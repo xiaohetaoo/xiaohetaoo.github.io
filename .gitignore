@@ -1,0 +1,7 @@
+# 本地工具与临时文件，不入库
+_gen_novel.py
+posts/_novel_shell.html
+_shots/
+_edge-tmp*/
+desktop.ini
+Thumbs.db

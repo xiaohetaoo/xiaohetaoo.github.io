@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小核桃工作室 · 博客 — 一切皆记录</title>
+  <meta name="description" content="小核桃工作室（xiaohetao）的个人博客：写代码、做作品，把好奇的东西做出来，把做过的东西写下来。" />
+  <meta property="og:title" content="小核桃工作室 · 博客" />
+  <meta property="og:description" content="把好奇的东西做出来，把做过的东西写下来。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/img/og-image.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- ============ 导航 ============ -->
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="index.html">
+        <img src="assets/img/logo-mark.png" alt="小核桃工作室 logo" />
+        <span>
+          <span class="brand-name">小核桃工作室</span>
+          <span class="brand-sub">XIAOHETAO</span>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="站内导航">
+        <a href="#posts">文章</a>
+        <a href="#projects">项目</a>
+        <a href="#contact">联系</a>
+        <a class="nav-cta" href="https://github.com/xiaohetaoo" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span class="label">GitHub</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ Hero ============ -->
+    <section class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="container hero-inner">
+        <div>
+          <span class="hero-badge reveal">
+            <span class="dot" aria-hidden="true"></span>
+            XIAOHETAO STUDIO · 个人博客
+          </span>
+          <h1 class="reveal" style="--d: 0.08s">一切皆<span class="grad">记录</span></h1>
+          <p class="hero-desc reveal" style="--d: 0.16s">
+            这里是小核桃工作室的博客。我们相信
+            <span class="formula">博客 = 输入 × 输出</span>
+            —— 把好奇的东西做出来，把做过的东西写下来。
+          </p>
+          <p class="hero-motto reveal" style="--d: 0.22s" aria-label="工作室口号：爱国、创新、和谐">
+            <span>爱国</span><i>·</i><span>创新</span><i>·</i><span>和谐</span>
+          </p>
+
+          <div class="hero-cta reveal" style="--d: 0.3s">
+            <a class="btn btn-primary" href="#posts">
+              阅读文章
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+            <a class="btn btn-secondary" href="#projects">看看项目</a>
+            <a class="btn btn-secondary" href="#contact">联系我</a>
+          </div>
+        </div>
+
+        <div class="hero-visual reveal" style="--d: 0.2s" aria-hidden="true">
+          <!-- 原子轨道动画：呼应工作室 logo -->
+          <canvas id="orbit-canvas" role="img" aria-label="原子轨道环绕立方体的动画"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 理念三栏（对齐 harness 理念区） ============ -->
+    <div class="concept">
+      <div class="container concept-grid">
+        <div class="concept-item reveal">
+          <span class="no">01 · RECORD</span>
+          <h3>记录</h3>
+          <p>每一次折腾、每一个踩过的坑，都值得写下来。记录是思考的存档，也是给未来自己的便签。</p>
+        </div>
+        <div class="concept-item reveal" style="--d: 0.1s">
+          <span class="no">02 · BUILD</span>
+          <h3>创造</h3>
+          <p>从一个想法到一个能跑的东西。做小而完整的作品，胜过做大而无当的计划。</p>
+        </div>
+        <div class="concept-item reveal" style="--d: 0.2s">
+          <span class="no">03 · SHARE</span>
+          <h3>分享</h3>
+          <p>写下来，才能想清楚。分享出去，才能收到回声。博客就是我们的公开笔记本。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 博客文章 ============ -->
+    <section class="section" id="posts">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">$ ls ~/posts</span>
+          <h2>博客文章</h2>
+          <p class="sub">写代码、也写文章。下方列表点进去就能阅读。</p>
+        </div>
+
+        <div class="post-list">
+          <!-- ▼ 新文章：复制 posts/_template.html 后，在这里照抄一个 <a> 卡片 ▼ -->
+          <a class="post-card reveal" href="posts/games-i-played.html">
+            <span class="date">2026-08-29</span>
+            <div>
+              <h3>我玩过的游戏（双语）</h3>
+              <p class="excerpt">想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。</p>
+            </div>
+            <div class="meta-col">
+              <span class="tags"><span class="tag">游戏</span><span class="tag tag-gray">了解我</span></span>
+              <span class="arrow" aria-hidden="true">-&gt;</span>
+            </div>
+          </a>
+
+          <a class="post-card reveal" style="--d: 0.08s" href="posts/exist-error.html">
+            <span class="date">2026-08-29</span>
+            <div>
+              <h3>存在错误</h3>
+              <p class="excerpt">初高中构思四年写的中长篇科幻小说，感谢领路人刘慈欣老师。</p>
+            </div>
+            <div class="meta-col">
+              <span class="tags"><span class="tag">科幻</span><span class="tag tag-gray">小说</span></span>
+              <span class="arrow" aria-hidden="true">-&gt;</span>
+            </div>
+          </a>
+
+          <a class="post-card reveal" style="--d: 0.16s" href="posts/good-and-evil.html">
+            <span class="date">2026-08-29</span>
+            <div>
+              <h3>善恶论</h3>
+              <p class="excerpt">高中课余写的思辨性议论文，跳出人类视角，思考问题。</p>
+            </div>
+            <div class="meta-col">
+              <span class="tags"><span class="tag">思考</span><span class="tag tag-gray">议论文</span></span>
+              <span class="arrow" aria-hidden="true">-&gt;</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 项目展示 ============ -->
+    <section class="section" id="projects">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">$ ls ~/projects</span>
+          <h2>项目与作品</h2>
+          <p class="sub">小核桃工作室做过的东西。</p>
+        </div>
+
+        <div class="project-grid">
+          <!-- ▼ 项目卡片：复制一个 card 改内容即可 ▼ -->
+          <div class="project-card reveal">
+            <div class="p-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+            <h3>粒子轨道可视化</h3>
+            <p class="p-desc">用原生 Canvas 写的原子轨道粒子动画 —— 就是本站首页右上角那个，零依赖、60fps。</p>
+            <div class="p-foot">
+              <span class="tags"><span class="tag tag-gray">Canvas</span><span class="tag tag-gray">JavaScript</span></span>
+              <span class="p-link mono">本站首页</span>
+            </div>
+          </div>
+
+          <a class="project-card reveal" style="--d: 0.08s" href="https://www.ccw.site/student/66b85c3793614d59cde4f9e4" target="_blank" rel="noopener">
+            <div class="p-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>
+            </div>
+            <h3>终觉之战</h3>
+            <p class="p-desc">基于 TurboWarp 开发的小游戏，将小说存在错误的高潮战斗视觉化，游戏流程大约 25 分钟。</p>
+            <div class="p-foot">
+              <span class="tags"><span class="tag tag-gray">游戏</span></span>
+              <span class="p-link mono">ccw.site ↗</span>
+            </div>
+          </a>
+
+          <a class="project-card reveal" style="--d: 0.16s" href="https://space.bilibili.com/1114603634" target="_blank" rel="noopener">
+            <div class="p-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </div>
+            <h3>视频创作</h3>
+            <p class="p-desc">主阵地是 B 站，当然抖音、快手、视频号、微博、小红书都有号。</p>
+            <div class="p-foot">
+              <span class="tags"><span class="tag tag-gray">视频</span></span>
+              <span class="p-link mono">bilibili ↗</span>
+            </div>
+          </a>
+
+          <a class="project-card reveal" style="--d: 0.24s" href="https://www.ifdian.net/a/xiaohetao" target="_blank" rel="noopener">
+            <div class="p-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>
+            </div>
+            <h3>支持我</h3>
+            <p class="p-desc">我的爱发电主页。如果喜欢小核桃的作品，欢迎请我喝杯奶茶，支持继续创作。</p>
+            <div class="p-foot">
+              <span class="tags"><span class="tag tag-gray">导航站</span><span class="tag tag-gray">捐赠</span></span>
+              <span class="p-link mono">ifdian.net ↗</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 联系方式 ============ -->
+    <section class="section" id="contact">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">$ ping xiaohetao</span>
+          <h2>联系我</h2>
+          <p class="sub">加个 QQ、发封邮件，或在 GitHub 上找到小核桃工作室。</p>
+        </div>
+
+        <div class="contact-grid">
+          <a class="contact-card reveal" href="https://github.com/xiaohetaoo" target="_blank" rel="noopener">
+            <div class="c-head">
+              <span class="c-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              </span>
+              <div>
+                <h3>GitHub</h3>
+                <span class="c-sub">代码与开源项目</span>
+              </div>
+            </div>
+            <span class="c-value">github.com/xiaohetaoo</span>
+          </a>
+
+          <a class="contact-card reveal" style="--d: 0.08s" href="mailto:671537419@qq.com">
+            <div class="c-head">
+              <span class="c-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </span>
+              <div>
+                <h3>邮箱</h3>
+                <span class="c-sub">合作与闲聊都欢迎</span>
+              </div>
+            </div>
+            <span class="c-value">671537419@qq.com</span>
+          </a>
+
+          <div class="contact-card reveal" style="--d: 0.16s">
+            <div class="c-head">
+              <span class="c-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+              </span>
+              <div>
+                <h3>QQ</h3>
+                <span class="c-sub">扫一扫加我为好友</span>
+              </div>
+            </div>
+            <div class="qr-box">
+              <img src="assets/img/qr-qq.png" alt="QQ 加好友二维码（QQ 号：671537419）" />
+            </div>
+            <span class="c-value">QQ: 671537419</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ 页脚 ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/img/logo-mark.png" alt="小核桃工作室 logo" />
+          <div>
+            <div class="n">小核桃工作室</div>
+            <div class="s">XIAOHETAO STUDIO</div>
+          </div>
+        </div>
+        <nav class="footer-links" aria-label="页脚导航">
+          <a href="#posts">文章</a>
+          <a href="#projects">项目</a>
+          <a href="#contact">联系</a>
+        </nav>
+      </div>
+      <p class="footer-caption">© <span id="year">2026</span> 小核桃工作室 · 记录 = 输入 × 输出 · 用好奇心驱动</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
