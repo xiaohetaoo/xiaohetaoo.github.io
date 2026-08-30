@@ -355,13 +355,31 @@
   document.querySelectorAll(".reveal").forEach(watchReveal);
 
   /* ---------- 5. 文章列表（posts.json 驱动：置顶优先，其余按日期倒序）
-         #post-list    首页，只显示最新 5 篇
-         #archive-list 归档页，显示全部 ---------- */
+         #post-list     首页，只显示最新 5 篇
+         #archive-list  归档页，显示全部
+         #sidebar-posts 文章页侧栏导航，当前篇高亮 ---------- */
   var esc = function (s) {
     return String(s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
     });
   };
+
+  // 同一页面多处列表共用一次请求；文章页在 /posts/ 子目录，要回到站点根再取
+  var postsCache = null;
+  function loadPosts() {
+    if (!postsCache) {
+      var root = window.location.pathname.indexOf("/posts/") !== -1 ? ".." : ".";
+      postsCache = fetch(root + "/posts.json").then(function (r) { return r.json(); });
+    }
+    return postsCache;
+  }
+
+  function sortPosts(posts) {
+    return posts.slice().sort(function (a, b) {
+      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+      return b.date.localeCompare(a.date);
+    });
+  }
 
   function postCardHtml(p, i) {
     var tags = (p.tags || [])
@@ -381,13 +399,9 @@
   }
 
   function renderPostCards(container, limit) {
-    fetch("posts.json")
-      .then(function (r) { return r.json(); })
+    loadPosts()
       .then(function (posts) {
-        var sorted = posts.slice().sort(function (a, b) {
-          if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-          return b.date.localeCompare(a.date);
-        });
+        var sorted = sortPosts(posts);
         var shown = limit > 0 ? sorted.slice(0, limit) : sorted;
         container.innerHTML = shown.map(postCardHtml).join("");
         container.querySelectorAll(".reveal").forEach(watchReveal);
@@ -404,6 +418,31 @@
   if (homeList) renderPostCards(homeList, 5);
   var archiveList = document.getElementById("archive-list");
   if (archiveList) renderPostCards(archiveList, 0);
+
+  /* ---------- 7. 文章页侧栏：文章导航 ---------- */
+  var sideList = document.getElementById("sidebar-posts");
+  if (sideList) {
+    loadPosts()
+      .then(function (posts) {
+        var path = window.location.pathname;
+        var root = path.indexOf("/posts/") !== -1 ? ".." : ".";
+        sideList.innerHTML = sortPosts(posts)
+          .map(function (p) {
+            var current = path.indexOf("/" + p.slug + ".html") !== -1;
+            return (
+              '<a class="side-item' + (current ? " current" : "") + '" href="' + root + "/posts/" + esc(p.slug) + '.html"' +
+                (current ? ' aria-current="page"' : "") + ">" +
+                '<span class="d">' + esc(p.date) + "</span>" +
+                '<span class="t">' + esc(p.title) + "</span>" +
+              "</a>"
+            );
+          })
+          .join("");
+      })
+      .catch(function () {
+        sideList.innerHTML = '<p class="sub">导航加载失败</p>';
+      });
+  }
 
   /* ---------- 3. 代码复制按钮 ---------- */
   document.querySelectorAll(".copy-btn[data-copy]").forEach(function (btn) {

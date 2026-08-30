@@ -514,32 +514,120 @@ button {
   color: var(--accent-bright);
 }
 
-/* 「查看全部文章」入口（蓝色实心按钮，全站主色） */
+/* 「查看全部文章」入口：复用 .btn .btn-primary（与首页「阅读文章」同款蓝色实心），
+   这里只补列表区块需要的间距和隐藏逻辑 */
 .all-posts-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 22px;
-  padding: 10px 20px;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #ffffff;
-  background: linear-gradient(135deg, var(--accent), #4a8ac4);
-  border-radius: 999px;
-  box-shadow: 0 0 24px rgba(103, 158, 254, 0.35);
-  transition: filter 0.25s, transform 0.25s var(--ease-out), box-shadow 0.25s;
-}
-
-.all-posts-link:hover {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
-  box-shadow: 0 0 36px rgba(103, 158, 254, 0.55);
+  margin-top: 28px;
 }
 
 .all-posts-link[hidden] {
   display: none;
+}
+
+/* ---------- 文章页侧栏（文章导航） ----------
+   默认隐藏，宽屏（>1100px）且页面带 .post-sidebar 时启用双栏 */
+.post-sidebar {
+  display: none;
+}
+
+.post-sidebar .kicker {
+  display: block;
+}
+
+.side-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 14px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+
+.side-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.side-item .d {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.side-item .t {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.side-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.side-item:hover .t {
+  color: var(--text-1);
+}
+
+.side-item.current {
+  background: var(--accent-dim);
+}
+
+.side-item.current .t {
+  color: var(--accent-bright);
+}
+
+.side-item.current .d {
+  color: var(--accent);
+}
+
+.side-all {
+  display: inline-block;
+  margin-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--text-3);
+  transition: color 0.2s;
+}
+
+.side-all:hover {
+  color: var(--accent-bright);
+}
+
+@media (min-width: 1101px) {
+  .post-page .container:has(.post-sidebar) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 272px;
+    grid-template-areas:
+      "back side"
+      "article side"
+      "nav side";
+    column-gap: 56px;
+    align-items: start;
+  }
+
+  .post-page .container:has(.post-sidebar) .back-link {
+    grid-area: back;
+  }
+
+  .post-page .container:has(.post-sidebar) .article {
+    grid-area: article;
+  }
+
+  .post-page .container:has(.post-sidebar) .post-nav {
+    grid-area: nav;
+  }
+
+  .post-page .container:has(.post-sidebar) .post-sidebar {
+    display: block;
+    grid-area: side;
+    position: sticky;
+    top: 96px;
+  }
 }
 
 .post-card {
