@@ -1481,6 +1481,10 @@ button {
   border-color: rgba(47, 108, 235, 0.25);
 }
 :root[data-theme="light"] .tier-badge.tier-a { background: rgba(16, 24, 40, 0.04); }
+/* 亮色模式下二维码反相成白底深色码（hue-rotate 保持蓝色系、不破坏可扫描性） */
+:root[data-theme="light"] .contact-card .qr-box img {
+  filter: invert(1) hue-rotate(180deg);
+}
 
 /* ---------- Giscus 评论区（文章页末尾） ---------- */
 .comments {
