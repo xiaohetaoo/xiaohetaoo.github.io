@@ -106,90 +106,22 @@
           <p class="sub">写代码、也写文章。下方列表点进去就能阅读。</p>
         </div>
 
-        <div class="post-list">
-          <!-- ▼ 新文章：复制 posts/_template.html 后，在这里照抄一个 <a> 卡片 ▼ -->
-          <a class="post-card reveal" href="posts/involution.html">
-            <span class="date">2026-08-30</span>
-            <div>
-              <h3>内卷的本质</h3>
-              <p class="excerpt">高中课余写的思辨性议论文，反思内卷现象。</p>
-            </div>
-            <div class="meta-col">
-              <span class="tags"><span class="tag">思考</span><span class="tag tag-gray">议论文</span></span>
-              <span class="arrow" aria-hidden="true">-&gt;</span>
-            </div>
-          </a>
-          <a class="post-card reveal" href="posts/mask-society.html">
-            <span class="date">2026-08-30</span>
-            <div>
-              <h3>面具社会</h3>
-              <p class="excerpt">高中课余写的思辨性议论文，反思信息时代人的伪装和表里不一。</p>
-            </div>
-            <div class="meta-col">
-              <span class="tags"><span class="tag">思考</span><span class="tag tag-gray">议论文</span></span>
-              <span class="arrow" aria-hidden="true">-&gt;</span>
-            </div>
-          </a>
-
-          <a class="post-card reveal" style="--d: 0.08s" href="posts/on-ineffective-effort.html">
-            <span class="date">2026-08-30</span>
-            <div>
-              <h3>论无效努力</h3>
-              <p class="excerpt">高中课余写的思辨性议论文，探讨究竟该如何努力，努力多少。</p>
-            </div>
-            <div class="meta-col">
-              <span class="tags"><span class="tag">思考</span><span class="tag tag-gray">议论文</span></span>
-              <span class="arrow" aria-hidden="true">-&gt;</span>
-            </div>
-          </a>
-
-          <a class="post-card reveal" style="--d: 0.08s" href="posts/on-utility.html">
-            <span class="date">2026-08-30</span>
-            <div>
-              <h3>论功利</h3>
-              <p class="excerpt">高中课余写的思辨性议论文，探讨读书学习的真谛。</p>
-            </div>
-            <div class="meta-col">
-              <span class="tags"><span class="tag">思考</span><span class="tag tag-gray">议论文</span></span>
-              <span class="arrow" aria-hidden="true">-&gt;</span>
-            </div>
-          </a>
-
-          <a class="post-card reveal" style="--d: 0.08s" href="posts/games-i-played.html">
-            <span class="date">2026-08-29</span>
-            <div>
-              <h3>我玩过的游戏（双语）</h3>
-              <p class="excerpt">想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。</p>
-            </div>
-            <div class="meta-col">
-              <span class="tags"><span class="tag">游戏</span><span class="tag tag-gray">了解我</span></span>
-              <span class="arrow" aria-hidden="true">-&gt;</span>
-            </div>
-          </a>
-
-          <a class="post-card reveal" style="--d: 0.08s" href="posts/exist-error.html">
-            <span class="date">2026-08-29</span>
-            <div>
-              <h3>存在错误</h3>
-              <p class="excerpt">初高中构思四年写的中长篇科幻小说，感谢领路人刘慈欣老师。</p>
-            </div>
-            <div class="meta-col">
-              <span class="tags"><span class="tag">科幻</span><span class="tag tag-gray">小说</span></span>
-              <span class="arrow" aria-hidden="true">-&gt;</span>
-            </div>
-          </a>
-
-          <a class="post-card reveal" style="--d: 0.16s" href="posts/good-and-evil.html">
-            <span class="date">2026-08-29</span>
-            <div>
-              <h3>善恶论</h3>
-              <p class="excerpt">高中课余写的思辨性议论文，跳出人类视角来思考问题。</p>
-            </div>
-            <div class="meta-col">
-              <span class="tags"><span class="tag">思考</span><span class="tag tag-gray">议论文</span></span>
-              <span class="arrow" aria-hidden="true">-&gt;</span>
-            </div>
-          </a>
+        <div class="post-list" id="post-list">
+            <!-- 文章列表由 assets/js/main.js 读取 posts.json 渲染；加新文章 = posts.json 加一条 + posts/ 建一个页面 -->
+            <noscript>
+              <p class="sub">你的浏览器禁用了 JS，请直接从下方链接进入文章：</p>
+              <ul class="fallback-list">
+                <li><a href="posts/games-i-played.html">我玩过的游戏（双语）</a></li>
+                <li><a href="posts/exist-error.html">存在错误</a></li>
+                <li><a href="posts/involution.html">内卷的本质</a></li>
+                <li><a href="posts/mask-society.html">面具社会</a></li>
+                <li><a href="posts/on-ineffective-effort.html">论无效努力</a></li>
+                <li><a href="posts/on-utility.html">论功利</a></li>
+                <li><a href="posts/good-and-evil.html">善恶论</a></li>
+              </ul>
+            </noscript>
+            <p class="sub" data-loading>正在加载文章列表…</p>
+          </div>
         </div>
       </div>
     </section>

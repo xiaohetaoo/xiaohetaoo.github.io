@@ -4,6 +4,7 @@
    2) 滚动进场（位移 + 模糊，对齐 harness 的 --enter-y/--enter-blur）
    3) 代码复制按钮
    4) 导航滚动高亮
+   5) 文章列表渲染（posts.json：置顶优先，其余按日期倒序）
    ============================================================ */
 
 (function () {
@@ -332,22 +333,65 @@
   }
 
   /* ---------- 2. 滚动进场 ---------- */
-  var revealEls = document.querySelectorAll(".reveal");
+  var revealIo = null;
   if ("IntersectionObserver" in window && !reducedMotion) {
-    var io = new IntersectionObserver(
+    revealIo = new IntersectionObserver(
       function (entries) {
         entries.forEach(function (en) {
           if (en.isIntersecting) {
             en.target.classList.add("is-visible");
-            io.unobserve(en.target);
+            revealIo.unobserve(en.target);
           }
         });
       },
       { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
     );
-    revealEls.forEach(function (el) { io.observe(el); });
-  } else {
-    revealEls.forEach(function (el) { el.classList.add("is-visible"); });
+  }
+  // 动态插入的元素（文章卡片）也走同一个观察器
+  function watchReveal(el) {
+    if (revealIo) revealIo.observe(el);
+    else el.classList.add("is-visible");
+  }
+  document.querySelectorAll(".reveal").forEach(watchReveal);
+
+  /* ---------- 5. 文章列表（posts.json 驱动：置顶优先，其余按日期倒序） ---------- */
+  var postList = document.getElementById("post-list");
+  if (postList) {
+    var esc = function (s) {
+      return String(s).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+      });
+    };
+    fetch("posts.json")
+      .then(function (r) { return r.json(); })
+      .then(function (posts) {
+        var sorted = posts.slice().sort(function (a, b) {
+          if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+          return b.date.localeCompare(a.date);
+        });
+        postList.innerHTML = sorted
+          .map(function (p, i) {
+            var tags = (p.tags || [])
+              .map(function (t, j) {
+                return '<span class="tag' + (j > 0 ? " tag-gray" : "") + '">' + esc(t) + "</span>";
+              })
+              .join("");
+            var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
+            var delay = ' style="--d:' + Math.min(i * 0.05, 0.3).toFixed(2) + 's"';
+            return (
+              '<a class="post-card reveal"' + delay + ' href="posts/' + esc(p.slug) + '.html">' +
+                '<span class="date">' + esc(p.date) + pin + "</span>" +
+                "<div><h3>" + esc(p.title) + '</h3><p class="excerpt">' + esc(p.excerpt) + "</p></div>" +
+                '<div class="meta-col"><span class="tags">' + tags + '</span><span class="arrow" aria-hidden="true">-&gt;</span></div>' +
+              "</a>"
+            );
+          })
+          .join("");
+        postList.querySelectorAll(".reveal").forEach(watchReveal);
+      })
+      .catch(function () {
+        postList.innerHTML = '<p class="sub">文章列表加载失败，请刷新重试。</p>';
+      });
   }
 
   /* ---------- 3. 代码复制按钮 ---------- */
