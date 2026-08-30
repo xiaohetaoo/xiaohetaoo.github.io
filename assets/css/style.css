@@ -1850,9 +1850,10 @@ html:not(.theme-anim)::view-transition-new(root) {
   animation: vt-page-in 0.3s ease-out both;
 }
 
-/* 共享元素：文章卡片 → 文章页标题区。
-   文章页这边常驻标记，首页/归档的卡片由 JS 在点击时挂同名标记（见 main.js） */
-html:not(.theme-anim) header.article-head {
+/* 共享元素：文章卡片 / 侧栏目录项 → 文章页标题区。
+   文章页这边常驻标记（侧栏项起飞时经 html.side-morph 让位，避免同页重名跳过过渡）；
+   首页/归档的卡片、侧栏项由 JS 在点击时挂同名标记（见 main.js） */
+html:not(.theme-anim):not(.side-morph) header.article-head {
   view-transition-name: post-hero;
 }
 

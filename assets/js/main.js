@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831e";
+  var DATA_VER = "20260831f";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -68,39 +68,44 @@
     );
   }
 
-  /* ---------- 0.5 跨页面过渡：文章卡片放大成文章头 ---------- */
-  // 点击文章卡片时给卡片挂 view-transition-name="post-hero"，
-  // 文章页的 header.article-head 在 CSS 里常驻同名标记，
-  // 浏览器就会在两页之间做"卡片放大成文章头"的共享元素过渡（不支持的浏览器回退普通跳转）。
-  var morphedCard = null;
-  function clearCardMorph() {
-    if (morphedCard) {
-      morphedCard.style.viewTransitionName = "";
-      morphedCard = null;
+  /* ---------- 0.5 跨页面过渡：卡片/侧栏项放大成文章头 ---------- */
+  // 点击文章卡片或侧栏目录项时，给被点的元素挂 view-transition-name="post-hero"，
+  // 新页面的 header.article-head 在 CSS 里挂着同名标记，
+  // 浏览器就会做"点击项放大成文章头"的共享元素过渡（不支持的浏览器回退普通跳转）。
+  // 侧栏项起飞时，当前文章头要让出标记（html.side-morph），否则同页重名会直接跳过过渡。
+  var morphedEl = null;
+  function clearNavMorph() {
+    if (morphedEl) {
+      morphedEl.style.viewTransitionName = "";
+      morphedEl = null;
     }
+    document.documentElement.classList.remove("side-morph");
   }
 
   document.addEventListener("click", function (e) {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
-    var card = e.target && e.target.closest ? e.target.closest(".post-card[href]") : null;
-    if (!card) {
-      // 点了别处（比如主题按钮）：顺手清掉残留标记，避免主题圆形扩散在这张卡片上漏一块
-      clearCardMorph();
+    var el = e.target && e.target.closest ? e.target.closest(".post-card[href], .side-item[href]") : null;
+    if (!el) {
+      // 点了别处（比如主题按钮）：顺手清掉残留标记，避免主题圆形扩散在这块区域漏一块
+      clearNavMorph();
       return;
     }
-    clearCardMorph();
-    morphedCard = card;
-    card.style.viewTransitionName = "post-hero";
+    clearNavMorph();
+    morphedEl = el;
+    el.style.viewTransitionName = "post-hero";
+    if (el.classList.contains("side-item")) {
+      document.documentElement.classList.add("side-morph");
+    }
   });
 
-  // 从文章页返回（bfcache 恢复）时卡片可能还挂着标记：
+  // 返回/恢复页面（bfcache）时元素可能还挂着标记：
   // 若正好有页面过渡就等它放完再摘，否则立刻摘掉，保持状态干净
   window.addEventListener("pagereveal", function (e) {
-    if (!morphedCard) return;
+    if (!morphedEl) return;
     if (e.viewTransition) {
-      e.viewTransition.finished.then(clearCardMorph, clearCardMorph);
+      e.viewTransition.finished.then(clearNavMorph, clearNavMorph);
     } else {
-      clearCardMorph();
+      clearNavMorph();
     }
   });
 
