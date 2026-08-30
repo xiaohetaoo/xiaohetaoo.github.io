@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260830m";
+  var DATA_VER = "20260830n";
 
   var themeBtn = document.getElementById("theme-toggle");
   if (themeBtn) {
@@ -649,7 +649,7 @@
     repo: "xiaohetaoo/xiaohetaoo.github.io",
     repoId: "R_kgDOUHvnPQ",
     category: "Announcements",
-    categoryId: "" // 待填：在 giscus.app 生成配置后填入，填好前评论区自动隐藏
+    categoryId: "DIC_kwDOUHvnPc4DEhME"
   };
   var giscusBox = document.getElementById("giscus");
   if (giscusBox) {
