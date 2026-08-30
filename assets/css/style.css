@@ -543,6 +543,27 @@ button {
   margin-top: 14px;
   padding-left: 12px;
   border-left: 1px solid var(--border);
+  /* 独立滚动：滚到头不带动整页，滚动条只在列表高过可用高度时出现 */
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.side-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.side-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.side-list::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+.side-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
 }
 
 .side-item {
@@ -625,10 +646,20 @@ button {
   }
 
   .post-page .container:has(.post-sidebar) .post-sidebar {
-    display: block;
+    display: flex;
+    flex-direction: column;
     grid-area: side;
     position: sticky;
     top: 96px;
+    /* 限高在视口内：标题和「全部文章」常驻，中间列表自己滚 */
+    max-height: calc(100vh - 120px);
+  }
+
+  .post-page .container:has(.post-sidebar) .side-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 5px;
   }
 }
 

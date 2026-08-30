@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831a";
+  var DATA_VER = "20260831b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -771,6 +771,11 @@
             );
           })
           .join("");
+        // 列表太长时，让当前篇在侧栏里滚到可见位置（nearest 不会牵动整页滚动）
+        var currentItem = sideList.querySelector(".side-item.current");
+        if (currentItem && currentItem.scrollIntoView) {
+          currentItem.scrollIntoView({ block: "nearest" });
+        }
       })
       .catch(function () {
         sideList.innerHTML = '<p class="sub">导航加载失败</p>';
