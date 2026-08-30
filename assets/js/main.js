@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260830p";
+  var DATA_VER = "20260831a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -44,6 +44,8 @@
       commit();
       return;
     }
+    // 主题动画期间挂作用域标记：圆形扩散用自己那份伪元素规则，和跨页面过渡互不干扰
+    document.documentElement.classList.add("theme-anim");
     var vt = document.startViewTransition(commit);
     vt.ready.then(function () {
       var x = origin.x, y = origin.y;
@@ -58,7 +60,47 @@
         { duration: 550, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
       );
     }).catch(function () {});
+    vt.finished.then(
+      function () { document.documentElement.classList.remove("theme-anim"); },
+      function () { document.documentElement.classList.remove("theme-anim"); }
+    );
   }
+
+  /* ---------- 0.5 跨页面过渡：文章卡片放大成文章头 ---------- */
+  // 点击文章卡片时给卡片挂 view-transition-name="post-hero"，
+  // 文章页的 header.article-head 在 CSS 里常驻同名标记，
+  // 浏览器就会在两页之间做"卡片放大成文章头"的共享元素过渡（不支持的浏览器回退普通跳转）。
+  var morphedCard = null;
+  function clearCardMorph() {
+    if (morphedCard) {
+      morphedCard.style.viewTransitionName = "";
+      morphedCard = null;
+    }
+  }
+
+  document.addEventListener("click", function (e) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
+    var card = e.target && e.target.closest ? e.target.closest(".post-card[href]") : null;
+    if (!card) {
+      // 点了别处（比如主题按钮）：顺手清掉残留标记，避免主题圆形扩散在这张卡片上漏一块
+      clearCardMorph();
+      return;
+    }
+    clearCardMorph();
+    morphedCard = card;
+    card.style.viewTransitionName = "post-hero";
+  });
+
+  // 从文章页返回（bfcache 恢复）时卡片可能还挂着标记：
+  // 若正好有页面过渡就等它放完再摘，否则立刻摘掉，保持状态干净
+  window.addEventListener("pagereveal", function (e) {
+    if (!morphedCard) return;
+    if (e.viewTransition) {
+      e.viewTransition.finished.then(clearCardMorph, clearCardMorph);
+    } else {
+      clearCardMorph();
+    }
+  });
 
   if (themeBtn) {
     syncTheme();
