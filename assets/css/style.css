@@ -1482,6 +1482,21 @@ button {
 }
 :root[data-theme="light"] .tier-badge.tier-a { background: rgba(16, 24, 40, 0.04); }
 
+/* ---------- Giscus 评论区（文章页末尾） ---------- */
+.comments {
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+.comments[hidden] {
+  display: none;
+}
+
+.comments-head {
+  margin-bottom: 24px;
+}
+
 .prose .chapter-nav-box {
   border: 1px solid var(--border);
   border-radius: var(--radius);

@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260830l";
+  var DATA_VER = "20260830m";
 
   var themeBtn = document.getElementById("theme-toggle");
   if (themeBtn) {
@@ -643,6 +643,49 @@
   }
 
   rerenderProjectLists();
+
+  /* ---------- 9. Giscus 评论（GitHub Discussions，仅文章页） ---------- */
+  var GISCUS = {
+    repo: "xiaohetaoo/xiaohetaoo.github.io",
+    repoId: "R_kgDOUHvnPQ",
+    category: "Announcements",
+    categoryId: "" // 待填：在 giscus.app 生成配置后填入，填好前评论区自动隐藏
+  };
+  var giscusBox = document.getElementById("giscus");
+  if (giscusBox) {
+    var commentsSection = giscusBox.closest(".comments");
+    if (GISCUS.categoryId) {
+      var giscusScript = document.createElement("script");
+      giscusScript.src = "https://giscus.app/client.js";
+      giscusScript.setAttribute("data-repo", GISCUS.repo);
+      giscusScript.setAttribute("data-repo-id", GISCUS.repoId);
+      giscusScript.setAttribute("data-category", GISCUS.category);
+      giscusScript.setAttribute("data-category-id", GISCUS.categoryId);
+      giscusScript.setAttribute("data-mapping", "pathname");
+      giscusScript.setAttribute("data-strict", "0");
+      giscusScript.setAttribute("data-reactions-enabled", "1");
+      giscusScript.setAttribute("data-emit-metadata", "0");
+      giscusScript.setAttribute("data-input-position", "top");
+      giscusScript.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
+      giscusScript.setAttribute("data-lang", "zh-CN");
+      giscusScript.setAttribute("data-loading", "lazy");
+      giscusScript.crossOrigin = "anonymous";
+      giscusScript.async = true;
+      giscusBox.appendChild(giscusScript);
+      // 评论区跟随站内深浅主题切换（主题按钮在 section 0 已先切换 data-theme）
+      if (themeBtn) {
+        themeBtn.addEventListener("click", function () {
+          var t = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+          var frame = document.querySelector("iframe.giscus-frame");
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({ giscus: { setConfig: { theme: t } } }, "https://giscus.app");
+          }
+        });
+      }
+    } else if (commentsSection) {
+      commentsSection.hidden = true;
+    }
+  }
 
   /* ---------- 7. 文章页侧栏：文章导航 ---------- */
   var sideList = document.getElementById("sidebar-posts");
