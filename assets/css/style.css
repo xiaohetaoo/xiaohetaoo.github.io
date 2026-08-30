@@ -514,27 +514,28 @@ button {
   color: var(--accent-bright);
 }
 
-/* 「查看全部文章」入口（幽灵胶囊按钮，对齐导航/标签的描边风格） */
+/* 「查看全部文章」入口（蓝色实心按钮，全站主色） */
 .all-posts-link {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   margin-top: 22px;
-  padding: 9px 18px;
+  padding: 10px 20px;
   font-family: var(--font-mono);
   font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--text-2);
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent), #4a8ac4);
   border-radius: 999px;
-  transition: border-color 0.25s, color 0.25s, background 0.25s;
+  box-shadow: 0 0 24px rgba(103, 158, 254, 0.35);
+  transition: filter 0.25s, transform 0.25s var(--ease-out), box-shadow 0.25s;
 }
 
 .all-posts-link:hover {
-  border-color: var(--accent-border);
-  color: var(--accent-bright);
-  background: var(--bg-panel-2);
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 0 36px rgba(103, 158, 254, 0.55);
 }
 
 .all-posts-link[hidden] {
