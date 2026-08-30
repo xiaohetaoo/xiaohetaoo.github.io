@@ -1328,6 +1328,11 @@ button {
   letter-spacing: 0.06em;
 }
 
+/* 剧本里的括号行（舞台指示 / 镜头说明）：弱化为次要色 */
+.prose p.stage {
+  color: var(--text-3);
+}
+
 .prose .chapter-nav-box {
   border: 1px solid var(--border);
   border-radius: var(--radius);
