@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+  <meta name="theme-color" content="#000000" />
+  <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":"#000000"}}catch(e){}</script>
   <title>内卷的本质 · 小核桃工作室博客</title>
   <meta name="description" content="高中课余写的思辨性议论文，反思内卷现象。" />
   <meta name="date" content="2026-08-30" />
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="../assets/img/favicon-64.png" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20260831d" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260831e" />
 </head>
 <body>
 
@@ -102,7 +103,7 @@
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <img src="../assets/img/logo-mark.png" alt="小核桃工作室 logo" />
+          <img loading="lazy" decoding="async" src="../assets/img/logo-mark.png" alt="小核桃工作室 logo" />
           <div>
             <div class="n">小核桃工作室</div>
             <div class="s">XIAOHETAO STUDIO</div>
@@ -118,6 +119,6 @@
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20260831d"></script>
+  <script src="../assets/js/main.js?v=20260831e"></script>
 </body>
 </html>

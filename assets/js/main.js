@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831d";
+  var DATA_VER = "20260831e";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -37,6 +37,8 @@
     var commit = function () {
       document.documentElement.setAttribute("data-theme", next);
       try { localStorage.setItem("theme", next); } catch (e) {}
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", next === "light" ? "#f5f6f8" : "#000000");
       syncTheme();
       document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: next } }));
     };
@@ -293,6 +295,16 @@
 
     var start = null;
     var lastTs = null;
+    var rafPending = false;
+    function scheduleFrame() {
+      // 防重入：标签页切走再切回时，挂起的旧帧和 visibilitychange 的重触发只会留下一个循环
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(function (ts) {
+        rafPending = false;
+        frame(ts);
+      });
+    }
     function frame(ts) {
       if (start === null) start = ts;
       var dt = lastTs === null ? 0.016 : Math.min(0.05, (ts - lastTs) / 1000);
@@ -303,25 +315,40 @@
       orbits.forEach(function (o) { drawOrbit(o, t); });
       drawCube(t, dt);
       orbits.forEach(function (o) { drawElectron(o, t, dt); });
-      if (!reducedMotion && !staticMode && !document.hidden) {
-        requestAnimationFrame(frame);
+      if (!reducedMotion && !staticMode && !document.hidden && heroVisible) {
+        scheduleFrame();
       }
+    }
+
+    // 滚出首屏就停帧，回到视口再继续（首页往下阅读时动画不必空转）
+    var heroVisible = true;
+    if ("IntersectionObserver" in window && !reducedMotion && !staticMode) {
+      heroVisible = false;
+      new IntersectionObserver(function (entries) {
+        var now = entries[0].isIntersecting;
+        if (now && !heroVisible) scheduleFrame();
+        heroVisible = now;
+      }, { threshold: 0 }).observe(canvas);
     }
 
     // 页面重新可见时恢复动画
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden && !reducedMotion && !staticMode) requestAnimationFrame(frame);
+      if (!document.hidden && !reducedMotion && !staticMode) scheduleFrame();
     });
 
+    var resizeTimer = null;
     window.addEventListener("resize", function () {
-      resize();
-      updateHeroRect();
-      if (reducedMotion || staticMode) {
-        ctx.clearRect(0, 0, W, H);
-        orbits.forEach(function (o) { drawOrbit(o, 0); });
-        drawCube(0.5);
-        orbits.forEach(function (o) { drawElectron(o, 0); });
-      }
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        resize();
+        updateHeroRect();
+        if (reducedMotion || staticMode) {
+          ctx.clearRect(0, 0, W, H);
+          orbits.forEach(function (o) { drawOrbit(o, 0); });
+          drawCube(0.5);
+          orbits.forEach(function (o) { drawElectron(o, 0); });
+        }
+      }, 120);
     });
 
     window.addEventListener("scroll", updateHeroRect, { passive: true });
@@ -335,7 +362,7 @@
       drawCube(0.5);
       orbits.forEach(function (o) { drawElectron(o, 0); });
     } else {
-      requestAnimationFrame(frame);
+      scheduleFrame();
     }
   }
 
@@ -352,6 +379,35 @@
     var dLastScroll = window.scrollY;
     var dScrollBoost = 0;
     var dLast = null;
+    var dustPending = false;
+
+    // 深浅主题各自的粒子配色；发光粒子用缓存的精灵图，避免每帧重建径向渐变
+    var DUST_PALETTES = {
+      dark: { glow: "140, 185, 255", dot: "205, 224, 255" },
+      light: { glow: "47, 108, 235", dot: "62, 90, 148" }
+    };
+    var dustPal = DUST_PALETTES.dark;
+    var glowSprite = null;
+    function buildGlowSprite() {
+      glowSprite = document.createElement("canvas");
+      glowSprite.width = glowSprite.height = 64;
+      var gctx = glowSprite.getContext("2d");
+      var g = gctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, "rgba(" + dustPal.glow + ", 0.85)");
+      g.addColorStop(1, "rgba(" + dustPal.glow + ", 0)");
+      gctx.fillStyle = g;
+      gctx.fillRect(0, 0, 64, 64);
+    }
+    function syncDustPalette() {
+      var pal = document.documentElement.getAttribute("data-theme") === "light"
+        ? DUST_PALETTES.light
+        : DUST_PALETTES.dark;
+      if (pal !== dustPal) {
+        dustPal = pal;
+        buildGlowSprite();
+      }
+    }
+    buildGlowSprite();
 
     function dustResize() {
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -383,13 +439,14 @@
       dMouse.y = e.clientY;
     }, { passive: true });
 
-    window.addEventListener("resize", dustResize);
+    var dustResizeTimer = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(dustResizeTimer);
+      dustResizeTimer = setTimeout(dustResize, 120);
+    });
     if (!staticMode) {
       document.addEventListener("visibilitychange", function () {
-        if (!document.hidden) {
-          dLast = null;
-          requestAnimationFrame(dustFrame);
-        }
+        if (!document.hidden) scheduleDust();
       });
     }
 
@@ -401,7 +458,9 @@
       dScrollBoost = dScrollBoost * 0.88 + (sy - dLastScroll) * 0.10;
       dLastScroll = sy;
 
+      syncDustPalette();
       dctx.clearRect(0, 0, dw, dh);
+      dctx.fillStyle = "rgb(" + dustPal.dot + ")";
       for (var i = 0; i < dust.length; i++) {
         var p = dust[i];
         p.x += p.vx * dt;
@@ -423,22 +482,18 @@
         if (p.y < -12) p.y += dh + 24; else if (p.y > dh + 12) p.y -= dh + 24;
 
         var alpha = p.a * (0.72 + 0.28 * Math.sin(t * 1.4 + p.tw));
+        dctx.globalAlpha = p.glow ? alpha * 0.85 : alpha;
         if (p.glow) {
-          var g = dctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 6);
-          g.addColorStop(0, "rgba(140, 185, 255, " + (alpha * 0.85).toFixed(3) + ")");
-          g.addColorStop(1, "rgba(140, 185, 255, 0)");
-          dctx.fillStyle = g;
-          dctx.beginPath();
-          dctx.arc(p.x, p.y, p.r * 6, 0, Math.PI * 2);
-          dctx.fill();
+          var gr = p.r * 6;
+          dctx.drawImage(glowSprite, p.x - gr, p.y - gr, gr * 2, gr * 2);
         }
-        dctx.fillStyle = "rgba(205, 224, 255, " + alpha.toFixed(3) + ")";
         dctx.beginPath();
         dctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         dctx.fill();
       }
+      dctx.globalAlpha = 1;
 
-      if (!document.hidden && !staticMode) requestAnimationFrame(dustFrame);
+      if (!document.hidden && !staticMode) scheduleDust();
     }
 
     function dustFrame(ts) {
@@ -448,11 +503,20 @@
       dustDraw(ts / 1000, dt);
     }
 
+    function scheduleDust() {
+      if (dustPending) return;
+      dustPending = true;
+      requestAnimationFrame(function (ts) {
+        dustPending = false;
+        dustFrame(ts);
+      });
+    }
+
     dustResize();
     if (staticMode) {
       dustDraw(0, 0);
     } else {
-      requestAnimationFrame(dustFrame);
+      scheduleDust();
     }
   }
 
@@ -483,8 +547,8 @@
          #archive-list  归档页，显示全部
          #sidebar-posts 文章页侧栏导航，当前篇高亮 ---------- */
   var esc = function (s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   };
 
@@ -723,23 +787,37 @@
   if (giscusBox) {
     var commentsSection = giscusBox.closest(".comments, .section");
     if (GISCUS.categoryId) {
-      var giscusScript = document.createElement("script");
-      giscusScript.src = "https://giscus.app/client.js";
-      giscusScript.setAttribute("data-repo", GISCUS.repo);
-      giscusScript.setAttribute("data-repo-id", GISCUS.repoId);
-      giscusScript.setAttribute("data-category", GISCUS.category);
-      giscusScript.setAttribute("data-category-id", GISCUS.categoryId);
-      giscusScript.setAttribute("data-mapping", "pathname");
-      giscusScript.setAttribute("data-strict", "0");
-      giscusScript.setAttribute("data-reactions-enabled", "1");
-      giscusScript.setAttribute("data-emit-metadata", "0");
-      giscusScript.setAttribute("data-input-position", "top");
-      giscusScript.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
-      giscusScript.setAttribute("data-lang", "zh-CN");
-      giscusScript.setAttribute("data-loading", "lazy");
-      giscusScript.crossOrigin = "anonymous";
-      giscusScript.async = true;
-      giscusBox.appendChild(giscusScript);
+      // 滚到评论区附近才注入脚本，首屏少一个第三方请求
+      var injectGiscus = function () {
+        var giscusScript = document.createElement("script");
+        giscusScript.src = "https://giscus.app/client.js";
+        giscusScript.setAttribute("data-repo", GISCUS.repo);
+        giscusScript.setAttribute("data-repo-id", GISCUS.repoId);
+        giscusScript.setAttribute("data-category", GISCUS.category);
+        giscusScript.setAttribute("data-category-id", GISCUS.categoryId);
+        giscusScript.setAttribute("data-mapping", "pathname");
+        giscusScript.setAttribute("data-strict", "0");
+        giscusScript.setAttribute("data-reactions-enabled", "1");
+        giscusScript.setAttribute("data-emit-metadata", "0");
+        giscusScript.setAttribute("data-input-position", "top");
+        giscusScript.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
+        giscusScript.setAttribute("data-lang", "zh-CN");
+        giscusScript.setAttribute("data-loading", "lazy");
+        giscusScript.crossOrigin = "anonymous";
+        giscusScript.async = true;
+        giscusBox.appendChild(giscusScript);
+      };
+      if ("IntersectionObserver" in window) {
+        var giscusIo = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) {
+            giscusIo.disconnect();
+            injectGiscus();
+          }
+        }, { rootMargin: "600px 0px" });
+        giscusIo.observe(giscusBox);
+      } else {
+        injectGiscus();
+      }
       // 评论区跟随站内深浅主题切换（监听主题事件，动画路径下也能拿到切换后的值）
       document.addEventListener("themechange", function (ev) {
         var t = ev.detail && ev.detail.theme === "light" ? "light" : "dark";

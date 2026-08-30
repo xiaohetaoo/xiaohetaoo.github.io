@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+  <meta name="theme-color" content="#000000" />
+  <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":"#000000"}}catch(e){}</script>
+  <noscript><style>[data-loading]{display:none}</style></noscript>
   <title>小核桃工作室 · 博客 — 一切皆记录</title>
   <meta name="description" content="小核桃工作室（xiaohetao）的个人博客：写代码、做作品，把好奇的东西做出来，把做过的东西写下来。" />
   <meta property="og:title" content="小核桃工作室 · 博客" />
@@ -13,7 +15,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20260831d" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260831e" />
 </head>
 <body>
 
@@ -223,7 +225,7 @@
               </div>
             </div>
             <div class="qr-box">
-              <img src="assets/img/qr-qq.png" alt="QQ 加好友二维码（QQ 号：671537419）" />
+              <img loading="lazy" decoding="async" src="assets/img/qr-qq.png" alt="QQ 加好友二维码（QQ 号：671537419）" />
             </div>
             <span class="c-value">QQ: 671537419</span>
           </div>
@@ -249,7 +251,7 @@
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <img src="assets/img/logo-mark.png" alt="小核桃工作室 logo" />
+          <img loading="lazy" decoding="async" src="assets/img/logo-mark.png" alt="小核桃工作室 logo" />
           <div>
             <div class="n">小核桃工作室</div>
             <div class="s">XIAOHETAO STUDIO</div>
@@ -265,6 +267,6 @@
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20260831d"></script>
+  <script src="assets/js/main.js?v=20260831e"></script>
 </body>
 </html>

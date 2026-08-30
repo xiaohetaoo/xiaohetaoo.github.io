@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+  <meta name="theme-color" content="#000000" />
+  <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":"#000000"}}catch(e){}</script>
   <!-- 加新文章共两步：
        1) 复制本文件，搜索「TODO」逐个替换
        2) 在 posts.json 里加一条记录（标题/日期/摘要/标签，要置顶就加 "pinned": true） -->
@@ -15,7 +16,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="../assets/img/favicon-64.png" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20260831d" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260831e" />
 </head>
 <body>
 
@@ -118,7 +119,7 @@ console.log("hello xiaohetao");</code></pre>
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <img src="../assets/img/logo-mark.png" alt="小核桃工作室 logo" />
+          <img loading="lazy" decoding="async" src="../assets/img/logo-mark.png" alt="小核桃工作室 logo" />
           <div>
             <div class="n">小核桃工作室</div>
             <div class="s">XIAOHETAO STUDIO</div>
@@ -134,6 +135,6 @@ console.log("hello xiaohetao");</code></pre>
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20260831d"></script>
+  <script src="../assets/js/main.js?v=20260831e"></script>
 </body>
 </html>
