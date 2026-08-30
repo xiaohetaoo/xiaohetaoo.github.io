@@ -7,7 +7,8 @@
 ## 结构
 
 ```text
-index.html            首页（文章列表、项目、联系方式都在这）
+index.html            首页（最新几篇文章、项目、联系方式）
+archive.html          全部文章归档
 posts.json            文章清单：标题、日期、标签，首页列表由它生成
 posts/                文章，一篇一个 html
 assets/css/style.css  全站样式，配色变量集中在文件开头的 :root

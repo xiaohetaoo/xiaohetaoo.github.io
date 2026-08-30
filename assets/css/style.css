@@ -514,6 +514,27 @@ button {
   color: var(--accent-bright);
 }
 
+/* 「查看全部文章」入口 */
+.all-posts-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: var(--accent-bright);
+  transition: color 0.2s;
+}
+
+.all-posts-link:hover {
+  color: var(--accent, #679efe);
+}
+
+.all-posts-link[hidden] {
+  display: none;
+}
+
 .post-card {
   display: grid;
   grid-template-columns: 118px 1fr auto;

@@ -354,14 +354,33 @@
   }
   document.querySelectorAll(".reveal").forEach(watchReveal);
 
-  /* ---------- 5. 文章列表（posts.json 驱动：置顶优先，其余按日期倒序） ---------- */
-  var postList = document.getElementById("post-list");
-  if (postList) {
-    var esc = function (s) {
-      return String(s).replace(/[&<>"]/g, function (c) {
-        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
-      });
-    };
+  /* ---------- 5. 文章列表（posts.json 驱动：置顶优先，其余按日期倒序）
+         #post-list    首页，只显示最新 5 篇
+         #archive-list 归档页，显示全部 ---------- */
+  var esc = function (s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  };
+
+  function postCardHtml(p, i) {
+    var tags = (p.tags || [])
+      .map(function (t, j) {
+        return '<span class="tag' + (j > 0 ? " tag-gray" : "") + '">' + esc(t) + "</span>";
+      })
+      .join("");
+    var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
+    var delay = ' style="--d:' + Math.min(i * 0.05, 0.3).toFixed(2) + 's"';
+    return (
+      '<a class="post-card reveal"' + delay + ' href="posts/' + esc(p.slug) + '.html">' +
+        '<span class="date">' + esc(p.date) + pin + "</span>" +
+        "<div><h3>" + esc(p.title) + '</h3><p class="excerpt">' + esc(p.excerpt) + "</p></div>" +
+        '<div class="meta-col"><span class="tags">' + tags + '</span><span class="arrow" aria-hidden="true">-&gt;</span></div>' +
+      "</a>"
+    );
+  }
+
+  function renderPostCards(container, limit) {
     fetch("posts.json")
       .then(function (r) { return r.json(); })
       .then(function (posts) {
@@ -369,30 +388,22 @@
           if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
           return b.date.localeCompare(a.date);
         });
-        postList.innerHTML = sorted
-          .map(function (p, i) {
-            var tags = (p.tags || [])
-              .map(function (t, j) {
-                return '<span class="tag' + (j > 0 ? " tag-gray" : "") + '">' + esc(t) + "</span>";
-              })
-              .join("");
-            var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
-            var delay = ' style="--d:' + Math.min(i * 0.05, 0.3).toFixed(2) + 's"';
-            return (
-              '<a class="post-card reveal"' + delay + ' href="posts/' + esc(p.slug) + '.html">' +
-                '<span class="date">' + esc(p.date) + pin + "</span>" +
-                "<div><h3>" + esc(p.title) + '</h3><p class="excerpt">' + esc(p.excerpt) + "</p></div>" +
-                '<div class="meta-col"><span class="tags">' + tags + '</span><span class="arrow" aria-hidden="true">-&gt;</span></div>' +
-              "</a>"
-            );
-          })
-          .join("");
-        postList.querySelectorAll(".reveal").forEach(watchReveal);
+        var shown = limit > 0 ? sorted.slice(0, limit) : sorted;
+        container.innerHTML = shown.map(postCardHtml).join("");
+        container.querySelectorAll(".reveal").forEach(watchReveal);
+        // 文章总数没超过首页配额时，就不显示「查看全部文章」入口
+        var allLink = document.getElementById("all-posts-link");
+        if (allLink) allLink.hidden = sorted.length <= limit;
       })
       .catch(function () {
-        postList.innerHTML = '<p class="sub">文章列表加载失败，请刷新重试。</p>';
+        container.innerHTML = '<p class="sub">文章列表加载失败，请刷新重试。</p>';
       });
   }
+
+  var homeList = document.getElementById("post-list");
+  if (homeList) renderPostCards(homeList, 5);
+  var archiveList = document.getElementById("archive-list");
+  if (archiveList) renderPostCards(archiveList, 0);
 
   /* ---------- 3. 代码复制按钮 ---------- */
   document.querySelectorAll(".copy-btn[data-copy]").forEach(function (btn) {
