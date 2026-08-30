@@ -1333,6 +1333,64 @@ button {
   color: var(--text-3);
 }
 
+/* ---------- 文章搜索 ---------- */
+.post-search {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.post-search .s-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.post-search input {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px 0 42px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.post-search input::placeholder {
+  color: var(--text-3);
+}
+
+.post-search input:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.search-hint {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.search-hint b {
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+
+.search-empty {
+  padding: 34px 0;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 14px;
+}
+
 .prose .chapter-nav-box {
   border: 1px solid var(--border);
   border-radius: var(--radius);

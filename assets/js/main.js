@@ -398,16 +398,37 @@
     );
   }
 
-  function renderPostCards(container, limit) {
+  function postMatches(p, q) {
+    var hay = (p.title + " " + p.excerpt + " " + (p.tags || []).join(" ")).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
+
+  function renderPostCards(container, limit, query) {
+    var q = (query || "").trim().toLowerCase();
     loadPosts()
       .then(function (posts) {
         var sorted = sortPosts(posts);
-        var shown = limit > 0 ? sorted.slice(0, limit) : sorted;
-        container.innerHTML = shown.map(postCardHtml).join("");
-        container.querySelectorAll(".reveal").forEach(watchReveal);
-        // 文章总数没超过首页配额时，就不显示「查看全部文章」入口
+        // 搜索时全库匹配、不限条数；否则按各页配额展示
+        var shown = q
+          ? sorted.filter(function (p) { return postMatches(p, q); })
+          : limit > 0 ? sorted.slice(0, limit) : sorted;
+        var html = "";
+        if (q) {
+          html += '<p class="search-hint">找到 <b>' + shown.length + "</b> 篇与「" + esc(query.trim()) + "」相关的文章</p>";
+        }
+        html += shown.length
+          ? shown.map(postCardHtml).join("")
+          : '<p class="search-empty">没有找到相关文章，换个关键词试试？</p>';
+        container.innerHTML = html;
+        if (q) {
+          // 打字过程中的连续重渲染，跳过渐显动画避免闪烁
+          container.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
+        } else {
+          container.querySelectorAll(".reveal").forEach(watchReveal);
+        }
+        // 文章总数没超过首页配额时，就不显示「查看全部文章」入口；搜索中也不显示
         var allLink = document.getElementById("all-posts-link");
-        if (allLink) allLink.hidden = sorted.length <= limit;
+        if (allLink) allLink.hidden = q ? true : sorted.length <= limit;
       })
       .catch(function () {
         container.innerHTML = '<p class="sub">文章列表加载失败，请刷新重试。</p>';
@@ -415,9 +436,32 @@
   }
 
   var homeList = document.getElementById("post-list");
-  if (homeList) renderPostCards(homeList, 5);
   var archiveList = document.getElementById("archive-list");
-  if (archiveList) renderPostCards(archiveList, 0);
+  var searchInput = document.getElementById("post-search");
+  var searchTimer = null;
+
+  function rerenderLists() {
+    var q = searchInput ? searchInput.value : "";
+    if (homeList) renderPostCards(homeList, 5, q);
+    if (archiveList) renderPostCards(archiveList, 0, q);
+  }
+
+  if (searchInput) {
+    // 支持 archive.html?q=关键词 直接带词搜索，链接可分享
+    var initialQ = new URLSearchParams(window.location.search).get("q") || "";
+    if (initialQ) searchInput.value = initialQ;
+    searchInput.addEventListener("input", function () {
+      var q = searchInput.value.trim();
+      try {
+        window.history.replaceState(null, "",
+          window.location.pathname + (q ? "?q=" + encodeURIComponent(q) : "") + window.location.hash);
+      } catch (e) {}
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(rerenderLists, 120);
+    });
+  }
+
+  rerenderLists();
 
   /* ---------- 7. 文章页侧栏：文章导航 ---------- */
   var sideList = document.getElementById("sidebar-posts");
