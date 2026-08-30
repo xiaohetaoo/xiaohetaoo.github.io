@@ -1394,6 +1394,13 @@ button {
 }
 
 /* ---------- 主题切换按钮 ---------- */
+/* View Transitions：关闭默认交叉淡化，圆形扩散由 JS 驱动 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;

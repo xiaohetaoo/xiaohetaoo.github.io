@@ -21,24 +21,50 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260830n";
+  var DATA_VER = "20260830o";
 
   var themeBtn = document.getElementById("theme-toggle");
-  if (themeBtn) {
-    var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
-    var MOON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
-    var syncTheme = function () {
-      var light = document.documentElement.getAttribute("data-theme") === "light";
-      themeBtn.innerHTML = light ? MOON_ICON : SUN_ICON;
-      themeBtn.setAttribute("aria-label", light ? "切换到深色主题" : "切换到亮色主题");
-    };
-    syncTheme();
-    themeBtn.addEventListener("click", function () {
-      var light = document.documentElement.getAttribute("data-theme") === "light";
-      var next = light ? "dark" : "light";
+  var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+  var MOON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+  var syncTheme = function () {
+    var light = document.documentElement.getAttribute("data-theme") === "light";
+    themeBtn.innerHTML = light ? MOON_ICON : SUN_ICON;
+    themeBtn.setAttribute("aria-label", light ? "切换到深色主题" : "切换到亮色主题");
+  };
+
+  // 切换主题；浏览器支持 View Transitions 时从点击位置做圆形扩散动画
+  function applyTheme(next, origin) {
+    var commit = function () {
       document.documentElement.setAttribute("data-theme", next);
       try { localStorage.setItem("theme", next); } catch (e) {}
       syncTheme();
+      document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: next } }));
+    };
+    if (!document.startViewTransition || reducedMotion) {
+      commit();
+      return;
+    }
+    var vt = document.startViewTransition(commit);
+    vt.ready.then(function () {
+      var x = origin.x, y = origin.y;
+      var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      document.documentElement.animate(
+        {
+          clipPath: [
+            "circle(0px at " + x + "px " + y + "px)",
+            "circle(" + radius + "px at " + x + "px " + y + "px)"
+          ]
+        },
+        { duration: 550, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
+      );
+    }).catch(function () {});
+  }
+
+  if (themeBtn) {
+    syncTheme();
+    themeBtn.addEventListener("click", function (e) {
+      var next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+      applyTheme(next, { x: e.clientX, y: e.clientY });
     });
   }
 
@@ -672,16 +698,14 @@
       giscusScript.crossOrigin = "anonymous";
       giscusScript.async = true;
       giscusBox.appendChild(giscusScript);
-      // 评论区跟随站内深浅主题切换（主题按钮在 section 0 已先切换 data-theme）
-      if (themeBtn) {
-        themeBtn.addEventListener("click", function () {
-          var t = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-          var frame = document.querySelector("iframe.giscus-frame");
-          if (frame && frame.contentWindow) {
-            frame.contentWindow.postMessage({ giscus: { setConfig: { theme: t } } }, "https://giscus.app");
-          }
-        });
-      }
+      // 评论区跟随站内深浅主题切换（监听主题事件，动画路径下也能拿到切换后的值）
+      document.addEventListener("themechange", function (ev) {
+        var t = ev.detail && ev.detail.theme === "light" ? "light" : "dark";
+        var frame = document.querySelector("iframe.giscus-frame");
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.postMessage({ giscus: { setConfig: { theme: t } } }, "https://giscus.app");
+        }
+      });
     } else if (commentsSection) {
       commentsSection.hidden = true;
     }
