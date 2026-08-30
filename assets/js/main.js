@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831b";
+  var DATA_VER = "20260831c";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -759,7 +759,19 @@
       .then(function (posts) {
         var path = window.location.pathname;
         var root = path.indexOf("/posts/") !== -1 ? ".." : ".";
-        sideList.innerHTML = sortPosts(posts)
+        // 侧栏只放最新 8 篇（置顶优先）；当前篇不在名单里时占掉最后一个位置，保证高亮可见
+        var sorted = sortPosts(posts);
+        var shown = sorted.slice(0, 8);
+        var currentPost = null;
+        sorted.forEach(function (p) {
+          if (path.indexOf("/" + p.slug + ".html") !== -1) currentPost = p;
+        });
+        if (currentPost) {
+          var inShown = false;
+          shown.forEach(function (p) { if (p.slug === currentPost.slug) inShown = true; });
+          if (!inShown) shown = shown.slice(0, 7).concat([currentPost]);
+        }
+        sideList.innerHTML = shown
           .map(function (p) {
             var current = path.indexOf("/" + p.slug + ".html") !== -1;
             return (
