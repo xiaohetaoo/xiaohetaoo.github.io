@@ -658,6 +658,8 @@ button {
   .post-page .container:has(.post-sidebar) .side-list {
     flex: 1;
     min-height: 0;
+    /* 约可见 8 行，再高的部分用滚轮看；矮视口时让位给可用高度 */
+    max-height: 456px;
     overflow-y: auto;
     padding-right: 5px;
   }
