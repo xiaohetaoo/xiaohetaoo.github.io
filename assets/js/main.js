@@ -510,16 +510,46 @@
     });
   }
 
-  function renderProjects(container, limit) {
+  function projectMatches(p, q) {
+    var hay = (p.title + " " + p.desc + " " + (p.tags || []).join(" ")).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
+
+  function renderProjects(container, limit, query) {
+    var q = (query || "").trim().toLowerCase();
     loadProjects()
       .then(function (projects) {
         var sorted = sortProjects(projects);
-        var shown = limit > 0 ? sorted.slice(0, limit) : sorted;
+        // 搜索时全库匹配、不限条数；否则按各页配额展示
+        var shown = q
+          ? sorted.filter(function (p) { return projectMatches(p, q); })
+          : limit > 0 ? sorted.slice(0, limit) : sorted;
+        // 网格容器里只能放卡片，结果提示 / 空态放外置元素，避免占掉第一个格子
+        var hint = document.querySelector("[data-project-hint]");
+        if (hint) {
+          if (q && !shown.length) {
+            hint.hidden = false;
+            hint.className = "search-empty";
+            hint.textContent = "没有找到相关项目，换个关键词试试？";
+          } else if (q) {
+            hint.hidden = false;
+            hint.className = "search-hint";
+            hint.innerHTML = "找到 <b>" + shown.length + "</b> 个与「" + esc(query.trim()) + "」相关的项目";
+          } else {
+            hint.hidden = true;
+            hint.innerHTML = "";
+          }
+        }
         container.innerHTML = shown.map(projectCardHtml).join("");
-        container.querySelectorAll(".reveal").forEach(watchReveal);
-        // 项目总数没超过首页配额时，就不显示「查看全部项目」入口
+        if (q) {
+          // 打字过程中的连续重渲染，跳过渐显动画避免闪烁
+          container.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
+        } else {
+          container.querySelectorAll(".reveal").forEach(watchReveal);
+        }
+        // 项目总数没超过首页配额时，就不显示「查看全部项目」入口；搜索中也不显示
         var allLink = document.getElementById("all-projects-link");
-        if (allLink) allLink.hidden = projects.length <= limit;
+        if (allLink) allLink.hidden = q ? true : projects.length <= limit;
       })
       .catch(function () {
         container.innerHTML = '<p class="sub">项目列表加载失败，请刷新重试。</p>';
@@ -527,9 +557,35 @@
   }
 
   var projectList = document.getElementById("project-list");
-  if (projectList) renderProjects(projectList, 6);
   var projectAllList = document.getElementById("project-all-list");
-  if (projectAllList) renderProjects(projectAllList, 0);
+  var projectSearchInput = document.getElementById("project-search");
+  var projectSearchTimer = null;
+
+  function rerenderProjectLists() {
+    var q = projectSearchInput ? projectSearchInput.value : "";
+    if (projectList) renderProjects(projectList, 6, q);
+    if (projectAllList) renderProjects(projectAllList, 0, q);
+  }
+
+  if (projectSearchInput) {
+    // projects.html 上支持 ?q= 直达分享；首页的 ?q= 已被文章搜索占用，项目搜索只做本地过滤
+    var isProjectsPage = !!projectAllList;
+    var initialProjectQ = isProjectsPage ? (new URLSearchParams(window.location.search).get("q") || "") : "";
+    if (initialProjectQ) projectSearchInput.value = initialProjectQ;
+    projectSearchInput.addEventListener("input", function () {
+      if (isProjectsPage) {
+        var q = projectSearchInput.value.trim();
+        try {
+          window.history.replaceState(null, "",
+            window.location.pathname + (q ? "?q=" + encodeURIComponent(q) : "") + window.location.hash);
+        } catch (e) {}
+      }
+      clearTimeout(projectSearchTimer);
+      projectSearchTimer = setTimeout(rerenderProjectLists, 120);
+    });
+  }
+
+  rerenderProjectLists();
 
   /* ---------- 7. 文章页侧栏：文章导航 ---------- */
   var sideList = document.getElementById("sidebar-posts");

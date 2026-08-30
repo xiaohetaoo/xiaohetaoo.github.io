@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20260830i" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260830k" />
 </head>
 <body>
 
@@ -46,6 +46,13 @@
         <h2>全部项目</h2>
         <p class="sub">小核桃工作室做过的东西，都在这里。</p>
       </div>
+
+      <div class="post-search reveal">
+        <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="project-search" type="search" placeholder="搜索项目：名称 / 介绍 / 标签…" autocomplete="off" />
+      </div>
+
+      <p class="search-hint" data-project-hint hidden></p>
 
       <div class="project-grid" id="project-all-list">
         <!-- 列表由 assets/js/main.js 读取 projects.json 渲染 -->
@@ -86,6 +93,6 @@
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20260830i"></script>
+  <script src="assets/js/main.js?v=20260830k"></script>
 </body>
 </html>
