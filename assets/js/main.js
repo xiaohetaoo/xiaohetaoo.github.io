@@ -19,6 +19,29 @@
     document.documentElement.classList.add("js");
   }
 
+  /* ---------- 0. 深浅主题切换 ---------- */
+  // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
+  var DATA_VER = "20260830l";
+
+  var themeBtn = document.getElementById("theme-toggle");
+  if (themeBtn) {
+    var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+    var MOON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+    var syncTheme = function () {
+      var light = document.documentElement.getAttribute("data-theme") === "light";
+      themeBtn.innerHTML = light ? MOON_ICON : SUN_ICON;
+      themeBtn.setAttribute("aria-label", light ? "切换到深色主题" : "切换到亮色主题");
+    };
+    syncTheme();
+    themeBtn.addEventListener("click", function () {
+      var light = document.documentElement.getAttribute("data-theme") === "light";
+      var next = light ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("theme", next); } catch (e) {}
+      syncTheme();
+    });
+  }
+
   /* ---------- 1. 原子轨道动画 ---------- */
   var canvas = document.getElementById("orbit-canvas");
   if (canvas) {
@@ -41,6 +64,38 @@
       { rx: 0.47, ry: 0.155, rot:  Math.PI / 7,   speed: 0.30, phase: 2.6,  color: "#4a8ac4", _ox: 0, _oy: 0 },
       { rx: 0.16, ry: 0.455, rot:  0.06,          speed: 0.22, phase: 4.6,  color: "#8ab4ff", _ox: 0, _oy: 0 }
     ];
+
+    // 深浅主题各自的画布配色（轨道 / 电子 / 立方体），切换主题后下一帧自动生效
+    var CANVAS_PALETTES = {
+      dark: {
+        orbitStroke: "rgba(103, 158, 254, 0.30)",
+        glowMid: "rgba(103, 158, 254, 0.45)",
+        glowEnd: "rgba(103, 158, 254, 0)",
+        electronCore: "#cfe2ff",
+        cubeStroke: "rgba(140, 190, 255, 0.65)",
+        cubeDot: "rgba(190, 218, 255, 0.85)",
+        orbitColors: ["#679efe", "#4a8ac4", "#8ab4ff"]
+      },
+      light: {
+        orbitStroke: "rgba(47, 108, 235, 0.38)",
+        glowMid: "rgba(47, 108, 235, 0.38)",
+        glowEnd: "rgba(47, 108, 235, 0)",
+        electronCore: "#1d4ed8",
+        cubeStroke: "rgba(37, 99, 235, 0.55)",
+        cubeDot: "rgba(30, 79, 174, 0.8)",
+        orbitColors: ["#2f6ceb", "#1e4fae", "#5b8def"]
+      }
+    };
+    var currentPal = CANVAS_PALETTES.dark;
+    function syncPalette() {
+      var pal = document.documentElement.getAttribute("data-theme") === "light"
+        ? CANVAS_PALETTES.light
+        : CANVAS_PALETTES.dark;
+      if (pal !== currentPal) {
+        currentPal = pal;
+        orbits.forEach(function (o, i) { o.color = pal.orbitColors[i]; });
+      }
+    }
 
     // 鼠标互动：电子被轻轻吸引，立方体微微偏转（克制档：作用半径 170px、最大偏移 16px）
     var heroMouse = { x: 0, y: 0, active: false };
@@ -82,7 +137,7 @@
       ctx.rotate(o.rot);
       ctx.beginPath();
       ctx.ellipse(0, 0, o.rx * W * 0.92, o.ry * W * 0.92, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(103, 158, 254, 0.30)";
+      ctx.strokeStyle = currentPal.orbitStroke;
       ctx.lineWidth = 1.4;
       ctx.stroke();
       ctx.restore();
@@ -100,14 +155,14 @@
       var r = 5.5;
       var g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
       g.addColorStop(0, o.color);
-      g.addColorStop(0.35, "rgba(103, 158, 254, 0.45)");
-      g.addColorStop(1, "rgba(103, 158, 254, 0)");
+      g.addColorStop(0.35, currentPal.glowMid);
+      g.addColorStop(1, currentPal.glowEnd);
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(x, y, r * 4, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "#cfe2ff";
+      ctx.fillStyle = currentPal.electronCore;
       ctx.beginPath();
       ctx.arc(x, y, r * 0.62, 0, Math.PI * 2);
       ctx.fill();
@@ -150,7 +205,7 @@
         var y1 = y * Math.cos(tiltX) - z1 * Math.sin(tiltX);
         return [W / 2 + x1, H / 2 + y1];
       });
-      ctx.strokeStyle = "rgba(140, 190, 255, 0.65)";
+      ctx.strokeStyle = currentPal.cubeStroke;
       ctx.lineWidth = 1.6;
       ctx.lineJoin = "round";
       EDGES.forEach(function (e) {
@@ -160,7 +215,7 @@
         ctx.stroke();
       });
       // 顶点微光
-      ctx.fillStyle = "rgba(190, 218, 255, 0.85)";
+      ctx.fillStyle = currentPal.cubeDot;
       pts.forEach(function (p) {
         ctx.beginPath();
         ctx.arc(p[0], p[1], 1.8, 0, Math.PI * 2);
@@ -175,6 +230,7 @@
       var dt = lastTs === null ? 0.016 : Math.min(0.05, (ts - lastTs) / 1000);
       lastTs = ts;
       var t = (ts - start) / 1000;
+      syncPalette();
       ctx.clearRect(0, 0, W, H);
       orbits.forEach(function (o) { drawOrbit(o, t); });
       drawCube(t, dt);
@@ -369,7 +425,7 @@
   function loadPosts() {
     if (!postsCache) {
       var root = window.location.pathname.indexOf("/posts/") !== -1 ? ".." : ".";
-      postsCache = fetch(root + "/posts.json").then(function (r) { return r.json(); });
+      postsCache = fetch(root + "/posts.json?v=" + DATA_VER).then(function (r) { return r.json(); });
     }
     return postsCache;
   }
@@ -481,11 +537,12 @@
         return '<span class="tag tag-gray">' + esc(t) + "</span>";
       })
       .join("");
+    var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
     var delay = ' style="--d:' + Math.min(i * 0.08, 0.48).toFixed(2) + 's"';
     var icon = PROJECT_ICONS[p.icon] || PROJECT_ICONS.cube;
     var inner =
       '<div class="p-icon" aria-hidden="true">' + icon + "</div>" +
-      "<h3>" + esc(p.title) + '<span class="p-date">' + esc(p.date) + "</span></h3>" +
+      "<h3>" + esc(p.title) + '<span class="p-date">' + esc(p.date) + pin + "</span></h3>" +
       '<p class="p-desc">' + esc(p.desc) + "</p>" +
       '<div class="p-foot"><span class="tags">' + tags + '</span><span class="p-link mono">' + esc(p.linkText) + "</span></div>";
     if (p.href) {
@@ -497,7 +554,7 @@
   var projectsCache = null;
   function loadProjects() {
     if (!projectsCache) {
-      projectsCache = fetch("projects.json").then(function (r) { return r.json(); });
+      projectsCache = fetch("projects.json?v=" + DATA_VER).then(function (r) { return r.json(); });
     }
     return projectsCache;
   }

@@ -1393,6 +1393,95 @@ button {
   font-size: 14px;
 }
 
+/* ---------- 主题切换按钮 ---------- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-left: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.theme-toggle:hover {
+  color: var(--text-1);
+  border-color: var(--accent-border);
+}
+
+.theme-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 置顶徽标放进项目卡片右上角日期旁时的间距 */
+.project-card .p-date .pin-badge {
+  margin-left: 8px;
+}
+
+/* ---------- 亮色主题（html[data-theme="light"] 时生效） ---------- */
+:root[data-theme="light"] {
+  --bg: #f5f6f8;
+  --bg-panel: #ffffff;
+  --bg-panel-2: #eef0f4;
+  --bg-code: #f6f7f9;
+
+  --border: rgba(16, 24, 40, 0.10);
+  --border-strong: rgba(16, 24, 40, 0.20);
+
+  --text-1: #171b22;
+  --text-2: #454c56;
+  --text-3: #7a828b;
+
+  --accent: #2f6ceb;
+  --accent-bright: #1e56c8;
+  --accent-dim: rgba(47, 108, 235, 0.10);
+  --accent-border: rgba(47, 108, 235, 0.32);
+
+  --glow-hi: #1e56c8;
+}
+
+:root[data-theme="light"] .nav { background: rgba(245, 246, 248, 0.82); }
+:root[data-theme="light"] .nav-links a:hover { background: rgba(16, 24, 40, 0.06); }
+:root[data-theme="light"] .nav-links a.nav-cta { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .theme-toggle { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .hero h1 .grad {
+  background: linear-gradient(100deg, #1893b4 0%, var(--accent) 55%, var(--glow-hi) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+:root[data-theme="light"] .hero-glow::before {
+  background: radial-gradient(circle, rgba(47, 108, 235, 0.10) 0%, rgba(47, 108, 235, 0.04) 40%, transparent 70%);
+}
+:root[data-theme="light"] .hero-glow::after {
+  background: radial-gradient(circle, rgba(47, 108, 235, 0.07) 0%, transparent 70%);
+}
+:root[data-theme="light"] .hero-badge { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .btn-secondary { background: rgba(16, 24, 40, 0.03); }
+:root[data-theme="light"] .side-item:hover { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="light"] .post-card,
+:root[data-theme="light"] .project-card {
+  background: var(--bg-panel);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+:root[data-theme="light"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
+:root[data-theme="light"] .prose strong { color: var(--text-1); }
+:root[data-theme="light"] .prose code { background: rgba(16, 24, 40, 0.06); }
+:root[data-theme="light"] .prose pre .code-head { background: rgba(16, 24, 40, 0.03); }
+:root[data-theme="light"] .copy-btn:hover { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="light"] .prose pre code { color: #3a4149; }
+:root[data-theme="light"] .prof-lv2 {
+  color: #1e56c8;
+  background: rgba(47, 108, 235, 0.08);
+  border-color: rgba(47, 108, 235, 0.25);
+}
+:root[data-theme="light"] .tier-badge.tier-a { background: rgba(16, 24, 40, 0.04); }
+
 .prose .chapter-nav-box {
   border: 1px solid var(--border);
   border-radius: var(--radius);
