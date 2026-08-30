@@ -15,7 +15,8 @@
     "tags": ["游戏"],
     "icon": "gamepad",
     "linkText": "ccw.site ↗",
-    "href": "https://www.ccw.site/student/66b85c3793614d59cde4f9e4"
+    "href": "https://www.ccw.site/student/66b85c3793614d59cde4f9e4",
+    "pinned": true
   },
   {
     "title": "视频创作",
@@ -24,7 +25,8 @@
     "tags": ["视频"],
     "icon": "play",
     "linkText": "bilibili ↗",
-    "href": "https://space.bilibili.com/1114603634"
+    "href": "https://space.bilibili.com/1114603634",
+    "pinned": true
   },
   {
     "title": "三角洲行动视频",
@@ -42,7 +44,8 @@
     "tags": ["礼物"],
     "icon": "gift",
     "linkText": "？？？",
-    "href": "https://vdse.bdstatic.com//192d9a98d782d9c74c96f09db9378d93.mp4"
+    "href": "https://vdse.bdstatic.com//192d9a98d782d9c74c96f09db9378d93.mp4",
+    "pinned": true
   },
   {
     "title": "游戏第九艺术",
@@ -60,6 +63,7 @@
     "tags": ["导航站", "捐赠"],
     "icon": "heart",
     "linkText": "ifdian.net ↗",
-    "href": "https://www.ifdian.net/a/xiaohetao"
+    "href": "https://www.ifdian.net/a/xiaohetao",
+    "pinned": true
   }
 ]

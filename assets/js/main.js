@@ -502,10 +502,19 @@
     return projectsCache;
   }
 
+  function sortProjects(projects) {
+    // 置顶优先，组内保持 json 里的书写顺序（稳定排序）
+    return projects.slice().sort(function (a, b) {
+      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+      return 0;
+    });
+  }
+
   function renderProjects(container, limit) {
     loadProjects()
       .then(function (projects) {
-        var shown = limit > 0 ? projects.slice(0, limit) : projects;
+        var sorted = sortProjects(projects);
+        var shown = limit > 0 ? sorted.slice(0, limit) : sorted;
         container.innerHTML = shown.map(projectCardHtml).join("");
         container.querySelectorAll(".reveal").forEach(watchReveal);
         // 项目总数没超过首页配额时，就不显示「查看全部项目」入口
