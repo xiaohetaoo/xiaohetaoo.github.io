@@ -804,6 +804,16 @@ button {
   gap: 8px;
 }
 
+/* 卡片右上角的更新日期（mono 小字，与文章日期同风格） */
+.project-card .p-date {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+
 .project-card .p-desc {
   margin-top: 9px;
   font-size: 14px;
