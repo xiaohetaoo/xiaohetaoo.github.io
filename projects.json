@@ -1,0 +1,65 @@
+[
+  {
+    "title": "粒子轨道可视化",
+    "date": "2026-08-29",
+    "desc": "原子轨道粒子动画，采用原生 Canvas，零依赖、60fps，就在本站首页。",
+    "tags": ["Canvas", "JavaScript"],
+    "icon": "cube",
+    "linkText": "本站首页",
+    "href": ""
+  },
+  {
+    "title": "终觉之战",
+    "date": "2026-08-29",
+    "desc": "基于 TurboWarp 开发的小游戏，将小说存在错误的高潮战斗视觉化，游戏流程大约 25 分钟。",
+    "tags": ["游戏"],
+    "icon": "gamepad",
+    "linkText": "ccw.site ↗",
+    "href": "https://www.ccw.site/student/66b85c3793614d59cde4f9e4"
+  },
+  {
+    "title": "视频创作",
+    "date": "2026-08-29",
+    "desc": "主阵地是 B 站，当然抖音、快手、视频号、微博、小红书都有号。",
+    "tags": ["视频"],
+    "icon": "play",
+    "linkText": "bilibili ↗",
+    "href": "https://space.bilibili.com/1114603634"
+  },
+  {
+    "title": "三角洲行动视频",
+    "date": "2026-08-30",
+    "desc": "专发三角洲内容的B站小号。",
+    "tags": ["游戏", "视频"],
+    "icon": "play",
+    "linkText": "bilibili ↗",
+    "href": "https://space.bilibili.com/3546643945229174"
+  },
+  {
+    "title": "神秘礼物",
+    "date": "2026-08-30",
+    "desc": "点我送你一百万。",
+    "tags": ["礼物"],
+    "icon": "gift",
+    "linkText": "？？？",
+    "href": "https://vdse.bdstatic.com//192d9a98d782d9c74c96f09db9378d93.mp4"
+  },
+  {
+    "title": "游戏第九艺术",
+    "date": "2026-08-30",
+    "desc": "高中班会演示PPT，两百页点击领取，密码：xhto，放视频处自己加或找我要原版，剧本文章区有，同名。",
+    "tags": ["游戏", "PPT"],
+    "icon": "presentation",
+    "linkText": "lanzoub.com ↗",
+    "href": "https://wwbau.lanzoub.com/i69rF45golwd"
+  },
+  {
+    "title": "支持我",
+    "date": "2026-08-29",
+    "desc": "我的爱发电主页。如果喜欢小核桃的作品，欢迎请我喝杯奶茶，支持继续创作。",
+    "tags": ["导航站", "捐赠"],
+    "icon": "heart",
+    "linkText": "ifdian.net ↗",
+    "href": "https://www.ifdian.net/a/xiaohetao"
+  }
+]

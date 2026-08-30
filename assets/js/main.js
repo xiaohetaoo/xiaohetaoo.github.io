@@ -463,6 +463,65 @@
 
   rerenderLists();
 
+  /* ---------- 8. 项目列表（projects.json 驱动）
+         #project-list     首页，只显示前 6 个
+         #project-all-list projects.html，显示全部 ---------- */
+  var PROJECT_ICONS = {
+    cube: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+    gamepad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
+    gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>',
+    presentation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>'
+  };
+
+  function projectCardHtml(p, i) {
+    var tags = (p.tags || [])
+      .map(function (t) {
+        return '<span class="tag tag-gray">' + esc(t) + "</span>";
+      })
+      .join("");
+    var delay = ' style="--d:' + Math.min(i * 0.08, 0.48).toFixed(2) + 's"';
+    var icon = PROJECT_ICONS[p.icon] || PROJECT_ICONS.cube;
+    var inner =
+      '<div class="p-icon" aria-hidden="true">' + icon + "</div>" +
+      "<h3>" + esc(p.title) + '<span class="p-date">' + esc(p.date) + "</span></h3>" +
+      '<p class="p-desc">' + esc(p.desc) + "</p>" +
+      '<div class="p-foot"><span class="tags">' + tags + '</span><span class="p-link mono">' + esc(p.linkText) + "</span></div>";
+    if (p.href) {
+      return '<a class="project-card reveal"' + delay + ' href="' + esc(p.href) + '" target="_blank" rel="noopener">' + inner + "</a>";
+    }
+    return '<div class="project-card reveal"' + delay + ">" + inner + "</div>";
+  }
+
+  var projectsCache = null;
+  function loadProjects() {
+    if (!projectsCache) {
+      projectsCache = fetch("projects.json").then(function (r) { return r.json(); });
+    }
+    return projectsCache;
+  }
+
+  function renderProjects(container, limit) {
+    loadProjects()
+      .then(function (projects) {
+        var shown = limit > 0 ? projects.slice(0, limit) : projects;
+        container.innerHTML = shown.map(projectCardHtml).join("");
+        container.querySelectorAll(".reveal").forEach(watchReveal);
+        // 项目总数没超过首页配额时，就不显示「查看全部项目」入口
+        var allLink = document.getElementById("all-projects-link");
+        if (allLink) allLink.hidden = projects.length <= limit;
+      })
+      .catch(function () {
+        container.innerHTML = '<p class="sub">项目列表加载失败，请刷新重试。</p>';
+      });
+  }
+
+  var projectList = document.getElementById("project-list");
+  if (projectList) renderProjects(projectList, 6);
+  var projectAllList = document.getElementById("project-all-list");
+  if (projectAllList) renderProjects(projectAllList, 0);
+
   /* ---------- 7. 文章页侧栏：文章导航 ---------- */
   var sideList = document.getElementById("sidebar-posts");
   if (sideList) {

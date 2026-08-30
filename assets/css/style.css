@@ -516,11 +516,13 @@ button {
 
 /* 「查看全部文章」入口：复用 .btn .btn-primary（与首页「阅读文章」同款蓝色实心），
    这里只补列表区块需要的间距和隐藏逻辑 */
-.all-posts-link {
+.all-posts-link,
+.all-projects-link {
   margin-top: 28px;
 }
 
-.all-posts-link[hidden] {
+.all-posts-link[hidden],
+.all-projects-link[hidden] {
   display: none;
 }
 
