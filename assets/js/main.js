@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831g";
+  var DATA_VER = "20260831h";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -107,6 +107,55 @@
     } else {
       clearNavMorph();
     }
+  });
+
+  /* ---------- 0.6 方向性滑动：查看全部文章/项目 = 下钻，返回 = 上钻 ---------- */
+  // 跨文档过渡的动画规则由【新页面】的样式决定（旧页只贡献快照），
+  // 所以点击时只写 sessionStorage 方向标记，新页面在 pagereveal 时读标记挂 nav-deep / nav-back 类。
+  function markNavDir(dir) {
+    try { sessionStorage.setItem("xht-nav-dir", dir); } catch (e) {}
+  }
+
+  document.addEventListener("click", function (e) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
+    var el = e.target && e.target.closest ? e.target : null;
+    var deep = el ? el.closest(".all-posts-link[href], .all-projects-link[href]") : null;
+    var backLink = null;
+    if (!deep) {
+      var path = window.location.pathname;
+      var onList = path.indexOf("archive.html") !== -1 || path.indexOf("projects.html") !== -1;
+      backLink = onList && el ? el.closest(".back-link[href]") : null;
+    }
+    if (deep) markNavDir("deep");
+    else if (backLink) markNavDir("back");
+    else {
+      // 点了别的入口：清掉残留标记，避免方向滑动污染下一次普通导航
+      try { sessionStorage.removeItem("xht-nav-dir"); } catch (err) {}
+    }
+  });
+
+  // 浏览器返回键：从列表页离开且是后退遍历时，也走反向滑动（点返回链接走上面的 click 路径）
+  window.addEventListener("pageswap", function (e) {
+    try {
+      var path = window.location.pathname;
+      if (path.indexOf("archive.html") === -1 && path.indexOf("projects.html") === -1) return;
+      var act = e.activation;
+      if (act && act.entry && act.oldEntry && act.entry.index < act.oldEntry.index) {
+        markNavDir("back");
+      }
+    } catch (err) {}
+  });
+
+  window.addEventListener("pagereveal", function (e) {
+    var dir = null;
+    try { dir = sessionStorage.getItem("xht-nav-dir"); } catch (err) {}
+    if (dir !== "deep" && dir !== "back") return;
+    try { sessionStorage.removeItem("xht-nav-dir"); } catch (err) {}
+    var dirCls = dir === "deep" ? "nav-deep" : "nav-back";
+    document.documentElement.classList.add(dirCls);
+    var dirDone = function () { document.documentElement.classList.remove(dirCls); };
+    if (e.viewTransition) e.viewTransition.finished.then(dirDone, dirDone);
+    else dirDone();
   });
 
   if (themeBtn) {

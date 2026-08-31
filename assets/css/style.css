@@ -1882,6 +1882,53 @@ html:not(.theme-anim)::view-transition-new(post-hero) {
   }
 }
 
+/* 方向性滑动：查看全部文章/项目 = 下钻（旧页向左滑走、新页自右滑入）；
+   从列表页返回 = 上钻（反向）。跨文档过渡的动画规则以新页面的类为准
+   （旧页只贡献快照，方向由 JS 经 sessionStorage 传给新页面挂类） */
+html.nav-deep:not(.theme-anim)::view-transition-old(root) {
+  animation: vt-slide-out-left 0.22s ease-in both;
+}
+
+html.nav-deep:not(.theme-anim)::view-transition-new(root) {
+  animation: vt-slide-in-right 0.3s ease-out both;
+}
+
+html.nav-back:not(.theme-anim)::view-transition-old(root) {
+  animation: vt-slide-out-right 0.22s ease-in both;
+}
+
+html.nav-back:not(.theme-anim)::view-transition-new(root) {
+  animation: vt-slide-in-left 0.3s ease-out both;
+}
+
+@keyframes vt-slide-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-48px);
+  }
+}
+
+@keyframes vt-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(64px);
+  }
+}
+
+@keyframes vt-slide-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+}
+
+@keyframes vt-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-64px);
+  }
+}
+
 /* 减弱动态效果：页面过渡直接到最终状态（主题切换在 JS 里本来就会跳过） */
 @media (prefers-reduced-motion: reduce) {
   html:not(.theme-anim)::view-transition-group(*),
