@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831i";
+  var DATA_VER = "20260831j";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -940,6 +940,161 @@
         sideList.innerHTML = '<p class="sub">导航加载失败</p>';
       });
   }
+
+  /* ---------- 7.5 文章页右侧目录（自动收集 h2/h3，滚动联动） ---------- */
+  // 仅当 .prose 里存在 ≥2 个章节时才生成目录；单章节太短直接跳过
+  (function () {
+    var prose = document.querySelector(".prose");
+    var sideBar = document.querySelector(".post-sidebar");
+    if (!prose || !sideBar) return;
+    var headings = prose.querySelectorAll("h2, h3");
+    if (headings.length < 2) return;
+
+    // 给缺 id 的标题补一个稳定锚点（不覆盖已有 id，如 exist-error 的 ch-0~ch-31）
+    var used = {};
+    headings.forEach(function (h, i) {
+      if (!h.id) {
+        var id = "toc-" + i;
+        // 极端情况兜底
+        while (used[id] || document.getElementById(id)) { id = "toc-" + i + "-" + Object.keys(used).length; }
+        h.id = id;
+      }
+      used[h.id] = true;
+    });
+
+    // 目录容器放在「全部文章」链接之前
+    var sideAll = sideBar.querySelector(".side-all");
+    var tocKick = document.createElement("span");
+    tocKick.className = "kicker";
+    tocKick.textContent = "$ cat outline";
+    var tocList = document.createElement("nav");
+    tocList.className = "side-toc";
+    tocList.setAttribute("aria-label", "文章目录");
+    var html = "";
+    headings.forEach(function (h) {
+      var level = h.tagName === "H3" ? 3 : 2;
+      html += '<a class="toc-h lv-' + level + '" href="#' + esc(h.id) + '">' + esc(h.textContent) + "</a>";
+    });
+    tocList.innerHTML = html;
+    if (sideAll && sideAll.parentNode === sideBar) {
+      sideBar.insertBefore(tocKick, sideAll);
+      sideBar.insertBefore(tocList, sideAll);
+    } else {
+      sideBar.appendChild(tocKick);
+      sideBar.appendChild(tocList);
+    }
+
+    // 平滑滚动（CSS scroll-behavior 已默认 smooth；点击时用 preventDefault 接管以便 focus 当前项）
+    tocList.addEventListener("click", function (ev) {
+      var a = ev.target.closest && ev.target.closest("a.toc-h");
+      if (!a) return;
+      var id = a.getAttribute("href").slice(1);
+      var target = document.getElementById(id);
+      if (!target) return;
+      ev.preventDefault();
+      target.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+      // 更新 hash 但不触发额外跳转
+      try { history.replaceState(null, "", "#" + id); } catch (e) {}
+    });
+
+    // 滚动联动：进入视口顶部 30% 的章节高亮（避开 reveal 动画阶段，章节可能暂时 translateY 偏移）
+    // 滚动节流交给 rAF
+    if ("IntersectionObserver" in window) {
+      var tocItems = Array.from(tocList.querySelectorAll(".toc-h"));
+      var lastCurrent = null;
+      var setCurrent = function (id) {
+        if (id === lastCurrent) return;
+        lastCurrent = id;
+        tocItems.forEach(function (a) {
+          if (a.getAttribute("href") === "#" + id) a.classList.add("current");
+          else a.classList.remove("current");
+        });
+        // 当前项在目录里滚到可见位置（nearest 不会牵动整页滚动）
+        var cur = tocList.querySelector(".toc-h.current");
+        if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
+      };
+      // 顶部时高亮第一个；底部时高亮最后一个
+      var visibleMap = {};
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { visibleMap[e.target.id] = e.isIntersecting; });
+        // 选第一个"在视口上半部分内"的标题作为 current
+        var chosen = null;
+        for (var i = 0; i < headings.length; i++) {
+          if (visibleMap[headings[i].id]) { chosen = headings[i].id; break; }
+        }
+        if (!chosen) {
+          // 顶部外：选第一个；底部外：选最后一个
+          var firstRect = headings[0].getBoundingClientRect();
+          var lastRect = headings[headings.length - 1].getBoundingClientRect();
+          if (lastRect.bottom < window.innerHeight) chosen = headings[headings.length - 1].id;
+          else if (firstRect.top > 0) chosen = headings[0].id;
+        }
+        if (chosen) setCurrent(chosen);
+      }, { rootMargin: "0px 0px -65% 0px", threshold: 0 });
+      headings.forEach(function (h) { io.observe(h); });
+    }
+  })();
+
+  /* ---------- 7.6 文章页文末「推荐阅读」3 篇（按 tag 相似度） ---------- */
+  // 注入位置：.post-nav 之后、.comments 之前
+  (function () {
+    var postNav = document.querySelector(".post-page .post-nav");
+    if (!postNav) return;
+    var path = window.location.pathname;
+    var root = path.indexOf("/posts/") !== -1 ? ".." : ".";
+    var currentSlug = (path.match(/\/posts\/([^\/]+)\.html/) || [])[1] || "";
+    loadPosts()
+      .then(function (posts) {
+        var current = posts.find(function (p) { return p.slug === currentSlug; });
+        if (!current) return;
+        var currentTags = (current.tags || []).map(function (t) { return t.toLowerCase(); });
+        var scored = posts
+          .filter(function (p) { return p.slug !== currentSlug; })
+          .map(function (p) {
+            var pt = (p.tags || []).map(function (t) { return t.toLowerCase(); });
+            var shared = pt.filter(function (t) { return currentTags.indexOf(t) !== -1; }).length;
+            return { p: p, shared: shared };
+          });
+        // 共享 tag 多 → 排前；同分按日期倒序
+        scored.sort(function (a, b) {
+          if (b.shared !== a.shared) return b.shared - a.shared;
+          return (b.p.date || "").localeCompare(a.p.date || "");
+        });
+        var top3 = scored.slice(0, 3);
+        if (top3.length === 0) return;
+
+        var wrap = document.createElement("section");
+        wrap.className = "related";
+        wrap.setAttribute("aria-label", "推荐阅读");
+        var html = '<div class="related-head"><span class="kicker">$ grep tag:' + esc((current.tags && current.tags[0]) || "") + "</span></div>";
+        html += '<div class="related-grid">';
+        top3.forEach(function (entry, i) {
+          var p = entry.p;
+          var tags = (p.tags || []).slice(0, 2).map(function (t) { return '<span class="t">' + esc(t) + "</span>"; }).join("");
+          html +=
+            '<a class="related-card reveal" href="' + root + "/posts/" + esc(p.slug) + '.html" style="--d:' + (i * 0.05) + 's">' +
+              '<span class="date">' + esc(p.date) + "</span>" +
+              "<h3>" + esc(p.title) + "</h3>" +
+              (tags ? '<div class="tag-row">' + tags + "</div>" : "") +
+            "</a>";
+        });
+        html += "</div>";
+        wrap.innerHTML = html;
+
+        // 插在 post-nav 之后；找不到 .comments 时直接跟在 post-nav 后面
+        var anchor = postNav.nextElementSibling;
+        if (anchor && (anchor.classList.contains("comments") || anchor.tagName === "SECTION")) {
+          postNav.parentNode.insertBefore(wrap, anchor);
+        } else {
+          postNav.parentNode.appendChild(wrap);
+        }
+        // 触发 reveal 动画
+        if (typeof watchReveal === "function") {
+          wrap.querySelectorAll(".reveal").forEach(function (el) { watchReveal(el); });
+        }
+      })
+      .catch(function () { /* posts.json 加载失败时静默跳过 */ });
+  })();
 
   /* ---------- 3. 代码复制按钮 ---------- */
   document.querySelectorAll(".copy-btn[data-copy]").forEach(function (btn) {
