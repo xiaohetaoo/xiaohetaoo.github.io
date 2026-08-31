@@ -661,7 +661,8 @@ button {
     grid-template-areas:
       "back side"
       "article side"
-      "nav side";
+      "nav side"
+      "comments comments";
     column-gap: 56px;
     align-items: start;
   }
@@ -676,6 +677,11 @@ button {
 
   .post-page .container:has(.post-sidebar) .post-nav {
     grid-area: nav;
+  }
+
+  .post-page .container:has(.post-sidebar) .comments {
+    grid-area: comments;
+    max-width: 720px;  /* 与 .article 同宽，跨两列后限制阅读宽度 */
   }
 
   .post-page .container:has(.post-sidebar) .post-sidebar {
