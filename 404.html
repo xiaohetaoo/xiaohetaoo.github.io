@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#000000" />
   <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":"#000000"}}catch(e){}</script>
   <noscript><style>[data-loading]{display:none}</style></noscript>
-  <title>全部项目 · 小核桃工作室</title>
-  <meta name="description" content="小核桃工作室的全部项目与作品。" />
-  <meta name="date" content="2026-08-30" />
+  <title>404 · 小核桃工作室博客</title>
+  <meta name="description" content="你访问的页面不存在，或者已经被搬走了。" />
+  <meta name="robots" content="noindex" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
@@ -40,41 +40,18 @@
     </div>
   </header>
 
-  <main class="post-page">
-    <div class="container">
-      <a class="back-link" href="index.html#projects">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-        返回首页
-      </a>
-
-      <div class="section-head reveal">
-        <span class="kicker">$ ls ~/projects --all</span>
-        <h2>全部项目</h2>
-        <p class="sub">小核桃工作室做过的东西，都在这里。</p>
-      </div>
-
-      <div class="post-search reveal">
-        <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="project-search" type="search" placeholder="搜索项目：名称 / 介绍 / 标签…" autocomplete="off" />
-      </div>
-
-      <p class="search-hint" data-project-hint hidden></p>
-
-      <div class="project-grid" id="project-all-list">
-        <!-- 列表由 assets/js/main.js 读取 projects.json 渲染 -->
-        <noscript>
-          <p class="sub">你的浏览器禁用了 JS，以下是文字版项目列表：</p>
-          <ul class="fallback-list">
-            <li>粒子轨道可视化 · 本站首页</li>
-            <li><a href="https://www.ccw.site/student/66b85c3793614d59cde4f9e4" target="_blank" rel="noopener">终觉之战</a></li>
-            <li><a href="https://space.bilibili.com/1114603634" target="_blank" rel="noopener">视频创作</a></li>
-            <li><a href="https://space.bilibili.com/3546643945229174" target="_blank" rel="noopener">三角洲行动视频</a></li>
-            <li><a href="https://vdse.bdstatic.com//192d9a98d782d9c74c96f09db9378d93.mp4" target="_blank" rel="noopener">神秘礼物</a></li>
-            <li><a href="https://wwbau.lanzoub.com/i69rF45golwd" target="_blank" rel="noopener">游戏第九艺术</a></li>
-            <li><a href="https://www.ifdian.net/a/xiaohetao" target="_blank" rel="noopener">支持我</a></li>
-          </ul>
-        </noscript>
-        <p class="sub" data-loading>正在加载项目列表…</p>
+  <main>
+    <div class="container" style="padding: 132px 24px 80px; max-width: 720px;">
+      <span class="kicker">$ cat /missing</span>
+      <h1 style="font-size: clamp(40px, 7vw, 72px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin: 12px 0 4px;">404</h1>
+      <p class="mono" style="color: var(--text-2); font-size: 15px; margin: 0 0 28px;">not found — 你访问的页面不存在，或者已经被搬走了。</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center;">
+        <a class="back-link" href="index.html" style="margin-bottom: 0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          返回首页
+        </a>
+        <a class="back-link" href="archive.html" style="margin-bottom: 0;">$ ls ~/posts --all</a>
+        <a class="back-link" href="projects.html" style="margin-bottom: 0;">$ ls ~/projects --all</a>
       </div>
     </div>
   </main>

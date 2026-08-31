@@ -1707,6 +1707,24 @@ html.theme-anim::view-transition-new(root) {
   visibility: hidden;
 }
 
+/* ---------- 阅读进度条（仅文章页，JS 注入到 body 末尾） ---------- */
+.reading-progress {
+  position: fixed;
+  top: 64px;            /* 紧贴 .nav 底部（nav 高 64px） */
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  z-index: 99;          /* 略低于 .nav(100)，不挡玻璃底 */
+  pointer-events: none;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reading-progress { transition: transform 0.08s linear; }
+}
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 1024px) {
   .hero-inner {

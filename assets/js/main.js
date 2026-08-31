@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831h";
+  var DATA_VER = "20260831i";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -868,7 +868,7 @@
             giscusIo.disconnect();
             injectGiscus();
           }
-        }, { rootMargin: "600px 0px" });
+        }, { rootMargin: "1200px 0px" });
         giscusIo.observe(giscusBox);
       } else {
         injectGiscus();
@@ -885,6 +885,32 @@
       commentsSection.hidden = true;
     }
   }
+
+  /* ---------- 8.5 阅读进度条（仅文章页） ---------- */
+  // 顶部 2px 蓝线，rAF 节流 + scaleX 走合成层；只挂 .post-page 存在时
+  (function () {
+    if (!document.querySelector(".post-page")) return;
+    var bar = document.createElement("div");
+    bar.className = "reading-progress";
+    bar.setAttribute("aria-hidden", "true");
+    document.body.appendChild(bar);
+    var ticking = false;
+    var update = function () {
+      var doc = document.documentElement;
+      var h = doc.scrollHeight - doc.clientHeight;
+      var p = h > 0 ? (window.scrollY / h) * 100 : 0;
+      if (p < 0) p = 0; else if (p > 100) p = 100;
+      bar.style.transform = "scaleX(" + (p / 100) + ")";
+      ticking = false;
+    };
+    var onScroll = function () {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    update();
+  })();
+
   /* ---------- 7. 文章页侧栏：文章导航 ---------- */
   var sideList = document.getElementById("sidebar-posts");
   if (sideList) {
