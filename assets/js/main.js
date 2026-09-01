@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831m";
+  var DATA_VER = "20260831n";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -68,11 +68,12 @@
     );
   }
 
-  /* ---------- 0.5 跨页面过渡：卡片/侧栏项放大成文章头 ---------- */
+  /* ---------- 0.5 跨页面过渡：卡片/侧栏项/推荐卡片放大成文章头 ---------- */
   // 点击文章卡片或侧栏目录项时，给被点的元素挂 view-transition-name="post-hero"，
   // 新页面的 header.article-head 在 CSS 里挂着同名标记，
   // 浏览器就会做"点击项放大成文章头"的共享元素过渡（不支持的浏览器回退普通跳转）。
-  // 侧栏项起飞时，当前文章头要让出标记（html.side-morph），否则同页重名会直接跳过过渡。
+  // 侧栏项和推荐卡片都在文章页内，起飞时当前文章头要让出标记（html.side-morph），
+  // 否则同页重名会直接跳过过渡。
   var morphedEl = null;
   function clearNavMorph() {
     if (morphedEl) {
@@ -93,7 +94,7 @@
     clearNavMorph();
     morphedEl = el;
     el.style.viewTransitionName = "post-hero";
-    if (el.classList.contains("side-item")) {
+    if (el.classList.contains("side-item") || el.classList.contains("related-card")) {
       document.documentElement.classList.add("side-morph");
     }
   });
