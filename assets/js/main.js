@@ -84,7 +84,7 @@
 
   document.addEventListener("click", function (e) {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
-    var el = e.target && e.target.closest ? e.target.closest(".post-card[href], .side-item[href]") : null;
+    var el = e.target && e.target.closest ? e.target.closest(".post-card[href], .side-item[href], .related-card[href]") : null;
     if (!el) {
       // 点了别处（比如主题按钮）：顺手清掉残留标记，避免主题圆形扩散在这块区域漏一块
       clearNavMorph();
