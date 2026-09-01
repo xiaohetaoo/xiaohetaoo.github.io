@@ -1504,6 +1504,10 @@ html.theme-anim::view-transition-new(root) {
   align-items: center;
   height: 34px;
   margin-left: 4px;
+  transition: height 0.22s var(--ease-out);
+}
+.nav-search.open {
+  height: 40px;
 }
 .nav-search-btn {
   display: inline-flex;
@@ -1562,7 +1566,8 @@ html.theme-anim::view-transition-new(root) {
   height: 16px;
 }
 .nav-search.open .nav-search-input {
-  width: 640px;
+  width: 600px;
+  height: 40px;
   padding: 0 12px 0 34px;
   margin-left: 10px;
   opacity: 1;
@@ -1585,7 +1590,7 @@ html.theme-anim::view-transition-new(root) {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  width: 640px;
+  width: 600px;
   max-width: calc(100vw - 24px);
   background: var(--bg-panel);
   border: 1px solid var(--border-strong);
