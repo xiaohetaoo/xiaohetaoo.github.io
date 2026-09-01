@@ -50,6 +50,25 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  /* 全站细主题滚动条（Firefox）；各组件的更窄条按自身选择器覆盖 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* 全站细主题滚动条（WebKit / Chromium / Edge） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
 }
 
 body {
@@ -1523,16 +1542,28 @@ html.theme-anim::view-transition-new(root) {
   overflow: hidden;
   transition: width 0.22s var(--ease-out), opacity 0.18s var(--ease-out), padding 0.22s var(--ease-out), border-color 0.2s, background 0.2s;
 }
+/* 展开后按钮退化为输入框内的放大镜图标（样式对齐项目页的大搜索框） */
 .nav-search.open .nav-search-btn {
-  opacity: 0;
-  pointer-events: none;
-  width: 0;
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
   border-color: transparent;
-  margin-right: -34px;
+  background: transparent;
+  color: var(--text-3);
+  opacity: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+.nav-search.open .nav-search-btn svg {
+  width: 16px;
+  height: 16px;
 }
 .nav-search.open .nav-search-input {
-  width: 280px;
-  padding: 0 12px;
+  width: 560px;
+  padding: 0 12px 0 34px;
   margin-left: 10px;
   opacity: 1;
   border-color: var(--border-strong);
@@ -1549,7 +1580,7 @@ html.theme-anim::view-transition-new(root) {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  width: 520px;
+  width: 560px;
   max-width: calc(100vw - 24px);
   background: var(--bg-panel);
   border: 1px solid var(--border-strong);
@@ -1557,8 +1588,27 @@ html.theme-anim::view-transition-new(root) {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
   padding: 14px;
   z-index: 101;
+  /* 文章 + 项目两组结果可能较长，浮层自己滚（细主题滚动条，同侧栏） */
+  max-height: min(60vh, 540px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
   /* 出现/消失用 opacity 微动画，不动布局 */
   animation: nav-search-pop 0.18s var(--ease-out) both;
+}
+.nav-search-results::-webkit-scrollbar {
+  width: 5px;
+}
+.nav-search-results::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav-search-results::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+.nav-search-results::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
 }
 @keyframes nav-search-pop {
   from { opacity: 0; transform: translateY(-6px); }
@@ -1580,6 +1630,81 @@ html.theme-anim::view-transition-new(root) {
 .nav-search-results .post-card.focused {
   border-color: var(--accent-border);
   background: var(--accent-dim);
+}
+/* 分组眉标：沿用全站终端命令的叙事 */
+.nav-search-label {
+  margin: 12px 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+.nav-search-results .search-hint + .nav-search-label { margin-top: 12px; }
+.nav-search-results .search-hint { margin-bottom: 10px; }
+/* 项目结果：紧凑单行（图标 / 标题+描述 / 外链文字） */
+.nav-project {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-panel-2);
+  color: var(--text-1);
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+.nav-project + .nav-project { margin-top: 8px; }
+.nav-project:hover {
+  border-color: var(--accent-border);
+  transform: translateY(-1px);
+}
+.nav-project-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.nav-project-icon svg {
+  width: 15px;
+  height: 15px;
+}
+.nav-project-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-project-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.nav-project-desc {
+  font-size: 12px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-project-link {
+  font-size: 11.5px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.nav-project.focused {
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+}
+/* 搜索展开时三个页面链接让位（JS 在 nav 上挂 nav-search-open），GitHub 入口保留 */
+.nav-links.nav-search-open > a:not(.nav-cta) {
+  display: none;
 }
 
 .theme-toggle {
@@ -2048,7 +2173,7 @@ html.theme-anim::view-transition-new(root) {
   }
 
   .nav-search { margin-left: 2px; }
-  .nav-search.open .nav-search-input { width: 180px; }
+  .nav-search.open .nav-search-input { width: 240px; }
   .nav-search-results { right: -8px; width: calc(100vw - 32px); }
 
   .hero-cta .btn {

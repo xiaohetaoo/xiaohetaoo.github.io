@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831n";
+  var DATA_VER = "20260831r";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -624,7 +624,7 @@
     });
   }
 
-  function postCardHtml(p, i) {
+  function postCardHtml(p, i, root) {
     var tags = (p.tags || [])
       .map(function (t, j) {
         return '<span class="tag' + (j > 0 ? " tag-gray" : "") + '">' + esc(t) + "</span>";
@@ -633,7 +633,7 @@
     var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
     var delay = ' style="--d:' + Math.min(i * 0.05, 0.3).toFixed(2) + 's"';
     return (
-      '<a class="post-card reveal"' + delay + ' href="posts/' + esc(p.slug) + '.html">' +
+      '<a class="post-card reveal"' + delay + ' href="' + (root || "") + 'posts/' + esc(p.slug) + '.html">' +
         '<span class="date">' + esc(p.date) + pin + "</span>" +
         "<div><h3>" + esc(p.title) + '</h3><p class="excerpt">' + esc(p.excerpt) + "</p></div>" +
         '<div class="meta-col"><span class="tags">' + tags + '</span><span class="arrow" aria-hidden="true">-&gt;</span></div>' +
@@ -741,7 +741,9 @@
   var projectsCache = null;
   function loadProjects() {
     if (!projectsCache) {
-      projectsCache = fetch("projects.json?v=" + DATA_VER).then(function (r) { return r.json(); });
+      // 与 loadPosts 同样的子目录处理：文章页在 /posts/ 下要回上一级拿 json
+      var root = window.location.pathname.indexOf("/posts/") !== -1 ? ".." : ".";
+      projectsCache = fetch(root + "/projects.json?v=" + DATA_VER).then(function (r) { return r.json(); });
     }
     return projectsCache;
   }
@@ -1148,6 +1150,181 @@
     );
     sections.forEach(function (s) { spy.observe(s); });
   }
+
+  /* ---------- 9. 导航栏全局搜索（放大镜 → 搜索框，下拉浮层：文章在前、项目在后） ---------- */
+  // 数据走 loadPosts() / loadProjects()，匹配复用 postMatches() / projectMatches()。
+  // 触发：点放大镜按钮 / Ctrl+K / Cmd+K；关闭：点外部 / Esc / 点击任意链接。
+  (function () {
+    var wrap = document.getElementById("nav-search");
+    if (!wrap) return;
+    var btn = wrap.querySelector(".nav-search-btn");
+    var input = wrap.querySelector(".nav-search-input");
+    var panel = wrap.querySelector(".nav-search-results");
+    if (!btn || !input || !panel) return;
+
+    // 文章页在 /posts/ 子目录，卡片和项目页 href 要加 ../
+    var root = window.location.pathname.indexOf("/posts/") !== -1 ? "../" : "";
+    var MAX_POSTS = 4;
+    var MAX_PROJECTS = 3;
+    var debounce = null;
+    var open = false;
+    var optionSeq = 0;
+
+    // 下拉里每条结果都是一个可键盘选中的 option（文章卡片复用 postCardHtml，
+    // 项目是紧凑单行）；选中态同时同步 aria-selected / aria-activedescendant
+    function navProjectHtml(p) {
+      var icon = PROJECT_ICONS[p.icon] || PROJECT_ICONS.cube;
+      var href = p.href ? esc(p.href) : root + "projects.html";
+      var external = p.href ? ' target="_blank" rel="noopener"' : "";
+      return (
+        '<a class="nav-project" href="' + href + '"' + external + ">" +
+          '<span class="nav-project-icon" aria-hidden="true">' + icon + "</span>" +
+          '<span class="nav-project-body"><span class="nav-project-title">' + esc(p.title) + "</span>" +
+          '<span class="nav-project-desc">' + esc(p.desc) + "</span></span>" +
+          '<span class="nav-project-link mono">' + esc(p.linkText) + "</span>" +
+        "</a>"
+      );
+    }
+
+    function bindOptions() {
+      var opts = panel.querySelectorAll(".post-card, .nav-project");
+      opts.forEach(function (el, i) {
+        el.setAttribute("data-option", "");
+        el.setAttribute("role", "option");
+        el.id = "nav-search-opt-" + i;
+        el.setAttribute("aria-selected", "false");
+      });
+    }
+
+    function options() {
+      return panel.querySelectorAll("[data-option]");
+    }
+
+    function setActive(el) {
+      options().forEach(function (o) {
+        o.classList.toggle("focused", o === el);
+        o.setAttribute("aria-selected", o === el ? "true" : "false");
+      });
+      if (el) {
+        input.setAttribute("aria-activedescendant", el.id);
+        el.scrollIntoView({ block: "nearest" });
+      } else {
+        input.removeAttribute("aria-activedescendant");
+      }
+    }
+
+    function setOpen(next) {
+      open = !!next;
+      wrap.classList.toggle("open", open);
+      // 展开时让同排的页面链接（文章/项目/联系）让位，给搜索框腾宽度
+      var nav = wrap.closest("nav");
+      if (nav) nav.classList.toggle("nav-search-open", open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      input.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) {
+        panel.hidden = false;
+        // 下一帧再聚焦，让过渡先跑
+        requestAnimationFrame(function () {
+          input.focus({ preventScroll: true });
+          if (input.value) input.select();
+        });
+      } else {
+        panel.hidden = true;
+        input.value = "";
+        panel.innerHTML = "";
+        input.removeAttribute("aria-activedescendant");
+      }
+    }
+
+    function renderResults(query) {
+      var q = (query || "").trim().toLowerCase();
+      if (!q) {
+        panel.innerHTML = "";
+        input.removeAttribute("aria-activedescendant");
+        return;
+      }
+      Promise.all([loadPosts(), loadProjects()])
+        .then(function (res) {
+          var posts = sortPosts(res[0]).filter(function (p) { return postMatches(p, q); }).slice(0, MAX_POSTS);
+          var projects = sortProjects(res[1]).filter(function (p) { return projectMatches(p, q); }).slice(0, MAX_PROJECTS);
+          if (!open) return; // 浮层已经关掉就不用渲染了
+          var html = "";
+          if (posts.length || projects.length) {
+            html += '<p class="search-hint">找到 <b>' + posts.length + "</b> 篇文章 · <b>" + projects.length + "</b> 个项目与「" + esc(query.trim()) + "」相关</p>";
+            if (posts.length) {
+              html += '<p class="nav-search-label">$ posts</p>';
+              html += posts.map(function (p, i) { return postCardHtml(p, i, root); }).join("");
+            }
+            if (projects.length) {
+              html += '<p class="nav-search-label">$ projects</p>';
+              html += projects.map(navProjectHtml).join("");
+            }
+          } else {
+            html = '<p class="search-empty">没有找到相关内容，换个关键词试试？</p>';
+          }
+          panel.innerHTML = html;
+          // 实时重渲染：跳过渐显避免闪烁（与 archive.search 一致）
+          panel.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
+          bindOptions();
+          setActive(null);
+        })
+        .catch(function () {});
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      setOpen(!open);
+    });
+
+    input.addEventListener("input", function () {
+      var q = input.value;
+      clearTimeout(debounce);
+      debounce = setTimeout(function () { renderResults(q); }, 120);
+    });
+
+    // 上下箭头在结果间移动（文章在前、项目在后），回车跳转选中项
+    input.addEventListener("keydown", function (e) {
+      var opts = options();
+      if (e.key === "Escape") { setOpen(false); btn.focus(); return; }
+      if (!opts.length) return;
+      var current = panel.querySelector(".focused");
+      var idx = -1;
+      opts.forEach(function (o, i) { if (o === current) idx = i; });
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActive(opts[Math.min(idx + 1, opts.length - 1)]);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActive(opts[Math.max(idx - 1, 0)]);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        // 走点击默认行为：文章卡片会带上共享元素过渡（0.5 段监听接管）
+        (current || opts[0]).click();
+      }
+    });
+
+    // 点外部关闭（点面板/按钮/输入框自己时不关）
+    document.addEventListener("click", function (e) {
+      if (!open) return;
+      if (wrap.contains(e.target)) return;
+      setOpen(false);
+    });
+
+    // 点击任意链接（搜索结果、导航项）都收起浮层，避免跳转后视图残留
+    document.addEventListener("click", function (e) {
+      if (!open) return;
+      if (e.target && e.target.closest && e.target.closest("a[href]")) setOpen(false);
+    }, true);
+
+    // Ctrl+K / Cmd+K 全局快捷键；输入框/富文本编辑中不抢（P1 守卫）
+    document.addEventListener("keydown", function (e) {
+      if (!(e.ctrlKey || e.metaKey) || (e.key !== "k" && e.key !== "K")) return;
+      var t = e.target;
+      if (t && t.closest && t.closest("input, textarea, select, [contenteditable]")) return;
+      e.preventDefault();
+      setOpen(!open);
+    });
+  })();
 
   /* ---------- 5. 页脚年份 ---------- */
   var year = document.getElementById("year");
