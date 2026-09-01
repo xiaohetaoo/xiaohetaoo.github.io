@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831q";
+  var DATA_VER = "20260831l";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -84,7 +84,7 @@
 
   document.addEventListener("click", function (e) {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
-    var el = e.target && e.target.closest ? e.target.closest(".post-card[href], .side-item[href], .related-card[href]") : null;
+    var el = e.target && e.target.closest ? e.target.closest(".post-card[href], .side-item[href]") : null;
     if (!el) {
       // 点了别处（比如主题按钮）：顺手清掉残留标记，避免主题圆形扩散在这块区域漏一块
       clearNavMorph();
@@ -95,16 +95,6 @@
     el.style.viewTransitionName = "post-hero";
     if (el.classList.contains("side-item")) {
       document.documentElement.classList.add("side-morph");
-    }
-    // 方向性滑动：查看全部文章/项目 = 下钻，返回 = 上钻
-    var deep = el.closest(".all-posts-link[href], .all-projects-link[href]");
-    var path = window.location.pathname;
-    var onList = path.indexOf("archive.html") !== -1 || path.indexOf("projects.html") !== -1;
-    var backLink = !deep && onList ? el.closest(".back-link[href]") : null;
-    if (deep) markNavDir("deep");
-    else if (backLink) markNavDir("back");
-    else {
-      try { sessionStorage.removeItem("xht-nav-dir"); } catch (err) {}
     }
   });
 
@@ -125,6 +115,24 @@
   function markNavDir(dir) {
     try { sessionStorage.setItem("xht-nav-dir", dir); } catch (e) {}
   }
+
+  document.addEventListener("click", function (e) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
+    var el = e.target && e.target.closest ? e.target : null;
+    var deep = el ? el.closest(".all-posts-link[href], .all-projects-link[href]") : null;
+    var backLink = null;
+    if (!deep) {
+      var path = window.location.pathname;
+      var onList = path.indexOf("archive.html") !== -1 || path.indexOf("projects.html") !== -1;
+      backLink = onList && el ? el.closest(".back-link[href]") : null;
+    }
+    if (deep) markNavDir("deep");
+    else if (backLink) markNavDir("back");
+    else {
+      // 点了别的入口：清掉残留标记，避免方向滑动污染下一次普通导航
+      try { sessionStorage.removeItem("xht-nav-dir"); } catch (err) {}
+    }
+  });
 
   // 浏览器返回键：从列表页离开且是后退遍历时，也走反向滑动（点返回链接走上面的 click 路径）
   window.addEventListener("pageswap", function (e) {
@@ -163,8 +171,6 @@
   if (canvas) {
     var ctx = canvas.getContext("2d");
     var W = 0, H = 0, DPR = 1;
-    // pageswap 期间停止 rAF + 忽略鼠标；pagereveal 时恢复（避免 bfcache 旧监听继续消耗 CPU）
-    var heroActive = true;
 
     function resize() {
       DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -363,7 +369,7 @@
       orbits.forEach(function (o) { drawOrbit(o, t); });
       drawCube(t, dt);
       orbits.forEach(function (o) { drawElectron(o, t, dt); });
-      if (!reducedMotion && !staticMode && !document.hidden && heroVisible && heroActive) {
+      if (!reducedMotion && !staticMode && !document.hidden && heroVisible) {
         scheduleFrame();
       }
     }
@@ -428,8 +434,6 @@
     var dScrollBoost = 0;
     var dLast = null;
     var dustPending = false;
-    // 同 hero：pageswap 关、pagereveal 开
-    var dustActive = true;
 
     // 深浅主题各自的粒子配色；发光粒子用缓存的精灵图，避免每帧重建径向渐变
     var DUST_PALETTES = {
@@ -543,7 +547,7 @@
       }
       dctx.globalAlpha = 1;
 
-      if (!document.hidden && !staticMode && dustActive) scheduleDust();
+      if (!document.hidden && !staticMode) scheduleDust();
     }
 
     function dustFrame(ts) {
@@ -619,7 +623,7 @@
     });
   }
 
-  function postCardHtml(p, i, root, idAttr, role) {
+  function postCardHtml(p, i) {
     var tags = (p.tags || [])
       .map(function (t, j) {
         return '<span class="tag' + (j > 0 ? " tag-gray" : "") + '">' + esc(t) + "</span>";
@@ -627,9 +631,8 @@
       .join("");
     var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
     var delay = ' style="--d:' + Math.min(i * 0.05, 0.3).toFixed(2) + 's"';
-    var attr = (idAttr ? ' id="' + idAttr + '"' : "") + (role ? ' role="' + role + '"' : "");
     return (
-      '<a class="post-card reveal"' + attr + delay + ' href="' + (root || "") + 'posts/' + esc(p.slug) + '.html">' +
+      '<a class="post-card reveal"' + delay + ' href="posts/' + esc(p.slug) + '.html">' +
         '<span class="date">' + esc(p.date) + pin + "</span>" +
         "<div><h3>" + esc(p.title) + '</h3><p class="excerpt">' + esc(p.excerpt) + "</p></div>" +
         '<div class="meta-col"><span class="tags">' + tags + '</span><span class="arrow" aria-hidden="true">-&gt;</span></div>' +
@@ -642,9 +645,8 @@
     return hay.indexOf(q) !== -1;
   }
 
-function renderPostCards(container, limit, query, root) {
+  function renderPostCards(container, limit, query) {
     var q = (query || "").trim().toLowerCase();
-    var cardRoot = root || "";
     loadPosts()
       .then(function (posts) {
         var sorted = sortPosts(posts);
@@ -654,10 +656,10 @@ function renderPostCards(container, limit, query, root) {
           : limit > 0 ? sorted.slice(0, limit) : sorted;
         var html = "";
         if (q) {
-          html += '<p class="search-hint">找到 <b>' + shown.length + "</b> 篇与「" + esc(query.trim()) + "」相关的文章</p>';
+          html += '<p class="search-hint">找到 <b>' + shown.length + "</b> 篇与「" + esc(query.trim()) + "」相关的文章</p>";
         }
         html += shown.length
-          ? shown.map(function (p, i) { return postCardHtml(p, i, cardRoot); }).join("")
+          ? shown.map(postCardHtml).join("")
           : '<p class="search-empty">没有找到相关文章，换个关键词试试？</p>';
         container.innerHTML = html;
         if (q) {
@@ -682,8 +684,8 @@ function renderPostCards(container, limit, query, root) {
 
   function rerenderLists() {
     var q = searchInput ? searchInput.value : "";
-    if (homeList) renderPostCards(homeList, 5, q, "");
-    if (archiveList) renderPostCards(archiveList, 0, q, "");
+    if (homeList) renderPostCards(homeList, 5, q);
+    if (archiveList) renderPostCards(archiveList, 0, q);
   }
 
   if (searchInput) {
@@ -1093,7 +1095,6 @@ function renderPostCards(container, limit, query, root) {
       })
       .catch(function () { /* posts.json 加载失败时静默跳过 */ });
   })();
-  })();
 
   /* ---------- 3. 代码复制按钮 ---------- */
   document.querySelectorAll(".copy-btn[data-copy]").forEach(function (btn) {
@@ -1146,169 +1147,6 @@ function renderPostCards(container, limit, query, root) {
     );
     sections.forEach(function (s) { spy.observe(s); });
   }
-
-  /* ---------- 0.7 bfcache 路径：离开页面时停掉 hero / dust 的 rAF + 鼠标监听，恢复时重启 ----------
-     pageswap 在跨页导航时触发，bfcache 恢复时浏览器把旧页面冻结但不重新跑 main.js；
-     如果不主动停，旧页的事件回调会继续消耗 CPU。pagereveal 在恢复时触发。 */
-  (function () {
-    var stopped = false;
-    window.addEventListener("pageswap", function () {
-      if (typeof heroActive !== "undefined") heroActive = false;
-      if (typeof dustActive !== "undefined") dustActive = false;
-      stopped = true;
-    });
-    window.addEventListener("pagereveal", function () {
-      if (!stopped) return;
-      if (typeof heroActive !== "undefined") {
-        heroActive = true;
-        // 重置时间基准，避免从 bfcache 恢复后 dt 巨大导致动画"瞬移"
-        lastTs = null;
-        start = null;
-        if (!reducedMotion && !staticMode && !document.hidden && heroVisible) scheduleFrame();
-      }
-      if (typeof dustActive !== "undefined") {
-        dustActive = true;
-        dLast = null;
-        dLastScroll = undefined;
-        if (!staticMode && !document.hidden) scheduleDust();
-      }
-      stopped = false;
-    });
-  })();
-
-  /* ---------- 9. 导航栏全局搜索（放大镜 → 搜索框，下拉浮层实时显示结果） ---------- */
-  // 数据走 loadPosts()，匹配复用 postMatches() / postCardHtml()；渲染容器在导航栏下方浮层里。
-  // 触发：点放大镜按钮 / Ctrl+K / Cmd+K；关闭：点外部 / Esc / 路由变化。
-  (function () {
-    var wrap = document.getElementById("nav-search");
-    if (!wrap) return;
-    var btn = wrap.querySelector(".nav-search-btn");
-    var input = wrap.querySelector(".nav-search-input");
-    var panel = wrap.querySelector(".nav-search-results");
-    if (!btn || !input || !panel) return;
-
-    // 文章页在 /posts/ 子目录，卡片 href 要加 ../
-    var root = window.location.pathname.indexOf("/posts/") !== -1 ? "../" : "";
-    var MAX_RESULTS = 6;
-    var debounce = null;
-    var open = false;
-
-    // 切到打开态：浮层可见 + 输入框可用 + aria 同步
-    function setOpen(next) {
-      open = !!next;
-      wrap.classList.toggle("open", open);
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
-      if (open) {
-        panel.hidden = false;
-        // 下一帧再聚焦，让过渡先跑
-        requestAnimationFrame(function () {
-          input.focus({ preventScroll: true });
-          if (input.value) input.select();
-        });
-      } else {
-        panel.hidden = true;
-        input.value = "";
-        btn.removeAttribute("aria-activedescendant");
-        renderResults("");
-        panel.querySelectorAll(".post-card").forEach(function (c) {
-          c.classList.remove("is-visible");
-        });
-      }
-    }
-
-    // 把命中的前 N 篇渲染到浮层；空状态 + 命中数提示复用 .search-hint / .search-empty
-    function renderResults(query) {
-      var q = (query || "").trim().toLowerCase();
-      if (!q) {
-        panel.innerHTML = "";
-        return;
-      }
-      loadPosts().then(function (posts) {
-        var sorted = sortPosts(posts);
-        var hits = sorted.filter(function (p) { return postMatches(p, q); }).slice(0, MAX_RESULTS);
-        var html = '<p class="search-hint">找到 <b>' + hits.length + "</b> 篇与「" + esc(query.trim()) + "」相关的文章</p>";
-        html += hits.length
-          ? hits.map(function (p, i) { return postCardHtml(p, i, root, "search-opt-" + i, "option"); }).join("")
-          : '<p class="search-empty">没有找到相关文章，换个关键词试试？</p>';
-        panel.innerHTML = html;
-        // 实时重渲染：跳过渐显避免闪烁（与 archive.search 一致）
-        panel.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
-      });
-    }
-
-    btn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      setOpen(!open);
-    });
-
-    input.addEventListener("input", function () {
-      var q = input.value;
-      clearTimeout(debounce);
-      debounce = setTimeout(function () { renderResults(q); }, 120);
-    });
-
-    // 上下箭头在结果间移动、回车跳转首个
-    input.addEventListener("keydown", function (e) {
-      var cards = panel.querySelectorAll(".post-card");
-      if (!cards.length) {
-        if (e.key === "Escape") { setOpen(false); btn.focus(); }
-        return;
-      }
-      var current = panel.querySelector(".post-card.focused");
-      var idx = -1;
-      cards.forEach(function (c, i) { if (c === current) idx = i; });
-      // 给按钮绑 aria-activedescendant（screen reader 朗读当前选项）
-      function syncActiveDesc(el) {
-        if (el && el.id) btn.setAttribute("aria-activedescendant", el.id);
-        else btn.removeAttribute("aria-activedescendant");
-      }
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        var next = cards[Math.min(idx + 1, cards.length - 1)];
-        cards.forEach(function (c) { c.classList.remove("focused"); });
-        next.classList.add("focused");
-        syncActiveDesc(next);
-        next.scrollIntoView({ block: "nearest" });
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        var prev = cards[Math.max(idx - 1, 0)];
-        cards.forEach(function (c) { c.classList.remove("focused"); });
-        prev.classList.add("focused");
-        syncActiveDesc(prev);
-        prev.scrollIntoView({ block: "nearest" });
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        var target = current || cards[0];
-        // 走共享元素过渡（main.js 0.5 段点击监听会接管）
-        target.click();
-        // 新页加载后归还焦点到按钮（用 setTimeout 让浏览器先把 focus 落到新页）
-        setTimeout(function () { btn.focus(); }, 50);
-      } else if (e.key === "Escape") {
-        setOpen(false);
-        btn.focus();
-      }
-    });
-
-    // 捕获阶段统一处理：点浮层外 / 点 .post-card 跳转 / 点 wrap 内元素 时分别处理
-    // 用捕获是为了在 0.5 跨页面过渡监听前决策（避免点 wrap 外元素时过渡不期望的卡片挂标记）
-    document.addEventListener("click", function (e) {
-      if (!open) return;
-      var card = e.target && e.target.closest ? e.target.closest(".post-card") : null;
-      if (card) { setOpen(false); return; }            // 跳转前先收起
-      if (!wrap.contains(e.target)) setOpen(false);   // 点外部收起
-    }, true);
-
-    // Ctrl+K / Cmd+K 全局快捷键（Mac 浏览器把 metaKey 暴露为 cmd）
-    // 输入框/可编辑区已经在打字时不抢，避免误触
-    document.addEventListener("keydown", function (e) {
-      if (!(e.ctrlKey || e.metaKey)) return;
-      if (e.key !== "k" && e.key !== "K") return;
-      var t = e.target;
-      if (t && t.matches && t.matches("input, textarea, [contenteditable]")) return;
-      e.preventDefault();
-      setOpen(!open);
-    });
-  })();
 
   /* ---------- 5. 页脚年份 ---------- */
   var year = document.getElementById("year");

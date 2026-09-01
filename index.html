@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20260831q" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260831l" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -43,13 +43,6 @@ var _hmt = _hmt || [];
         <a href="#posts">文章</a>
         <a href="#projects">项目</a>
         <a href="#contact">联系</a>
-        <div class="nav-search" id="nav-search">
-          <button class="nav-search-btn" type="button" aria-label="搜索文章（Ctrl+K）" aria-expanded="false" aria-controls="nav-search-results" aria-haspopup="listbox">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          </button>
-          <input class="nav-search-input" type="search" placeholder="搜索文章…" autocomplete="off" tabindex="-1" />
-          <div class="nav-search-results" id="nav-search-results" role="listbox" hidden aria-label="搜索结果"></div>
-        </div>
         <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换深浅主题">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
         </button>
@@ -135,7 +128,7 @@ var _hmt = _hmt || [];
         </div>
 
         <div class="post-list" id="post-list">
-            <!-- 文章列表由 assets/js/runtime.js 读取 posts.json 渲染；加新文章 = posts.json 加一条 + posts/ 建一个页面 -->
+            <!-- 文章列表由 assets/js/main.js 读取 posts.json 渲染；加新文章 = posts.json 加一条 + posts/ 建一个页面 -->
             <noscript>
               <p class="sub">你的浏览器禁用了 JS，请直接从下方链接进入文章：</p>
               <ul class="fallback-list">
@@ -176,7 +169,7 @@ var _hmt = _hmt || [];
         <p class="search-hint" data-project-hint hidden></p>
 
         <div class="project-grid" id="project-list">
-          <!-- 项目列表由 assets/js/runtime.js 读取 projects.json 渲染；加新项目 = projects.json 加一条 -->
+          <!-- 项目列表由 assets/js/main.js 读取 projects.json 渲染；加新项目 = projects.json 加一条 -->
           <noscript>
             <p class="sub">你的浏览器禁用了 JS，以下是文字版项目列表：</p>
             <ul class="fallback-list">
@@ -284,6 +277,6 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/runtime.js?v=20260831q"></script>
+  <script src="assets/js/main.js?v=20260831l"></script>
 </body>
 </html>
