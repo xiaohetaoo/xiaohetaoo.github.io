@@ -1566,7 +1566,7 @@ html.theme-anim::view-transition-new(root) {
   height: 16px;
 }
 .nav-search.open .nav-search-input {
-  width: 600px;
+  width: 540px;
   height: 40px;
   padding: 0 12px 0 34px;
   margin-left: 10px;
@@ -1585,12 +1585,14 @@ html.theme-anim::view-transition-new(root) {
   transition: width 0.22s var(--ease-out), padding 0.22s var(--ease-out), border-color 0.2s, background 0.2s;
 }
 
-/* 下拉浮层：导航栏下方浮窗，显示实时结果 */
+/* 下拉浮层：导航栏下方浮窗，显示实时结果。
+   注意：必须挂在 body 下用 fixed 定位——panel 若留在 .nav（backdrop-filter）子树里，
+   Chromium 会跳过其内部元素的 VT 快照，搜索结果的共享元素过渡会失效 */
 .nav-search-results {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  width: 600px;
+  position: fixed;
+  top: 70px;
+  right: 12px;
+  width: 540px;
   max-width: calc(100vw - 24px);
   background: var(--bg-panel);
   border: 1px solid var(--border-strong);
@@ -2203,7 +2205,7 @@ html.theme-anim::view-transition-new(root) {
 
   .nav-search { margin-left: 2px; }
   .nav-search.open .nav-search-input { width: 240px; }
-  .nav-search-results { right: -8px; width: calc(100vw - 32px); }
+  .nav-search-results { width: calc(100vw - 32px); }
 
   .hero-cta .btn {
     flex: 1;

@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831w";
+  var DATA_VER = "20260831y";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -94,7 +94,7 @@
     clearNavMorph();
     morphedEl = el;
     el.style.viewTransitionName = "post-hero";
-    if (el.classList.contains("side-item") || el.classList.contains("related-card") || el.closest(".nav-search")) {
+    if (el.classList.contains("side-item") || el.classList.contains("related-card") || el.closest(".nav-search, .nav-search-results")) {
       document.documentElement.classList.add("side-morph");
     }
   });
@@ -1195,6 +1195,22 @@
     var open = false;
     var optionSeq = 0;
 
+    // 面板挂到 body：留在 .nav（backdrop-filter）子树里，元素的 VT 快照会被
+    // Chromium 跳过，搜索结果的共享元素过渡就飞不起来
+    document.body.appendChild(panel);
+    // fixed 定位下与输入框右缘对齐（输入框收窄变宽时跟随）
+    function positionPanel() {
+      var r = input.getBoundingClientRect();
+      panel.style.right = Math.max(12, window.innerWidth - r.right) + "px";
+    }
+    window.addEventListener("resize", function () {
+      if (open) positionPanel();
+    });
+    function hitArea(target) {
+      // 输入框/按钮在 wrap 里，结果面板在 body 下，两处都算"点在搜索上"
+      return wrap.contains(target) || panel.contains(target);
+    }
+
     // 下拉里每条结果都是一个可键盘选中的 option（文章卡片复用 postCardHtml，
     // 项目是紧凑单行）；选中态同时同步 aria-selected / aria-activedescendant。
     // 项目不直接跳外链：落到全部项目页定位高亮，介绍在那边是完整的
@@ -1248,6 +1264,9 @@
       input.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) {
         panel.hidden = false;
+        positionPanel();
+        // 宽度过渡 0.22s 结束后输入框右缘才停稳，再对齐一次
+        setTimeout(positionPanel, 250);
         // 下一帧再聚焦，让过渡先跑
         requestAnimationFrame(function () {
           input.focus({ preventScroll: true });
@@ -1336,7 +1355,7 @@
     // 主题切换也不关——切明暗不该收起搜索框、更不该把页面链接放出来
     document.addEventListener("click", function (e) {
       if (!open) return;
-      if (wrap.contains(e.target)) return;
+      if (hitArea(e.target)) return;
       if (e.target.closest && e.target.closest(".theme-toggle")) return;
       setOpen(false);
     });
@@ -1348,7 +1367,7 @@
       if (!open) return;
       var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
       if (!a) return;
-      if (wrap.contains(a)) {
+      if (hitArea(a)) {
         wrap.classList.remove("open");
         var nav = wrap.closest("nav");
         if (nav) nav.classList.remove("nav-search-open");
