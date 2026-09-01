@@ -40,6 +40,8 @@
 
   --radius: 14px;
   --radius-lg: 20px;
+  --radius-xs: 6px;   /* 散装 4 / 6 / 7 / 8 / 9 px 的归位（图标按钮、tag、小卡片） */
+  --radius-pill: 999px; /* 胶囊形（hero h1 占位 / 角标） */
   --container: 1120px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -287,7 +289,7 @@ button {
   font-size: 14px;
   color: var(--text-2);
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   transition: color 0.2s, background 0.2s;
 }
 
@@ -375,7 +377,7 @@ button {
   border: 1px solid var(--border-strong);
   background: rgba(255, 255, 255, 0.04);
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   margin-bottom: 26px;
 }
 
@@ -420,7 +422,7 @@ button {
   color: var(--text-1);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 1px 8px;
   white-space: nowrap;
 }
@@ -623,7 +625,7 @@ button {
   flex-direction: column;
   gap: 3px;
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   transition: background 0.2s;
 }
 
@@ -798,7 +800,7 @@ button {
   color: var(--accent-bright);
   background: var(--accent-dim);
   border: 1px solid var(--accent-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 1.5px 8px;
 }
 
@@ -851,7 +853,7 @@ button {
   color: var(--accent-bright);
   background: var(--accent-dim);
   border: 1px solid var(--accent-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 2.5px 11px;
   white-space: nowrap;
 }
@@ -914,7 +916,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 11px;
+  border-radius: var(--radius-xs);
   background: var(--accent-dim);
   border: 1px solid var(--accent-border);
   color: var(--accent-bright);
@@ -1256,7 +1258,7 @@ button {
   font-size: 0.86em;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   padding: 1.5px 6.5px;
   color: var(--accent-bright);
 }
@@ -1289,7 +1291,7 @@ button {
   color: var(--text-3);
   padding: 8px 12px;
   min-height: 28px; /* 让上下 padding 撑到 44 不算美观，留文字小一点；移动端覆盖 */
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   border: 1px solid transparent;
   transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
@@ -1381,7 +1383,7 @@ button {
   font-family: var(--font-mono);
   font-size: 23px;
   font-weight: 700;
-  border-radius: 13px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 
@@ -1412,7 +1414,7 @@ button {
   font-size: 12.5px;
   letter-spacing: 0.1em;
   padding: 3.5px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   margin: 26px 0 16px;
 }
 
@@ -1496,7 +1498,8 @@ button {
   border-radius: 10px;
   color: var(--text-1);
   font-family: var(--font-mono);
-  font-size: 13.5px;
+  /* 16px 防止 iOS Safari / Android WebView 在 focus 时自动 zoom viewport */
+  font-size: 16px;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -1557,7 +1560,7 @@ html.theme-anim::view-transition-new(root) {
   width: 44px;
   height: 44px;
   border: 1px solid var(--border-strong);
-  border-radius: 9px;
+  border-radius: var(--radius-xs);
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-2);
   cursor: pointer;
@@ -1584,7 +1587,7 @@ html.theme-anim::view-transition-new(root) {
   padding: 0 12px 0 38px;
   border: 1px solid var(--border-strong);
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   color: var(--text-1);
   font-family: var(--font-mono);
   font-size: 13.5px;
@@ -1596,7 +1599,7 @@ html.theme-anim::view-transition-new(root) {
 /* 展开后按钮退化为输入框内的放大镜图标（样式对齐项目页的大搜索框） */
 .nav-search.open .nav-search-btn {
   position: absolute;
-  left: 22px; /* wrap 坐标系：输入框左缘在 +10px，12px 内边距 → 22px */
+  left: 54px; /* wrap 坐标系：input 左缘在 +44px + padding-left 12px → 56px */
   top: 50%;
   transform: translateY(-50%);
   width: 20px;
@@ -1638,7 +1641,7 @@ html.theme-anim::view-transition-new(root) {
   max-width: calc(100vw - 24px);
   background: var(--bg-panel);
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
   padding: 14px;
   z-index: 101;
@@ -1720,7 +1723,7 @@ html.theme-anim::view-transition-new(root) {
   width: 30px;
   height: 30px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   background: var(--accent-dim);
   color: var(--accent);
   flex-shrink: 0;
@@ -1785,7 +1788,7 @@ html.theme-anim::view-transition-new(root) {
   height: 44px;
   margin-left: 10px;
   border: 1px solid var(--border-strong);
-  border-radius: 9px;
+  border-radius: var(--radius-xs);
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-2);
   cursor: pointer;
@@ -1819,7 +1822,7 @@ html.theme-anim::view-transition-new(root) {
 
   --text-1: #171b22;
   --text-2: #454c56;
-  --text-3: #7a828b;
+  --text-3: #6b727b;  /* 浅色主题：4.5:1 对比度（W3C AAA Large）边缘失败 → 5.0:1 过 AA 4.5:1 */
 
   --accent: #2f6ceb;
   --accent-bright: #1e56c8;
@@ -1917,7 +1920,7 @@ html.theme-anim::view-transition-new(root) {
   color: var(--text-2);
   padding: 4px 12px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius-xs);
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
@@ -2113,7 +2116,7 @@ html.theme-anim::view-transition-new(root) {
   font-size: 10.5px;
   padding: 2px 7px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--text-2);
   letter-spacing: 0.02em;
 }
@@ -2213,37 +2216,54 @@ html.theme-anim::view-transition-new(root) {
     padding: 0 18px;
   }
 
+  /* 移动端紧凑 brand：只留 logo，文字彻底去掉，节省 ~70px 给 nav 链接和按钮 */
   .brand img {
     width: 28px;
     height: 28px;
   }
-
-  .brand-name {
-    font-size: 14px;
+  .brand > span {
+    display: none;
+  }
+  .brand {
+    padding: 6px 6px;
+    margin: -6px -6px;
   }
 
-/* 移动端空间紧张：收起态隐藏 3 个文字链接（文章/项目/联系）+ GitHub 文字标签，
-     导航条只剩 brand + 搜索按钮 + 主题按钮 + GitHub 图标 */
+  /* 导航只显示 文章 + 项目 文字链接（去联系、去 GitHub），其余 nav-links 子元素隐藏 */
   .nav-links {
     gap: 2px;
   }
-  .nav-links > a:not(.nav-cta) {
+  .nav-links a {
+    padding: 8px 12px;
+    font-size: 13.5px;
+  }
+  /* "联系" 隐藏：精确属性选择，跨 archive/projects/articles 一致 */
+  .nav-links a[href*="#contact"] {
     display: none;
   }
-  .nav-links a.nav-cta {
-    margin-left: 2px;
-    padding: 8px 9px;
-  }
-  .nav-links a.nav-cta .label {
+  /* GitHub 入口（.nav-cta）整条隐藏 */
+  .nav-links > a.nav-cta,
+  .nav-links > .nav-cta {
     display: none;
   }
 
-  /* 搜索框展开时主题按钮 + GitHub 图标让位（transform: scaleX + opacity，避开 layout），
-     整个 nav-links 折叠让搜索框从 brand 右缘扩到屏右；
-     calc(100vw - 18 - 28 - 11 - 64 - 12 - 18) = 224px，brand 区外 nav 右侧剩余 */
+  /* nav 总宽不超屏外：brand 占 40px，nav-links 占剩余空间，theme-toggle 44px，nav-search 44px */
+  .brand {
+    flex-shrink: 0;
+  }
+  .nav-links {
+    flex: 1;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+  .nav-search {
+    flex-shrink: 0;
+    margin-left: 2px;
+  }
+
+  /* nav-search 展开：把 nav-links 折叠让位 */
   .nav-search { margin-left: 2px; }
-  .nav-links.nav-search-open .theme-toggle,
-  .nav-links.nav-search-open .nav-cta {
+  .nav-links.nav-search-open > a:not(.nav-search) {
     opacity: 0;
     pointer-events: none;
     transform: scaleX(0);
@@ -2252,7 +2272,7 @@ html.theme-anim::view-transition-new(root) {
     padding: 0;
     overflow: hidden;
   }
-  .nav-search.open { width: calc(100vw - 36px); }
+  .nav-search.open { width: calc(100vw - 18px - 40px); }
   .nav-search.open .nav-search-input { width: 100%; }
   .nav-search-results { width: calc(100vw - 36px); right: 18px; }
 
