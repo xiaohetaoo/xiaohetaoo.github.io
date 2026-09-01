@@ -1562,17 +1562,22 @@ html.theme-anim::view-transition-new(root) {
   height: 16px;
 }
 .nav-search.open .nav-search-input {
-  width: 560px;
+  width: 640px;
   padding: 0 12px 0 34px;
   margin-left: 10px;
   opacity: 1;
   border-color: var(--border-strong);
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
+  border-radius: 6px;
 }
 .nav-search.open .nav-search-input:focus {
   border-color: var(--accent-border);
   background: rgba(255, 255, 255, 0.06);
+}
+/* 收起时值/占位符立刻隐藏（opacity 不参与过渡），只留宽度动画，
+   避免收起过程中文字被挤压闪烁；展开仍走上面的渐显 */
+.nav-search:not(.open) .nav-search-input {
+  transition: width 0.22s var(--ease-out), padding 0.22s var(--ease-out), border-color 0.2s, background 0.2s;
 }
 
 /* 下拉浮层：导航栏下方浮窗，显示实时结果 */
@@ -1580,7 +1585,7 @@ html.theme-anim::view-transition-new(root) {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  width: 560px;
+  width: 640px;
   max-width: calc(100vw - 24px);
   background: var(--bg-panel);
   border: 1px solid var(--border-strong);
@@ -1702,9 +1707,28 @@ html.theme-anim::view-transition-new(root) {
   border-color: var(--accent-border);
   background: var(--accent-dim);
 }
-/* 搜索展开时三个页面链接让位（JS 在 nav 上挂 nav-search-open），GitHub 入口保留 */
+/* 全局搜索点项目跳转：全部项目页里目标卡片的高亮态（2.6s 后由 JS 摘掉） */
+.project-card.highlight {
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+}
+/* 搜索展开时三个页面链接让位（JS 在 nav 上挂 nav-search-open），GitHub 入口保留。
+   让位用 max-width 收拢；收起时延迟到输入框收完（0.22s）再渐显回来 */
+.nav-links > a:not(.nav-cta) {
+  max-width: 64px;
+  transition: opacity 0.2s var(--ease-out), max-width 0.22s var(--ease-out), padding 0.22s var(--ease-out);
+}
 .nav-links.nav-search-open > a:not(.nav-cta) {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  max-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+}
+.nav-links:not(.nav-search-open) > a:not(.nav-cta) {
+  transition: opacity 0.25s var(--ease-out) 0.22s, max-width 0.22s var(--ease-out) 0.22s,
+    padding 0.22s var(--ease-out) 0.22s;
 }
 
 .theme-toggle {
@@ -2199,6 +2223,7 @@ html.theme-anim::view-transition-new(root) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
   }
 
   .js .reveal {

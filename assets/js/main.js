@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831r";
+  var DATA_VER = "20260831v";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -94,7 +94,7 @@
     clearNavMorph();
     morphedEl = el;
     el.style.viewTransitionName = "post-hero";
-    if (el.classList.contains("side-item") || el.classList.contains("related-card")) {
+    if (el.classList.contains("side-item") || el.classList.contains("related-card") || el.closest(".nav-search")) {
       document.documentElement.classList.add("side-morph");
     }
   });
@@ -733,9 +733,32 @@
       '<p class="p-desc">' + esc(p.desc) + "</p>" +
       '<div class="p-foot"><span class="tags">' + tags + '</span><span class="p-link mono">' + esc(p.linkText) + "</span></div>";
     if (p.href) {
-      return '<a class="project-card reveal"' + delay + ' href="' + esc(p.href) + '" target="_blank" rel="noopener">' + inner + "</a>";
+      return '<a class="project-card reveal"' + delay + ' data-project="' + esc(p.title) + '" href="' + esc(p.href) + '" target="_blank" rel="noopener">' + inner + "</a>";
     }
-    return '<div class="project-card reveal"' + delay + ">" + inner + "</div>";
+    return '<div class="project-card reveal"' + delay + ' data-project="' + esc(p.title) + '">' + inner + "</div>";
+  }
+
+  // 全局搜索点项目跳过来：projects.html#p=<标题> → 定位到对应卡片并高亮片刻，
+  // 让用户在完整卡片里读介绍（下拉浮层里的描述是被截断的）
+  var highlightTimer = null;
+  function highlightProjectFromHash() {
+    var raw = window.location.hash || "";
+    if (raw.indexOf("#p=") !== 0) return;
+    var target;
+    try {
+      target = decodeURIComponent(raw.slice(3));
+    } catch (e) {
+      target = raw.slice(3);
+    }
+    if (!target) return;
+    var card = document.querySelector('.project-card[data-project="' + target.replace(/"/g, '\\"') + '"]');
+    if (!card) return;
+    card.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
+    card.classList.add("highlight");
+    if (highlightTimer) clearTimeout(highlightTimer);
+    highlightTimer = setTimeout(function () {
+      card.classList.remove("highlight");
+    }, 2600);
   }
 
   var projectsCache = null;
@@ -793,6 +816,8 @@
           container.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
         } else {
           container.querySelectorAll(".reveal").forEach(watchReveal);
+          // 带着 #p=<标题> 落地时（全局搜索点项目跳转），定位并高亮对应卡片
+          highlightProjectFromHash();
         }
         // 项目总数没超过首页配额时，就不显示「查看全部项目」入口；搜索中也不显示
         var allLink = document.getElementById("all-projects-link");
@@ -1171,13 +1196,13 @@
     var optionSeq = 0;
 
     // 下拉里每条结果都是一个可键盘选中的 option（文章卡片复用 postCardHtml，
-    // 项目是紧凑单行）；选中态同时同步 aria-selected / aria-activedescendant
+    // 项目是紧凑单行）；选中态同时同步 aria-selected / aria-activedescendant。
+    // 项目不直接跳外链：落到全部项目页定位高亮，介绍在那边是完整的
     function navProjectHtml(p) {
       var icon = PROJECT_ICONS[p.icon] || PROJECT_ICONS.cube;
-      var href = p.href ? esc(p.href) : root + "projects.html";
-      var external = p.href ? ' target="_blank" rel="noopener"' : "";
+      var href = root + "projects.html#p=" + encodeURIComponent(p.title);
       return (
-        '<a class="nav-project" href="' + href + '"' + external + ">" +
+        '<a class="nav-project" href="' + href + '">' +
           '<span class="nav-project-icon" aria-hidden="true">' + icon + "</span>" +
           '<span class="nav-project-body"><span class="nav-project-title">' + esc(p.title) + "</span>" +
           '<span class="nav-project-desc">' + esc(p.desc) + "</span></span>" +
@@ -1213,7 +1238,7 @@
       }
     }
 
-    function setOpen(next) {
+    function setOpen(next, keepPanel) {
       open = !!next;
       wrap.classList.toggle("open", open);
       // 展开时让同排的页面链接（文章/项目/联系）让位，给搜索框腾宽度
@@ -1229,10 +1254,14 @@
           if (input.value) input.select();
         });
       } else {
-        panel.hidden = true;
         input.value = "";
-        panel.innerHTML = "";
         input.removeAttribute("aria-activedescendant");
+        // keepPanel：点结果卡片跳转时面板留在渲染树里，旧页面快照拍得到卡片，
+        // 共享元素过渡才不会因为元素消失而被跳过
+        if (!keepPanel) {
+          panel.hidden = true;
+          panel.innerHTML = "";
+        }
       }
     }
 
@@ -1303,17 +1332,31 @@
       }
     });
 
-    // 点外部关闭（点面板/按钮/输入框自己时不关）
+    // 点外部关闭（点面板/按钮/输入框自己时不关）；
+    // 主题切换也不关——切明暗不该收起搜索框、更不该把页面链接放出来
     document.addEventListener("click", function (e) {
       if (!open) return;
       if (wrap.contains(e.target)) return;
+      if (e.target.closest && e.target.closest(".theme-toggle")) return;
       setOpen(false);
     });
 
-    // 点击任意链接（搜索结果、导航项）都收起浮层，避免跳转后视图残留
+    // 点击链接时收起：面板外的链接整层关闭；面板内的结果卡片只收输入框、
+    // 面板留在渲染树里（open 保持 true），旧页面快照拍得到卡片，共享元素过渡不丢；
+    // 万一跳转被取消，点外部/再点按钮仍会正常收起
     document.addEventListener("click", function (e) {
       if (!open) return;
-      if (e.target && e.target.closest && e.target.closest("a[href]")) setOpen(false);
+      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+      if (!a) return;
+      if (wrap.contains(a)) {
+        wrap.classList.remove("open");
+        var nav = wrap.closest("nav");
+        if (nav) nav.classList.remove("nav-search-open");
+        btn.setAttribute("aria-expanded", "false");
+        input.setAttribute("aria-expanded", "false");
+      } else {
+        setOpen(false);
+      }
     }, true);
 
     // Ctrl+K / Cmd+K 全局快捷键；输入框/富文本编辑中不抢（P1 守卫）
