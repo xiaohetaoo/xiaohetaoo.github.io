@@ -1478,6 +1478,110 @@ html.theme-anim::view-transition-new(root) {
   mix-blend-mode: normal;
 }
 
+/* 导航栏全局搜索：放大镜按钮原地扩展为搜索框，结果下拉浮层 */
+.nav-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  margin-left: 4px;
+}
+.nav-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, opacity 0.18s;
+  flex-shrink: 0;
+}
+.nav-search-btn:hover {
+  color: var(--text-1);
+  border-color: var(--accent-border);
+}
+.nav-search-btn svg {
+  width: 15px;
+  height: 15px;
+}
+/* 打开时按钮让位给输入框（圆框淡出，输入框从右滑入） */
+.nav-search-input {
+  width: 0;
+  padding: 0;
+  margin-left: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  outline: none;
+  opacity: 0;
+  overflow: hidden;
+  transition: width 0.22s var(--ease-out), opacity 0.18s var(--ease-out), padding 0.22s var(--ease-out), border-color 0.2s, background 0.2s;
+}
+.nav-search.open .nav-search-btn {
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  border-color: transparent;
+  margin-right: -34px;
+}
+.nav-search.open .nav-search-input {
+  width: 280px;
+  padding: 0 12px;
+  margin-left: 10px;
+  opacity: 1;
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+.nav-search.open .nav-search-input:focus {
+  border-color: var(--accent-border);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* 下拉浮层：导航栏下方浮窗，显示实时结果 */
+.nav-search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 520px;
+  max-width: calc(100vw - 24px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+  padding: 14px;
+  z-index: 101;
+  /* 出现/消失用 opacity 微动画，不动布局 */
+  animation: nav-search-pop 0.18s var(--ease-out) both;
+}
+@keyframes nav-search-pop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* 浮层内的卡片更紧凑 */
+.nav-search-results .post-card {
+  min-height: 0;
+  padding: 12px 14px;
+}
+.nav-search-results .post-card h3 {
+  font-size: 14.5px;
+}
+.nav-search-results .post-card .excerpt {
+  font-size: 12.5px;
+  -webkit-line-clamp: 2;
+}
+/* 键盘选中态：accent 描边 */
+.nav-search-results .post-card.focused {
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -1534,6 +1638,10 @@ html.theme-anim::view-transition-new(root) {
 :root[data-theme="light"] .nav-links a:hover { background: rgba(16, 24, 40, 0.06); }
 :root[data-theme="light"] .nav-links a.nav-cta { background: rgba(16, 24, 40, 0.04); }
 :root[data-theme="light"] .theme-toggle { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .nav-search-btn { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .nav-search.open .nav-search-input { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="light"] .nav-search.open .nav-search-input:focus { background: rgba(16, 24, 40, 0.07); }
+:root[data-theme="light"] .nav-search-results { box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14); }
 :root[data-theme="light"] .hero h1 .grad {
   background: linear-gradient(100deg, #1893b4 0%, var(--accent) 55%, var(--glow-hi) 100%);
   -webkit-background-clip: text;
@@ -1943,6 +2051,10 @@ html.theme-anim::view-transition-new(root) {
   .nav-links a.nav-cta .label {
     display: none;
   }
+
+  .nav-search { margin-left: 2px; }
+  .nav-search.open .nav-search-input { width: 180px; }
+  .nav-search-results { right: -8px; width: calc(100vw - 32px); }
 
   .hero-cta .btn {
     flex: 1;
