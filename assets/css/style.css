@@ -1774,8 +1774,19 @@ html.theme-anim::view-transition-new(root) {
   background: var(--bg-panel);
   text-decoration: none;
   color: inherit;
+  /* hover 反馈：transform / border / background 全部 0.25s */
   transition: transform 0.25s var(--ease-out), border-color 0.25s, background 0.25s;
   min-height: 138px;
+}
+/* 进场动画（reveal 0.8s）必须用更长 transition，否则会被基础规则覆盖成 0.25s 瞬变 */
+.js .related-card.reveal {
+  transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out), filter 0.8s var(--ease-out),
+              border-color 0.25s, background 0.25s;
+}
+.related-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-border);
+  background: var(--bg-panel-2);
 }
 .related-card:hover {
   transform: translateY(-2px);
