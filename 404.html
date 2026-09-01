@@ -7,12 +7,25 @@
   <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":"#000000"}}catch(e){}</script>
   <noscript><style>[data-loading]{display:none}</style></noscript>
   <title>404 · 小核桃工作室博客</title>
-  <meta name="description" content="你访问的页面不存在，或者已经被搬走了。" />
+  <link rel="canonical" href="https://xiaohetaoo.github.io/404.html" />
+  <meta property="og:title" content="404 · 页面不存在" />
+  <meta property="og:description" content="你访问的页面不存在。返回首页看看？" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://xiaohetaoo.github.io/404.html" />
+  <meta property="og:image" content="https://xiaohetaoo.github.io/assets/img/og-image.png" />
+  <meta property="og:site_name" content="小核桃工作室 · 博客" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="404 · 页面不存在" />
+  <meta name="twitter:description" content="你访问的页面不存在。返回首页看看？" />
+  <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image.png" />
+
+<meta name="description" content="你访问的页面不存在，或者已经被搬走了。" />
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20260901c" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260901d" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -25,6 +38,8 @@ var _hmt = _hmt || [];
 </script>
 </head>
 <body>
+
+  <a class="skip-link" href="#main">跳到主要内容</a>
 
   <header class="nav">
     <div class="container nav-inner">
@@ -57,7 +72,7 @@ var _hmt = _hmt || [];
     </div>
   </header>
 
-  <main>
+  <main id="main">
     <div class="container" style="padding: 132px 24px 80px; max-width: 720px;">
       <span class="kicker">$ cat /missing</span>
       <h1 style="font-size: clamp(40px, 7vw, 72px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin: 12px 0 4px;">404</h1>
@@ -93,6 +108,6 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20260901c"></script>
+  <script src="assets/js/main.js?v=20260901d"></script>
 </body>
 </html>

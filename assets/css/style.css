@@ -117,6 +117,29 @@ button {
   border-radius: 4px;
 }
 
+/* 键盘 / 屏读用户跳过 nav 直达主内容 */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 200;
+  padding: 10px 16px;
+  background: var(--accent);
+  color: var(--btn-on-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: top 0.2s var(--ease-out);
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 16px;
+  outline: 2px solid var(--text-1);
+  outline-offset: 2px;
+}
+
 /* ---------- Utilities ---------- */
 .container {
   width: 100%;
@@ -227,6 +250,9 @@ button {
   align-items: center;
   gap: 11px;
   min-width: 0;
+  padding: 6px 5px;
+  margin: -6px -5px; /* 视觉不占位，但点击区 ≥44px */
+  border-radius: var(--radius);
 }
 
 .brand img {
@@ -975,8 +1001,8 @@ button {
 }
 
 .contact-card .c-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1261,10 +1287,17 @@ button {
   font-family: var(--font-mono);
   font-size: 11.5px;
   color: var(--text-3);
-  padding: 3px 10px;
+  padding: 8px 12px;
+  min-height: 28px; /* 让上下 padding 撑到 44 不算美观，留文字小一点；移动端覆盖 */
   border-radius: 6px;
   border: 1px solid transparent;
   transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+@media (max-width: 640px) {
+  .copy-btn {
+    min-height: 44px;
+    padding: 12px 14px;
+  }
 }
 
 .copy-btn:hover {
@@ -1509,19 +1542,20 @@ html.theme-anim::view-transition-new(root) {
   position: relative;
   display: flex;
   align-items: center;
-  height: 34px;
+  width: 44px; /* 收起时只占按钮宽，input 用 absolute 浮出 */
+  height: 44px; /* 44px 触摸目标 */
   margin-left: 4px;
-  transition: height 0.22s var(--ease-out);
+  transition: width 0.22s var(--ease-out);
 }
 .nav-search.open {
-  height: 40px;
+  width: 600px;
 }
 .nav-search-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--border-strong);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.05);
@@ -1538,20 +1572,26 @@ html.theme-anim::view-transition-new(root) {
   width: 15px;
   height: 15px;
 }
-/* 打开时按钮让位给输入框（圆框淡出，输入框从右滑入） */
+/* 打开时按钮让位给输入框（圆框淡出，输入框从右滑入）。
+   input 用 position: absolute 从 nav 流里浮出，避免参与 nav 内布局；
+   展开/收起走 clip-path：不变形文字、不重复触发 reflow（width 一次性切到 600）。 */
 .nav-search-input {
-  width: 0;
-  padding: 0;
-  margin-left: 0;
-  border: 1px solid transparent;
-  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 44px; /* 按钮右侧 */
+  right: 0;
+  height: 44px;
+  padding: 0 12px 0 38px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
   color: var(--text-1);
   font-family: var(--font-mono);
   font-size: 13.5px;
   outline: none;
   opacity: 0;
-  overflow: hidden;
-  transition: width 0.22s var(--ease-out), opacity 0.18s var(--ease-out), padding 0.22s var(--ease-out), border-color 0.2s, background 0.2s;
+  clip-path: inset(0 100% 0 0); /* 从右往左收：右侧裁掉 */
+  transition: clip-path 0.22s var(--ease-out), opacity 0.18s var(--ease-out), border-color 0.2s, background 0.2s;
 }
 /* 展开后按钮退化为输入框内的放大镜图标（样式对齐项目页的大搜索框） */
 .nav-search.open .nav-search-btn {
@@ -1573,23 +1613,17 @@ html.theme-anim::view-transition-new(root) {
   height: 16px;
 }
 .nav-search.open .nav-search-input {
-  width: 540px;
-  height: 40px;
-  padding: 0 12px 0 38px;
-  margin-left: 10px;
   opacity: 1;
-  border-color: var(--border-strong);
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 6px;
+  clip-path: inset(0 0 0 0); /* 完全可见 */
 }
 .nav-search.open .nav-search-input:focus {
   border-color: var(--accent-border);
   background: rgba(255, 255, 255, 0.06);
 }
-/* 收起时值/占位符立刻隐藏（opacity 不参与过渡），只留宽度动画，
-   避免收起过程中文字被挤压闪烁；展开仍走上面的渐显 */
+/* 收起时值/占位符立刻隐藏（opacity 不参与 clip-path 过渡时序），避免闪烁；
+   展开仍走上面的渐显 */
 .nav-search:not(.open) .nav-search-input {
-  transition: width 0.22s var(--ease-out), padding 0.22s var(--ease-out), border-color 0.2s, background 0.2s;
+  transition: clip-path 0.22s var(--ease-out), border-color 0.2s, background 0.2s;
 }
 
 /* 下拉浮层：导航栏下方浮窗，显示实时结果。
@@ -1728,30 +1762,27 @@ html.theme-anim::view-transition-new(root) {
   background: var(--accent-dim);
 }
 /* 搜索展开时三个页面链接让位（JS 在 nav 上挂 nav-search-open），GitHub 入口保留。
-   让位用 max-width 收拢；收起时延迟到输入框收完（0.22s）再渐显回来 */
+   让位用 transform: scaleX(0) 收起，避开 max-width/padding 触发 nav 内 reflow；
+   收起时延迟到输入框收完（0.22s）再渐显回来 */
 .nav-links > a:not(.nav-cta) {
-  max-width: 64px;
-  transition: opacity 0.2s var(--ease-out), max-width 0.22s var(--ease-out), padding 0.22s var(--ease-out);
+  transform-origin: center;
+  transition: opacity 0.2s var(--ease-out), transform 0.22s var(--ease-out);
 }
 .nav-links.nav-search-open > a:not(.nav-cta) {
   opacity: 0;
   pointer-events: none;
-  max-width: 0;
-  padding-left: 0;
-  padding-right: 0;
-  overflow: hidden;
+  transform: scaleX(0);
 }
 .nav-links:not(.nav-search-open) > a:not(.nav-cta) {
-  transition: opacity 0.25s var(--ease-out) 0.22s, max-width 0.22s var(--ease-out) 0.22s,
-    padding 0.22s var(--ease-out) 0.22s;
+  transition: opacity 0.25s var(--ease-out) 0.22s, transform 0.22s var(--ease-out) 0.22s;
 }
 
 .theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   margin-left: 10px;
   border: 1px solid var(--border-strong);
   border-radius: 9px;
