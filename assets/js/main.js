@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260901d";
+  var DATA_VER = "20260901e";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1204,7 +1204,10 @@
     // fixed 定位下与输入框右缘对齐（输入框收窄变宽时跟随）
     function positionPanel() {
       var r = input.getBoundingClientRect();
-      panel.style.right = Math.max(12, document.documentElement.clientWidth - r.right) + "px"; // clientWidth 不含滚动条，innerWidth 会偏十几像素
+      // 面板右缘 = input 右缘到屏右的距离（保留 12px 最小留白，避免贴屏边）
+      panel.style.right = Math.max(12, document.documentElement.clientWidth - r.right) + "px";
+      // 面板宽 = input 宽，跟随展开/收起与窄屏响应（窄屏下 input 收缩，面板也收缩）
+      panel.style.width = r.width + "px";
     }
     window.addEventListener("resize", function () {
       if (open) positionPanel();

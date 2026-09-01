@@ -2208,7 +2208,7 @@ html.theme-anim::view-transition-new(root) {
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .container {
     padding: 0 18px;
   }
@@ -2222,27 +2222,45 @@ html.theme-anim::view-transition-new(root) {
     font-size: 14px;
   }
 
+/* 移动端空间紧张：收起态隐藏 3 个文字链接（文章/项目/联系）+ GitHub 文字标签，
+     导航条只剩 brand + 搜索按钮 + 主题按钮 + GitHub 图标 */
   .nav-links {
     gap: 2px;
   }
-
-  .nav-links a {
-    padding: 8px 7px;
-    font-size: 13px;
+  .nav-links > a:not(.nav-cta) {
+    display: none;
   }
-
   .nav-links a.nav-cta {
-    margin-left: 4px;
+    margin-left: 2px;
     padding: 8px 9px;
   }
-
   .nav-links a.nav-cta .label {
     display: none;
   }
 
+  /* 搜索框展开时主题按钮 + GitHub 图标让位（transform: scaleX + opacity，避开 layout），
+     整个 nav-links 折叠让搜索框从 brand 右缘扩到屏右；
+     calc(100vw - 18 - 28 - 11 - 64 - 12 - 18) = 224px，brand 区外 nav 右侧剩余 */
   .nav-search { margin-left: 2px; }
-  .nav-search.open .nav-search-input { width: 240px; }
-  .nav-search-results { width: calc(100vw - 32px); }
+  .nav-links.nav-search-open .theme-toggle,
+  .nav-links.nav-search-open .nav-cta {
+    opacity: 0;
+    pointer-events: none;
+    transform: scaleX(0);
+    width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  .nav-search.open { width: calc(100vw - 36px); }
+  .nav-search.open .nav-search-input { width: 100%; }
+  .nav-search-results { width: calc(100vw - 36px); right: 18px; }
+
+  /* 窄屏 placeholder 用更短字号避免截断 */
+  .nav-search.open .nav-search-input {
+    font-size: 13px;
+    padding-left: 34px;
+  }
 
   .hero-cta .btn {
     flex: 1;
