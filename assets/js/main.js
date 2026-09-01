@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260831z";
+  var DATA_VER = "20260901a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1204,7 +1204,7 @@
     // fixed 定位下与输入框右缘对齐（输入框收窄变宽时跟随）
     function positionPanel() {
       var r = input.getBoundingClientRect();
-      panel.style.right = Math.max(12, window.innerWidth - r.right) + "px";
+      panel.style.right = Math.max(12, document.documentElement.clientWidth - r.right) + "px"; // clientWidth 不含滚动条，innerWidth 会偏十几像素
     }
     window.addEventListener("resize", function () {
       if (open) positionPanel();
@@ -1266,7 +1266,8 @@
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       input.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) {
-        panel.hidden = false;
+        // 没输入内容前不显示空面板（悬空一个圆角框很怪），打了字由 renderResults 展开
+        panel.hidden = input.value.trim() === "";
         positionPanel();
         // 宽度过渡 0.22s 结束后输入框右缘才停稳，再对齐一次
         setTimeout(positionPanel, 250);
@@ -1291,6 +1292,7 @@
       var q = (query || "").trim().toLowerCase();
       if (!q) {
         panel.innerHTML = "";
+        panel.hidden = true; // 空查询不显示空面板
         input.removeAttribute("aria-activedescendant");
         return;
       }
@@ -1313,6 +1315,7 @@
           } else {
             html = '<p class="search-empty">没有找到相关内容，换个关键词试试？</p>';
           }
+          panel.hidden = false; // 有结果了，展开面板
           panel.innerHTML = html;
           // 实时重渲染：跳过渐显避免闪烁（与 archive.search 一致）
           panel.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });

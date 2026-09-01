@@ -1549,7 +1549,7 @@ html.theme-anim::view-transition-new(root) {
 /* 展开后按钮退化为输入框内的放大镜图标（样式对齐项目页的大搜索框） */
 .nav-search.open .nav-search-btn {
   position: absolute;
-  left: 8px;
+  left: 22px; /* wrap 坐标系：输入框左缘在 +10px，12px 内边距 → 22px */
   top: 50%;
   transform: translateY(-50%);
   width: 20px;
@@ -1568,7 +1568,7 @@ html.theme-anim::view-transition-new(root) {
 .nav-search.open .nav-search-input {
   width: 540px;
   height: 40px;
-  padding: 0 12px 0 34px;
+  padding: 0 12px 0 38px;
   margin-left: 10px;
   opacity: 1;
   border-color: var(--border-strong);
@@ -1587,16 +1587,17 @@ html.theme-anim::view-transition-new(root) {
 
 /* 下拉浮层：导航栏下方浮窗，显示实时结果。
    注意：必须挂在 body 下用 fixed 定位——panel 若留在 .nav（backdrop-filter）子树里，
-   Chromium 会跳过其内部元素的 VT 快照，搜索结果的共享元素过渡会失效 */
+   Chromium 会跳过其内部元素的 VT 快照，搜索结果的共享元素过渡会失效。
+   top 58 = 导航 64px 内输入框底缘（52px）+ 6px 间距；圆角与输入框一致 6px */
 .nav-search-results {
   position: fixed;
-  top: 70px;
+  top: 58px;
   right: 12px;
   width: 540px;
   max-width: calc(100vw - 24px);
   background: var(--bg-panel);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: 6px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
   padding: 14px;
   z-index: 101;
