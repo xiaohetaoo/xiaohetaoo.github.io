@@ -26,6 +26,13 @@
   --glow-mid: #2d5f9e;
   --glow-hi: #4a8ac4;
 
+  /* hero 渐变起色 + 文本强/代码字/成功/按钮主文字 */
+  --grad-start: #3ec2dd;
+  --text-strong: #ffffff;
+  --code-text: #cdd3da;
+  --success: #28c840;
+  --btn-on-primary: #0b0d12;
+
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
   --font-mono: "Cascadia Code", "Cascadia Mono", ui-monospace, "JetBrains Mono",
@@ -101,7 +108,7 @@ button {
 
 ::selection {
   background: rgba(103, 158, 254, 0.35);
-  color: #fff;
+  color: var(--text-1);
 }
 
 :focus-visible {
@@ -368,7 +375,7 @@ button {
 }
 
 .hero h1 .grad {
-  background: linear-gradient(100deg, #3ec2dd 0%, var(--accent) 55%, var(--glow-hi) 100%);
+  background: linear-gradient(100deg, var(--grad-start) 0%, var(--accent) 55%, var(--glow-hi) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -420,7 +427,7 @@ button {
 
 .btn-primary {
   background: var(--accent);
-  color: #0b0d12;
+  color: var(--btn-on-primary);
   font-weight: 600;
   box-shadow: 0 0 0 rgba(103, 158, 254, 0);
 }
@@ -1178,7 +1185,7 @@ button {
 }
 
 .prose strong {
-  color: #fff;
+  color: var(--text-strong);
   font-weight: 650;
 }
 
@@ -1267,7 +1274,7 @@ button {
 }
 
 .copy-btn.copied {
-  color: #28c840;
+  color: var(--success);
 }
 
 .prose pre code {
@@ -1278,7 +1285,7 @@ button {
   border-radius: 0;
   font-size: 13.5px;
   line-height: 1.8;
-  color: #cdd3da;
+  color: var(--code-text);
   overflow-x: auto;
 }
 
@@ -1383,7 +1390,7 @@ button {
 }
 
 .prof-lv2 {
-  color: #a9c8ff;
+  color: var(--accent-bright);
   background: rgba(103, 158, 254, 0.07);
   border: 1px solid rgba(103, 158, 254, 0.18);
 }
@@ -1789,6 +1796,12 @@ html.theme-anim::view-transition-new(root) {
   --accent-border: rgba(47, 108, 235, 0.32);
 
   --glow-hi: #1e56c8;
+
+  --grad-start: #1893b4;
+  --text-strong: #171b22;
+  --code-text: #3a4149;
+  --success: #1aa64f;
+  --btn-on-primary: #0b0d12;
 }
 
 :root[data-theme="light"] .nav { background: rgba(245, 246, 248, 0.82); }
@@ -1799,11 +1812,6 @@ html.theme-anim::view-transition-new(root) {
 :root[data-theme="light"] .nav-search.open .nav-search-input { background: rgba(16, 24, 40, 0.05); }
 :root[data-theme="light"] .nav-search.open .nav-search-input:focus { background: rgba(16, 24, 40, 0.07); }
 :root[data-theme="light"] .nav-search-results { box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14); }
-:root[data-theme="light"] .hero h1 .grad {
-  background: linear-gradient(100deg, #1893b4 0%, var(--accent) 55%, var(--glow-hi) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
 :root[data-theme="light"] .hero-glow::before {
   background: radial-gradient(circle, rgba(47, 108, 235, 0.10) 0%, rgba(47, 108, 235, 0.04) 40%, transparent 70%);
 }
@@ -1819,13 +1827,10 @@ html.theme-anim::view-transition-new(root) {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
 :root[data-theme="light"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
-:root[data-theme="light"] .prose strong { color: var(--text-1); }
 :root[data-theme="light"] .prose code { background: rgba(16, 24, 40, 0.06); }
 :root[data-theme="light"] .prose pre .code-head { background: rgba(16, 24, 40, 0.03); }
 :root[data-theme="light"] .copy-btn:hover { background: rgba(16, 24, 40, 0.05); }
-:root[data-theme="light"] .prose pre code { color: #3a4149; }
 :root[data-theme="light"] .prof-lv2 {
-  color: #1e56c8;
   background: rgba(47, 108, 235, 0.08);
   border-color: rgba(47, 108, 235, 0.25);
 }
