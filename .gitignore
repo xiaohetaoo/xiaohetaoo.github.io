@@ -3,6 +3,7 @@ _gen_novel.py
 posts/_novel_shell.html
 _shots/
 _edge-tmp*/
+_edge-tmp[0-9]*/
 desktop.ini
 Thumbs.db
 _edge-live-tmp/
