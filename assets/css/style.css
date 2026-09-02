@@ -2229,17 +2229,13 @@ html.theme-anim::view-transition-new(root) {
     margin: -6px -6px;
   }
 
-  /* 导航只显示 文章 + 项目 文字链接（去联系、去 GitHub），其余 nav-links 子元素隐藏 */
+  /* 导航显示 文章 + 项目 + 联系 3 个文字链接，GitHub 整条隐藏 */
   .nav-links {
     gap: 2px;
   }
   .nav-links a {
     padding: 8px 12px;
     font-size: 13.5px;
-  }
-  /* "联系" 隐藏：精确属性选择，跨 archive/projects/articles 一致 */
-  .nav-links a[href*="#contact"] {
-    display: none;
   }
   /* GitHub 入口（.nav-cta）整条隐藏 */
   .nav-links > a.nav-cta,
@@ -2261,9 +2257,11 @@ html.theme-anim::view-transition-new(root) {
     margin-left: 2px;
   }
 
-  /* nav-search 展开：把 nav-links 折叠让位 */
+  /* nav-search 展开：3 个文字链接 + 主题按钮 都让位（避免 100vw 装不下），
+     整个 nav-links 折叠让搜索框从 brand 右缘扩到屏右 */
   .nav-search { margin-left: 2px; }
-  .nav-links.nav-search-open > a:not(.nav-search) {
+  .nav-links.nav-search-open > a:not(.nav-search),
+  .nav-links.nav-search-open .theme-toggle {
     opacity: 0;
     pointer-events: none;
     transform: scaleX(0);
