@@ -2282,9 +2282,14 @@ html.theme-anim::view-transition-new(root) {
     padding: 0;
     overflow: hidden;
   }
-  .nav-search.open { width: calc(100vw - 18px - 40px); }
+  .nav-search.open {
+    /* nav-inner 内部可用宽 = 100vw - 24*2 (container padding) - 44 (brand) - 8 (右侧留白)
+       = 100vw - 100px。比旧版 -58px 窄一些，搜索框不会溢出到屏外 */
+    flex: 0 0 calc(100vw - 100px);
+    width: calc(100vw - 100px);
+  }
   .nav-search.open .nav-search-input { width: 100%; }
-  .nav-search-results { width: calc(100vw - 36px); right: 18px; }
+  .nav-search-results { width: calc(100vw - 100px); right: 50px; }
 
   /* 窄屏 placeholder 用更短字号避免截断 */
   .nav-search.open .nav-search-input {
