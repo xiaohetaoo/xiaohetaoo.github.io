@@ -2247,6 +2247,7 @@ html.theme-anim::view-transition-new(root) {
   .nav-links a {
     padding: 8px 12px;
     font-size: 13.5px;
+    white-space: nowrap;  /* 窄屏下禁止"文章"等两字竖排换行 */
   }
   /* GitHub 入口（.nav-cta）整条隐藏 */
   .nav-links > a.nav-cta,
@@ -2268,28 +2269,85 @@ html.theme-anim::view-transition-new(root) {
     margin-left: 2px;
   }
 
-  /* nav-search 展开：3 个文字链接 + 主题按钮 都让位（避免 100vw 装不下），
-     整个 nav-links 折叠让搜索框从 brand 右缘扩到屏右 */
+  /* ≤640 移动端：手机端全局搜索用「下拉式」交互 —— 点放大镜后，搜索面板从 nav
+     下方往下弹出。面板 + 背景都用毛玻璃质感，不画死背景色，靠半透明叠加 blur。
+     跟桌面端的"原地展开"路径分开。 */
   .nav-search { margin-left: 2px; }
+  /* 让位元素在 ≤640 直接从 flex 流中抽出（display: none），不参与 nav 布局，
+     避免之前的 transform: scaleX(0) + width: 0 把链接挤成竖排 */
   .nav-links.nav-search-open > a:not(.nav-search),
   .nav-links.nav-search-open .theme-toggle,
   .nav-links.nav-search-open .key-toggle {
+    display: none;
+  }
+  /* 桌面端 .nav-search.open 仍走原 600px 展开规则；移动端则在 JS 里跳过 .open，
+     转而给 .nav 加 .nav-search-mobile-open 触发下拉面板（避免污染桌面端） */
+
+  /* ≤640 下拉式搜索面板：nav-search-results 浮层在移动端从 nav 下方下拉。
+     毛玻璃质感：半透明 + backdrop-filter blur，无纯背景色。 */
+  .nav-search-results {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    max-height: calc(100vh - 64px);
+    /* 毛玻璃：半透明 + backdrop-filter blur。backdrop-filter 只模糊 panel 后的 main 内容，
+       panel 自身子元素（input、list、cards）保持清晰。 */
+    background: color-mix(in srgb, var(--bg-panel) 65%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+    border: none;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
+    padding: 16px;
+    transform: translateY(calc(-100vh + 64px));
     opacity: 0;
     pointer-events: none;
-    transform: scaleX(0);
-    width: 0;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+    transition: transform 0.26s var(--ease-out), opacity 0.26s var(--ease-out);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
-  .nav-search.open {
-    /* nav-inner 内部可用宽 = 100vw - 24*2 (container padding) - 44 (brand) - 8 (右侧留白)
-       = 100vw - 100px。比旧版 -58px 窄一些，搜索框不会溢出到屏外 */
-    flex: 0 0 calc(100vw - 100px);
-    width: calc(100vw - 100px);
+  /* 面板内 .reveal 卡片直接显示（不进滚动进场动画 —— 面板是 fixed 不会触发 IntersectionObserver） */
+  .nav-search-results .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
   }
-  .nav-search.open .nav-search-input { width: 100%; }
-  .nav-search-results { width: calc(100vw - 100px); right: 50px; }
+  .nav-search-results.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* 移动端下拉面板顶部的搜索框（毛玻璃面板内的输入框） */
+  .nav-search-results > .nav-search-mobile-input {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    font-size: 16px;  /* 防 iOS focus zoom */
+    color: var(--text-1);
+    background: rgba(255, 255, 255, 0.06);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xs);
+    padding: 12px 14px 12px 44px;
+    margin: 0 0 12px;
+    outline: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'/><path d='m21 21-4.3-4.3'/></svg>");
+    background-repeat: no-repeat;
+    background-position: 14px center;
+    background-size: 16px 16px;
+  }
+  .nav-search-results > .nav-search-mobile-input:focus {
+    border-color: var(--accent-border);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  /* 移动端不需要单独遮罩 —— 面板本身已经覆盖剩余屏幕 + 毛玻璃模糊 */
+  .nav-search-mobile-backdrop { display: none; }
 
   /* 窄屏 placeholder 用更短字号避免截断 */
   .nav-search.open .nav-search-input {

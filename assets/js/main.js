@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260901j";
+  var DATA_VER = "20260901k";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1190,6 +1190,18 @@
     var panel = wrap.querySelector(".nav-search-results");
     if (!btn || !input || !panel) return;
 
+    // placeholder 按视口切：≤640 短版（屏窄放不下长文案），>640 保留长版
+    var longPH = input.placeholder;  // HTML 默认长版
+    var shortPH = "搜索";
+    function syncPlaceholder() {
+      input.placeholder = window.matchMedia("(max-width: 640px)").matches ? shortPH : longPH;
+    }
+    syncPlaceholder();
+    // resize 监听（手机旋转/PC 拖窗时跟随）
+    var mq = window.matchMedia("(max-width: 640px)");
+    if (mq.addEventListener) mq.addEventListener("change", syncPlaceholder);
+    else if (mq.addListener) mq.addListener(syncPlaceholder);  // 老 Safari 兼容
+
     // 文章页在 /posts/ 子目录，卡片和项目页 href 要加 ../
     var root = window.location.pathname.indexOf("/posts/") !== -1 ? "../" : "";
     var MAX_POSTS = 4;
@@ -1262,6 +1274,11 @@
 
     function setOpen(next, keepPanel) {
       open = !!next;
+      // 移动端（≤640）走下拉式：跳到独立分支，不污染桌面端
+      if (window.matchMedia("(max-width: 640px)").matches) {
+        setMobileOpen(next, keepPanel);
+        return;
+      }
       wrap.classList.toggle("open", open);
       // 展开时让同排的页面链接（文章/项目/联系）让位，给搜索框腾宽度
       var nav = wrap.closest("nav");
@@ -1292,6 +1309,106 @@
           panel.innerHTML = "";
         }
       }
+    }
+
+    // 移动端（≤640）下拉式：点放大镜 → 浮层从 nav 下方下拉，含 input 副本 + 实时结果。
+    // 原 nav 里的 44px 按钮始终保持，input 仍在 nav 里但被下拉面板覆盖视觉。
+    function getMobileList() {
+      // results 内容放在 panel 内一个固定的子 div 里，mobile input 永远不删
+      var list = panel.querySelector(".nav-search-mobile-list");
+      if (!list) {
+        list = document.createElement("div");
+        list.className = "nav-search-mobile-list";
+        panel.appendChild(list);
+      }
+      return list;
+    }
+    function setMobileOpen(next, keepPanel) {
+      open = !!next;
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      input.setAttribute("aria-expanded", open ? "true" : "false");
+      var main = document.querySelector("main");
+      if (main) main.toggleAttribute("inert", open);
+      // nav 加 .nav-search-open 触发 ≤640 让位元素 display:none
+      var nav = wrap.closest("nav");
+      if (nav) nav.classList.toggle("nav-search-open", open);
+      // 用 .open class 触发 CSS translateY/opacity 动画
+      panel.classList.toggle("open", open);
+      // panel 默认有 hidden 属性会 display:none 盖住动画，先清掉
+      panel.hidden = false;
+      if (open) {
+        // 首次打开时插入 mobile input
+        if (!panel.querySelector(".nav-search-mobile-input")) {
+          var mobileInput = document.createElement("input");
+          mobileInput.type = "search";
+          mobileInput.className = "nav-search-mobile-input";
+          // placeholder 跟 nav 里的 input 保持一致（nav input 的 placeholder 已被 syncPlaceholder 切过）
+          mobileInput.placeholder = input.placeholder;
+          mobileInput.autocomplete = "off";
+          mobileInput.setAttribute("aria-label", "搜索");
+          mobileInput.addEventListener("input", function () {
+            renderResultsMobile(mobileInput.value);
+          });
+          mobileInput.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") { setOpen(false); return; }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              var focused = getMobileList().querySelector(".focused");
+              if (!focused) {
+                var cards = getMobileList().querySelectorAll(".post-card, .nav-project-card");
+                focused = cards[0];
+              }
+              if (focused) focused.click();
+            }
+          });
+          panel.insertBefore(mobileInput, panel.firstChild);
+        }
+        // 等下拉出现后聚焦 mobile input
+        setTimeout(function () {
+          var mi = panel.querySelector(".nav-search-mobile-input");
+          if (mi && open) mi.focus({ preventScroll: true });
+        }, 230);
+      } else {
+        // 关闭：清空内容，等动画结束后再 hidden
+        var mi2 = panel.querySelector(".nav-search-mobile-input");
+        if (mi2) mi2.value = "";
+        getMobileList().innerHTML = "";
+        // 收回动画结束后再 hidden（避免动画过程中 display: none 突然消失）
+        setTimeout(function () {
+          if (!open) panel.hidden = true;
+        }, 230);
+      }
+    }
+
+    // 移动端版本 renderResults：把结果写进 panel 内的子 div，不动 mobile input
+    function renderResultsMobile(query) {
+      var q = (query || "").trim().toLowerCase();
+      var list = getMobileList();
+      if (!q) {
+        list.innerHTML = "";
+        return;
+      }
+      Promise.all([loadPosts(), loadProjects()])
+        .then(function (res) {
+          var posts = sortPosts(res[0]).filter(function (p) { return postMatches(p, q); }).slice(0, MAX_POSTS);
+          var projects = sortProjects(res[1]).filter(function (p) { return projectMatches(p, q); }).slice(0, MAX_PROJECTS);
+          if (!open) return;
+          var html = "";
+          if (posts.length || projects.length) {
+            html += '<p class="search-hint">找到 <b>' + posts.length + "</b> 篇文章 · <b>" + projects.length + "</b> 个项目与「" + esc(query.trim()) + "」相关</p>";
+            if (posts.length) {
+              html += '<p class="nav-search-label">$ posts</p>';
+              html += posts.map(function (p, i) { return postCardHtml(p, i, root); }).join("");
+            }
+            if (projects.length) {
+              html += '<p class="nav-search-label">$ projects</p>';
+              html += projects.map(navProjectHtml).join("");
+            }
+          } else {
+            html = '<p class="search-empty">没有找到相关内容，换个关键词试试？</p>';
+          }
+          list.innerHTML = html;
+        });
     }
 
     function renderResults(query) {
