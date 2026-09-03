@@ -1194,7 +1194,11 @@
     var longPH = input.placeholder;  // HTML 默认长版
     var shortPH = "搜索";
     function syncPlaceholder() {
-      input.placeholder = window.matchMedia("(max-width: 640px)").matches ? shortPH : longPH;
+      var isMobile = window.matchMedia("(max-width: 640px)").matches;
+      input.placeholder = isMobile ? shortPH : longPH;
+      // 同步移动端下拉面板里 mobile input 的 placeholder（旋转屏幕时跟随）
+      var mi = panel.querySelector(".nav-search-mobile-input");
+      if (mi) mi.placeholder = isMobile ? shortPH : longPH;
     }
     syncPlaceholder();
     // resize 监听（手机旋转/PC 拖窗时跟随）
@@ -1207,6 +1211,7 @@
     var MAX_POSTS = 4;
     var MAX_PROJECTS = 3;
     var debounce = null;
+    var mobileDebounce = null;  // 移动端下拉面板 mobile input 的防抖 timer
     var open = false;
     var optionSeq = 0;
 
@@ -1221,8 +1226,37 @@
       // 面板宽 = input 宽，跟随展开/收起与窄屏响应（窄屏下 input 收缩，面板也收缩）
       panel.style.width = r.width + "px";
     }
+    // 清掉 desktop 留下的 panel inline style（width/right），让 ≤640 媒体查询
+    // 的 width: 100vw + left: 0 接管。避免从桌面缩到手机后 panel 残留 540px。
+    function clearPanelInline() {
+      panel.style.width = "";
+      panel.style.right = "";
+    }
+    var viewportMq = window.matchMedia("(max-width: 640px)");
+    // 跨断点切换：< → > 时清 inline style 让桌面 positionPanel 接管；> → < 时清
+    // inline style 让 mobile CSS 接管。避免残留。
+    var lastIsMobile = viewportMq.matches;
+    viewportMq.addEventListener("change", function () {
+      var isMobile = viewportMq.matches;
+      if (isMobile !== lastIsMobile) {
+        clearPanelInline();
+        lastIsMobile = isMobile;
+        if (open && !isMobile) {
+          // 切到桌面，input 还在 0.22s 宽度过渡中。过渡跑完再算 panel 位置。
+          setTimeout(function () {
+            if (open && !viewportMq.matches) positionPanel();
+          }, 250);
+        }
+      }
+    });
     window.addEventListener("resize", function () {
-      if (open) positionPanel();
+      if (!open) return;
+      if (viewportMq.matches) {
+        // mobile 模式：CSS 已用 100vw 撑满，清掉 inline style 让它每次自动重算
+        clearPanelInline();
+      } else {
+        positionPanel();
+      }
     });
     function hitArea(target) {
       // 输入框/按钮在 wrap 里，结果面板在 body 下，两处都算"点在搜索上"
@@ -1274,20 +1308,24 @@
 
     function setOpen(next, keepPanel) {
       open = !!next;
+      var isMobile = window.matchMedia("(max-width: 640px)").matches;
       // 移动端（≤640）走下拉式：跳到独立分支，不污染桌面端
-      if (window.matchMedia("(max-width: 640px)").matches) {
+      if (isMobile) {
         setMobileOpen(next, keepPanel);
         return;
       }
-      wrap.classList.toggle("open", open);
-      // 展开时让同排的页面链接（文章/项目/联系）让位，给搜索框腾宽度
-      var nav = wrap.closest("nav");
-      if (nav) nav.classList.toggle("nav-search-open", open);
+      // ===== 公共部分：桌面 + 移动都用 =====
+      // 1) ARIA 状态
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       input.setAttribute("aria-expanded", open ? "true" : "false");
-      // 用 <main inert> 把主内容锁住，搜索浮层内键盘焦点自然不会逃出去（免费 focus trap）
+      // 2) 主内容 inert 锁（免费 focus trap）
       var main = document.querySelector("main");
       if (main) main.toggleAttribute("inert", open);
+      // 3) nav 让位元素 class（≤640 媒体查询让它们 display:none）
+      var nav = wrap.closest("nav");
+      if (nav) nav.classList.toggle("nav-search-open", open);
+      // ===== 桌面特有部分 =====
+      wrap.classList.toggle("open", open);
       if (open) {
         // 没输入内容前不显示空面板（悬空一个圆角框很怪），打了字由 renderResults 展开
         panel.hidden = input.value.trim() === "";
@@ -1325,13 +1363,17 @@
     }
     function setMobileOpen(next, keepPanel) {
       open = !!next;
+      // ===== 公共部分：与 setOpen 桌面分支共享 =====
+      // 1) ARIA 状态
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       input.setAttribute("aria-expanded", open ? "true" : "false");
+      // 2) 主内容 inert 锁
       var main = document.querySelector("main");
       if (main) main.toggleAttribute("inert", open);
-      // nav 加 .nav-search-open 触发 ≤640 让位元素 display:none
+      // 3) nav 让位元素 class
       var nav = wrap.closest("nav");
       if (nav) nav.classList.toggle("nav-search-open", open);
+      // ===== 移动特有部分 =====
       // 用 .open class 触发 CSS translateY/opacity 动画
       panel.classList.toggle("open", open);
       // panel 默认有 hidden 属性会 display:none 盖住动画，先清掉
@@ -1347,7 +1389,11 @@
           mobileInput.autocomplete = "off";
           mobileInput.setAttribute("aria-label", "搜索");
           mobileInput.addEventListener("input", function () {
-            renderResultsMobile(mobileInput.value);
+            // 防抖：避免每个键击都 fetch + filter
+            clearTimeout(mobileDebounce);
+            mobileDebounce = setTimeout(function () {
+              renderResultsMobile(mobileInput.value);
+            }, 120);
           });
           mobileInput.addEventListener("keydown", function (e) {
             if (e.key === "Escape") { setOpen(false); return; }
@@ -1379,6 +1425,24 @@
         }, 230);
       }
     }
+
+    // 移动端下拉面板：点击 input/list/结果卡片之外的位置（即 panel 自身的"空白"
+    // 比如 panel 的 padding 区域、两个 list 之间的空隙）时关闭下拉。
+    // 桌面端走 document click 监听，hitArea 区分内外。mobile 模式下面板占满屏，
+    // 没"外部"可点，所以监听 panel 内的"非交互区域"关闭。
+    panel.addEventListener("click", function (e) {
+      if (!viewportMq.matches) return;  // 桌面端不参与
+      if (!open) return;
+      var t = e.target;
+      // 点击 mobile input / 关闭按钮 / 提交按钮 / 结果卡片 / 链接 → 不关
+      if (t.closest(".nav-search-mobile-input")) return;
+      if (t.closest(".post-card")) return;
+      if (t.closest(".nav-project")) return;
+      if (t.closest(".search-hint")) return;
+      if (t.closest(".nav-search-label")) return;
+      // 其他空白区域：关
+      setOpen(false);
+    });
 
     // 移动端版本 renderResults：把结果写进 panel 内的子 div，不动 mobile input
     function renderResultsMobile(query) {
@@ -1480,32 +1544,33 @@
       }
     });
 
-    // 点外部关闭（点面板/按钮/输入框自己时不关）；
-    // 主题切换也不关——切明暗不该收起搜索框、更不该把页面链接放出来
+    // 合并的 document click handler：
+    //  1) 点 panel/按钮/input 自身 → 命中 hitArea，return
+    //  2) 主题按钮点击 → 不关（切明暗不该收起搜索）
+    //  3) 点链接（a[href]）：在 panel 内的链接（结果卡片）只收输入框，panel 保留
+    //     用于共享元素过渡；其它链接 → 整层关
+    //  4) 其它外部点击 → 关
     document.addEventListener("click", function (e) {
       if (!open) return;
-      if (hitArea(e.target)) return;
-      if (e.target.closest && e.target.closest(".theme-toggle")) return;
+      var t = e.target;
+      // 主题按钮不触发关
+      if (t.closest && t.closest(".theme-toggle")) return;
+      // 点 panel/wrap/input 内部：不关
+      if (hitArea(t)) {
+        // panel 内的链接：保留 panel 用于共享元素过渡，只清输入
+        var a = t.closest && t.closest("a[href]");
+        if (a) {
+          wrap.classList.remove("open");
+          var nav = wrap.closest("nav");
+          if (nav) nav.classList.remove("nav-search-open");
+          btn.setAttribute("aria-expanded", "false");
+          input.setAttribute("aria-expanded", "false");
+        }
+        return;
+      }
+      // 外部点击：关整个
       setOpen(false);
     });
-
-    // 点击链接时收起：面板外的链接整层关闭；面板内的结果卡片只收输入框、
-    // 面板留在渲染树里（open 保持 true），旧页面快照拍得到卡片，共享元素过渡不丢；
-    // 万一跳转被取消，点外部/再点按钮仍会正常收起
-    document.addEventListener("click", function (e) {
-      if (!open) return;
-      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
-      if (!a) return;
-      if (hitArea(a)) {
-        wrap.classList.remove("open");
-        var nav = wrap.closest("nav");
-        if (nav) nav.classList.remove("nav-search-open");
-        btn.setAttribute("aria-expanded", "false");
-        input.setAttribute("aria-expanded", "false");
-      } else {
-        setOpen(false);
-      }
-    }, true);
 
     // Ctrl+K / Cmd+K 全局快捷键；输入框/富文本编辑中不抢（P1 守卫）
     document.addEventListener("keydown", function (e) {
@@ -1522,10 +1587,11 @@
      不区分大小写、不 trim、完全匹配。
      数据明文常量（彩蛋属性 > 加密），存放在源码里被人看到也是预期行为。 */
   (function () {
-    // 钥匙 IIFE 在 main.js 同步加载时，HTML 里 key-modal 节点还在 main.js script
-    // 之后（modal 注入位置在 </body> 前）。同步执行 getElementById("key-modal") 会
-    // 拿到 null，所以延后到 DOMContentLoaded 再跑。
-    var init = function () {
+    // 钥匙弹窗主体：所有 DOM 绑定 / 事件 / 渲染逻辑都在 init() 里。
+    // 必须延后到 DOMContentLoaded 后跑：main.js script 同步加载时，HTML
+    // 里 key-modal 节点（注入在 </body> 前）还没解析完，getElementById 拿 null。
+    // 兜底：如果 main.js 加载时已 DCL，直接跑。
+    function init() {
     // K：口令 → V：显示内容。键为小写匹配键，原口令原样用于回显。
     var KEYS = [
       { k: "施瑶涵",         v: "宝贝你好呀awa" },
@@ -1659,7 +1725,7 @@
     });
     // 初始占位
     renderResult("");
-    };
+    }
     // 等 DOMContentLoaded 后 modal 节点才被解析到（main.js script 之前只有 key-toggle，
     // key-modal 是在 </body> 前注入的）。如果已 DCL 则直接跑。
     if (document.readyState === "loading") {
