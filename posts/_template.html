@@ -85,7 +85,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="../assets/img/favicon-64.png" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20260901h" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260901i" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -121,6 +121,7 @@ var _hmt = _hmt || [];
           <input class="nav-search-input" type="search" placeholder="搜索文章 / 项目：标题 / 简介 / 标签…" autocomplete="off" tabindex="-1" role="combobox" aria-expanded="false" aria-controls="nav-search-results" aria-autocomplete="list" />
           <div class="nav-search-results" id="nav-search-results" role="listbox" aria-label="搜索结果" hidden></div>
         </div>
+        <button class="key-toggle" id="key-toggle" type="button" aria-label="口令彩蛋" aria-expanded="false" aria-controls="key-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 8.65-8.65"/><path d="m18 5 2 2"/><path d="m15 8 2 2"/></svg></button>
         <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换深浅主题">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
         </button>
@@ -223,6 +224,32 @@ console.log("hello xiaohetao");</code></pre>
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20260901h"></script>
+  <script src="../assets/js/main.js?v=20260901i"></script>
+
+  <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
+    <div class="key-modal-backdrop" data-key-close></div>
+    <div class="key-modal-panel" role="document">
+      <div class="key-modal-head">
+        <span class="key-modal-title" id="key-modal-title">口令彩蛋</span>
+        <button class="key-modal-close" type="button" aria-label="关闭" data-key-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="key-modal-body">
+        <label class="key-modal-field">
+          <span class="key-modal-label">输入口令</span>
+          <span class="key-modal-input-row">
+            <input id="key-modal-input" type="text" placeholder="请输入口令" autocomplete="off" spellcheck="false" />
+            <button class="key-modal-submit" id="key-modal-submit" type="button" aria-label="提交口令">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14"/>
+                <path d="m13 5 7 7-7 7"/>
+              </svg>
+            </button>
+          </span>
+        </label>
+        <div class="key-modal-result" id="key-modal-result" aria-live="polite"></div>
+        
+      </div>
+    </div>
+  </div>
 </body>
 </html>

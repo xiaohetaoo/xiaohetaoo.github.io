@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260901h";
+  var DATA_VER = "20260901i";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1398,6 +1398,153 @@
       e.preventDefault();
       setOpen(!open);
     });
+  })();
+
+  /* ---------- 4.5. 口令彩蛋弹窗 ----------
+     设计：点击钥匙按钮 → 弹窗打开 → 输入口令 → 命中输出"冒号后"内容；
+     不区分大小写、不 trim、完全匹配。
+     数据明文常量（彩蛋属性 > 加密），存放在源码里被人看到也是预期行为。 */
+  (function () {
+    // 钥匙 IIFE 在 main.js 同步加载时，HTML 里 key-modal 节点还在 main.js script
+    // 之后（modal 注入位置在 </body> 前）。同步执行 getElementById("key-modal") 会
+    // 拿到 null，所以延后到 DOMContentLoaded 再跑。
+    var init = function () {
+    // K：口令 → V：显示内容。键为小写匹配键，原口令原样用于回显。
+    var KEYS = [
+      { k: "施瑶涵",   v: "宝贝你好呀awa" },
+      { k: "睡一会",   v: "宝贝你好呀awa" },
+      { k: "syh",      v: "宝贝你好呀awa" },
+      { k: "你该罚",   v: "你该罚！！！" },
+      { k: "蔡徐坤",   v: "小黑子！" },
+      { k: "cxk",      v: "小黑子！" },
+      { k: "平阳中学",  v: "凤山之麓，弦溪之东，抗战时期诞生我平中~" },
+      { k: "744454853", v: "生日快乐！" },
+      { k: "小核桃",    v: "找我什么事呀awa" },
+      { k: "小核桃哦",  v: "哦？找我什么事呀awa" },
+      { k: "小核桃哦哦", v: "哦哦？！你干嘛~~" }
+    ];
+
+    var btn = document.getElementById("key-toggle");
+    var modal = document.getElementById("key-modal");
+    if (!btn || !modal) return;  // 老页面没有弹窗节点直接退出（安全）
+    var panel = modal.querySelector(".key-modal-panel");
+    var input = document.getElementById("key-modal-input");
+    var result = document.getElementById("key-modal-result");
+    var submit = document.getElementById("key-modal-submit");
+    var lastFocus = null;
+
+    // 查询：原样 trim 比较（去首尾空白以容忍复制带换行的场景），但不折叠内部空白
+    function lookup(raw) {
+      var q = String(raw || "").trim();
+      if (!q) return null;
+      var ql = q.toLowerCase();
+      for (var i = 0; i < KEYS.length; i++) {
+        if (KEYS[i].k.toLowerCase() === ql) return KEYS[i];
+      }
+      return null;
+    }
+
+    function renderResult(raw) {
+      var q = String(raw || "").trim();
+      if (!q) {
+        result.textContent = "在上方输入口令，回车查看结果";
+        result.setAttribute("data-state", "empty");
+        return;
+      }
+      var hit = lookup(raw);
+      if (hit) {
+        result.textContent = hit.v;
+        result.setAttribute("data-state", "hit");
+      } else {
+        result.textContent = "没有匹配的口令";
+        result.setAttribute("data-state", "miss");
+      }
+    }
+
+    function setOpen(next) {
+      var willOpen = !!next;
+      if (willOpen) {
+        lastFocus = document.activeElement;
+        modal.hidden = false;
+        // 把主内容锁住，键盘焦点不会逃到背后的 nav 链接（免费 focus trap）
+        var main = document.querySelector("main");
+        if (main) main.setAttribute("inert", "");
+        btn.setAttribute("aria-expanded", "true");
+        // 下一帧聚焦，等动画跑一拍
+        requestAnimationFrame(function () {
+          input.focus({ preventScroll: true });
+          input.select();
+        });
+        renderResult(input.value);
+      } else {
+        modal.hidden = true;
+        var main2 = document.querySelector("main");
+        if (main2) main2.removeAttribute("inert");
+        btn.setAttribute("aria-expanded", "false");
+        // 清空状态，避免下次打开残留旧结果
+        input.value = "";
+        renderResult("");
+        // 把焦点还给触发按钮（无障碍约定）
+        if (lastFocus && typeof lastFocus.focus === "function") {
+          try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
+        } else {
+          try { btn.focus({ preventScroll: true }); } catch (e) {}
+        }
+      }
+    }
+
+    btn.addEventListener("click", function () {
+      setOpen(modal.hidden);
+    });
+    // 任何带 [data-key-close] 的元素：背景遮罩、关闭按钮
+    modal.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t && t.closest && t.closest("[data-key-close]")) {
+        setOpen(false);
+      }
+    });
+    // 不做实时反馈：input 只更新 value，结果只在按 Enter / 点提交按钮后渲染。
+    // （设计要求：必须显式确认才显示结果，避免边输入边闪。）
+    // 提交按钮：渲染一次结果
+    function submitOnce() {
+      renderResult(input.value);
+      input.focus({ preventScroll: true });
+    }
+    if (submit) {
+      submit.addEventListener("click", function () {
+        submitOnce();
+      });
+    }
+    // Enter 键提交（不抢 Shift+Enter / IME 组合键）
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        submitOnce();
+      }
+    });
+    // 弹窗内 Esc 关闭；Enter 不阻止默认（用户按 Enter 也许想换行？这里没换行，简单允许默认）
+    modal.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpen(false);
+      }
+    });
+    // 全局兜底：弹窗打开时按 Esc 也关（防止焦点跑到 nav）
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hidden) {
+        setOpen(false);
+      }
+    });
+    // 初始占位
+    renderResult("");
+    };
+    // 等 DOMContentLoaded 后 modal 节点才被解析到（main.js script 之前只有 key-toggle，
+    // key-modal 是在 </body> 前注入的）。如果已 DCL 则直接跑。
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init, { once: true });
+    } else {
+      init();
+    }
   })();
 
   /* ---------- 5. 页脚年份 ---------- */

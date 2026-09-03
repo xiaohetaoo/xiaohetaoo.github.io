@@ -1780,7 +1780,8 @@ html.theme-anim::view-transition-new(root) {
   transition: opacity 0.25s var(--ease-out) 0.22s, transform 0.22s var(--ease-out) 0.22s;
 }
 
-.theme-toggle {
+.theme-toggle,
+.key-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1795,14 +1796,23 @@ html.theme-anim::view-transition-new(root) {
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.key-toggle:hover {
   color: var(--text-1);
   border-color: var(--accent-border);
 }
 
-.theme-toggle svg {
+.theme-toggle svg,
+.key-toggle svg {
   width: 16px;
   height: 16px;
+}
+
+/* 钥匙按钮：展开态给一个轻微高亮，提示"已开" */
+.key-toggle[aria-expanded="true"] {
+  color: var(--text-1);
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
 }
 
 /* 置顶徽标放进项目卡片右上角日期旁时的间距 */
@@ -1841,7 +1851,8 @@ html.theme-anim::view-transition-new(root) {
 :root[data-theme="light"] .nav { background: rgba(245, 246, 248, 0.82); }
 :root[data-theme="light"] .nav-links a:hover { background: rgba(16, 24, 40, 0.06); }
 :root[data-theme="light"] .nav-links a.nav-cta { background: rgba(16, 24, 40, 0.04); }
-:root[data-theme="light"] .theme-toggle { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .theme-toggle,
+:root[data-theme="light"] .key-toggle { background: rgba(16, 24, 40, 0.04); }
 :root[data-theme="light"] .nav-search-btn { background: rgba(16, 24, 40, 0.04); }
 :root[data-theme="light"] .nav-search.open .nav-search-input { background: rgba(16, 24, 40, 0.05); }
 :root[data-theme="light"] .nav-search.open .nav-search-input:focus { background: rgba(16, 24, 40, 0.07); }
@@ -2261,7 +2272,8 @@ html.theme-anim::view-transition-new(root) {
      整个 nav-links 折叠让搜索框从 brand 右缘扩到屏右 */
   .nav-search { margin-left: 2px; }
   .nav-links.nav-search-open > a:not(.nav-search),
-  .nav-links.nav-search-open .theme-toggle {
+  .nav-links.nav-search-open .theme-toggle,
+  .nav-links.nav-search-open .key-toggle {
     opacity: 0;
     pointer-events: none;
     transform: scaleX(0);
@@ -2415,4 +2427,210 @@ html.nav-back:not(.theme-anim)::view-transition-new(root) {
     animation-duration: 0.01s !important;
     animation-delay: 0s !important;
   }
+}
+
+/* ---------- 口令彩蛋弹窗 ---------- */
+/* 全屏遮罩 + 居中面板：z-index 220（高于 nav 的 200 和 nav-search-results 的 101） */
+.key-modal[hidden] { display: none; }
+
+.key-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  /* 自身不进场动画，让 backdrop 和 panel 自己表演 */
+}
+
+.key-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: key-modal-fade 0.18s var(--ease-out) both;
+  cursor: pointer;
+}
+
+.key-modal-panel {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+  padding: 20px 22px 22px;
+  animation: key-modal-pop 0.22s var(--ease-out) both;
+}
+
+.key-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.key-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: 0.01em;
+}
+
+.key-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+.key-modal-close:hover {
+  color: var(--text-1);
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+}
+.key-modal-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.key-modal-field {
+  display: block;
+  margin: 0 0 12px;
+}
+.key-modal-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+.key-modal-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+#key-modal-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-1);
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+.key-modal-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-xs);
+  background: var(--accent-dim);
+  color: var(--text-1);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+.key-modal-submit:hover {
+  background: var(--accent);
+  color: var(--btn-on-primary);
+  border-color: var(--accent);
+}
+.key-modal-submit:active {
+  transform: scale(0.96);
+}
+.key-modal-submit svg {
+  width: 16px;
+  height: 16px;
+}
+#key-modal-input:focus {
+  border-color: var(--accent-border);
+  background: var(--bg-panel);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.key-modal-result {
+  min-height: 24px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-1);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.key-modal-result[data-state="empty"] {
+  color: var(--text-3);
+  font-style: italic;
+}
+.key-modal-result[data-state="miss"] {
+  color: var(--text-3);
+}
+.key-modal-result[data-state="hit"] {
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.key-modal-hint {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+@keyframes key-modal-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes key-modal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 浅色主题：遮罩稍浅，阴影更柔和 */
+:root[data-theme="light"] .key-modal-backdrop {
+  background: rgba(16, 24, 40, 0.32);
+}
+:root[data-theme="light"] .key-modal-panel {
+  box-shadow: 0 20px 48px rgba(16, 24, 40, 0.20);
+}
+
+/* 减弱动效：弹窗直接呈现 */
+@media (prefers-reduced-motion: reduce) {
+  .key-modal-backdrop,
+  .key-modal-panel {
+    animation: none !important;
+  }
+}
+
+/* ≤640：弹窗贴边但不顶满 */
+@media (max-width: 640px) {
+  .key-modal { padding: 12px; }
+  .key-modal-panel {
+    max-width: none;
+    border-radius: var(--radius-md, 14px);
+  }
+  #key-modal-input { font-size: 16px; }  /* 防 iOS focus zoom */
 }
