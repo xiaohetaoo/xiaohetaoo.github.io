@@ -22,6 +22,36 @@
     "pinned": true
   },
   {
+    "slug": "illegal-sites-report",
+    "title": "非法网站打击公示",
+    "date": "2026-09-04",
+    "excerpt": "小核桃工作室致力于响应国家清朗网络行动，坚决打击违法违规网站！",
+    "tags": [
+      "举报",
+      "查询码"
+    ]
+  },
+  {
+    "slug": "he-shi-numeral-pinyin-cipher",
+    "title": "核氏数字拼音中文加密法",
+    "date": "2026-09-04",
+    "excerpt": "初中课余研究的中文加密法，对发音进行加密",
+    "tags": [
+      "加密",
+      "介绍"
+    ]
+  },
+  {
+    "slug": "he-shi-structure-cipher",
+    "title": "核氏汉字结构加密法",
+    "date": "2026-09-04",
+    "excerpt": "高中课余研究的汉字加密法，对汉字结构进行加密",
+    "tags": [
+      "加密",
+      "介绍"
+    ]
+  },
+  {
     "slug": "jiangnan-forever",
     "title": "江南永存",
     "date": "2026-08-31",

@@ -1,5 +1,14 @@
 [
   {
+    "title": "地理标识",
+    "date": "2026-09-04",
+    "desc": "高中学校举办的地理标识设计比赛参赛作品，获一等奖，内涵自己揣摩awa，密码：xhto",
+    "tags": ["地理", "logo"],
+    "icon": "compass",
+    "linkText": "lanzoub.com ↗",
+    "href": "https://wwbau.lanzoub.com/iYA7o46m6o4h"
+  },
+  {
     "title": "粒子轨道可视化",
     "date": "2026-08-29",
     "desc": "原子轨道粒子动画，采用原生 Canvas，零依赖、60fps，就在本站首页。",
