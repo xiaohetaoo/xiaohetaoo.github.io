@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260901n";
+  var DATA_VER = "20260901o";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -119,6 +119,8 @@
 
   document.addEventListener("click", function (e) {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
+    // el 直接是 e.target（不是 closest('.something')）—— 这里只需要 Element 引用，
+    // 下面 el.closest() 在元素上调用天然有效；guard 是为 null / 非 Element 兜底
     var el = e.target && e.target.closest ? e.target : null;
     var deep = el ? el.closest(".all-posts-link[href], .all-projects-link[href]") : null;
     var backLink = null;
@@ -491,10 +493,14 @@
       }
     }
 
-    window.addEventListener("mousemove", function (e) {
-      dMouse.x = e.clientX;
-      dMouse.y = e.clientY;
-    }, { passive: true });
+    // dMouse mousemove：星尘块已受 !reducedMotion 守门；这里再守 !staticMode
+    // （截图/打印 static=1 时 dMouse 默认 (-9999, -9999) 永远不更新，listener 注册也无用）
+    if (!staticMode) {
+      window.addEventListener("mousemove", function (e) {
+        dMouse.x = e.clientX;
+        dMouse.y = e.clientY;
+      }, { passive: true });
+    }
 
     var dustResizeTimer = null;
     window.addEventListener("resize", function () {
@@ -1031,9 +1037,16 @@
       try { history.replaceState(null, "", "#" + id); } catch (e) {}
     });
 
-    // 滚动联动：进入视口顶部 30% 的章节高亮（避开 reveal 动画阶段，章节可能暂时 translateY 偏移）
-    // 滚动节流交给 rAF
-    if ("IntersectionObserver" in window) {
+    // 滚动联动：当前章节 = 距离视口顶部（0）最近、且 top ≤ 0 的那个 h2/h3
+    // （修复了 IO + 65% rootMargin 的两个老问题：
+    //   ① 滚到底时所有 h 都在 65% 下方 → 选不到 → 退化到选最后一项，但若 lastRect 还在屏幕下沿就高亮错
+    //   ② 滚到中部偏下时，可见区里只有最后一个 h 的底部 → 高亮跳到最后而非当前真正阅读的段
+    // 新算法不靠 IO 阈值，对每个 h 算 getBoundingClientRect().top：
+    //   - 全部 top > 0（未到第一个 h）：高亮第一个（页面顶端）
+    //   - 找到 top ≤ 0 且 |top| 最小（最贴近顶部、已滚过）：高亮它
+    //   - 全部 top ≤ 0（已滚过所有 h）：高亮最后一个（页面底端）
+    // rAF 节流，scroll 触发
+    if ("IntersectionObserver" in window || true) {
       var tocItems = Array.from(tocList.querySelectorAll(".toc-h"));
       var lastCurrent = null;
       var setCurrent = function (id) {
@@ -1047,25 +1060,37 @@
         var cur = tocList.querySelector(".toc-h.current");
         if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
       };
-      // 顶部时高亮第一个；底部时高亮最后一个
-      var visibleMap = {};
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) { visibleMap[e.target.id] = e.isIntersecting; });
-        // 选第一个"在视口上半部分内"的标题作为 current
-        var chosen = null;
+      var ticking = false;
+      var updateToc = function () {
+        ticking = false;
+        if (!headings.length) return;
+        // 阈值：h2/h3 离视口顶 0 最近即为当前；这里把"0"放宽到 NAV 下方一点点（64px），
+        // 避免"h 正好贴着 0 但还在 reveal 动画 translateY 偏移"导致短暂选错。
+        var THRESHOLD = 80;
+        var chosen = headings[0].id; // 默认第一个（页面顶端）
+        var bestTop = -Infinity;     // 记录"top 最接近 THRESHOLD 但不超过"的差值
+        var allPast = true;
         for (var i = 0; i < headings.length; i++) {
-          if (visibleMap[headings[i].id]) { chosen = headings[i].id; break; }
+          var top = headings[i].getBoundingClientRect().top;
+          if (top > THRESHOLD) { allPast = false; break; } // 还有 h 在屏幕下方 → 取已滚过里最靠下的
+          if (THRESHOLD - top > bestTop) {
+            bestTop = THRESHOLD - top;
+            chosen = headings[i].id;
+          }
         }
-        if (!chosen) {
-          // 顶部外：选第一个；底部外：选最后一个
-          var firstRect = headings[0].getBoundingClientRect();
-          var lastRect = headings[headings.length - 1].getBoundingClientRect();
-          if (lastRect.bottom < window.innerHeight) chosen = headings[headings.length - 1].id;
-          else if (firstRect.top > 0) chosen = headings[0].id;
-        }
-        if (chosen) setCurrent(chosen);
-      }, { rootMargin: "0px 0px -65% 0px", threshold: 0 });
-      headings.forEach(function (h) { io.observe(h); });
+        // 全部 h 都已滚过顶部（allPast=true 且完整走完循环）：chosen = 最后一个
+        if (allPast) chosen = headings[headings.length - 1].id;
+        setCurrent(chosen);
+      };
+      var onScrollToc = function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(updateToc);
+      };
+      window.addEventListener("scroll", onScrollToc, { passive: true });
+      window.addEventListener("resize", onScrollToc, { passive: true });
+      // 初始跑一次（首屏就显示正确高亮）
+      updateToc();
     }
   })();
 
