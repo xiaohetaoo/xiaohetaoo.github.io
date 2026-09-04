@@ -1295,13 +1295,6 @@ button {
   border: 1px solid transparent;
   transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
-@media (max-width: 640px) {
-  .copy-btn {
-    min-height: 44px;
-    padding: 12px 14px;
-  }
-}
-
 .copy-btn:hover {
   color: var(--text-1);
   border-color: var(--border-strong);
@@ -1549,6 +1542,9 @@ html.theme-anim::view-transition-new(root) {
   height: 44px; /* 44px 触摸目标 */
   margin-left: 4px;
   transition: width 0.22s var(--ease-out);
+  /* 锁定不被 flex 压缩：展开 0→600px 时 nav-inner 总宽超视口，flex 会把 .nav-search
+     实际渲染窄于 600px（input 浮在外面会显得被裁）。同钥匙/主题一起锁。 */
+  flex-shrink: 0;
 }
 .nav-search.open {
   width: 600px;
@@ -1793,6 +1789,10 @@ html.theme-anim::view-transition-new(root) {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-2);
   cursor: pointer;
+  /* 显式锁定不被 flex 压缩：nav-search 展开 0→600px 时 nav-inner 总宽
+     短暂超视口，flex 默认 min-width: auto 会把钥匙/主题按钮压窄。
+     锁定后按钮保持 44×44 完整正方形。 */
+  flex-shrink: 0;
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
@@ -2250,8 +2250,7 @@ html.theme-anim::view-transition-new(root) {
     white-space: nowrap;  /* 窄屏下禁止"文章"等两字竖排换行 */
   }
   /* GitHub 入口（.nav-cta）整条隐藏 */
-  .nav-links > a.nav-cta,
-  .nav-links > .nav-cta {
+  .nav-links > a.nav-cta {
     display: none;
   }
 
@@ -2369,6 +2368,20 @@ html.theme-anim::view-transition-new(root) {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  /* 代码复制按钮：44px 触摸目标（合并自原 line 1298 段） */
+  .copy-btn {
+    min-height: 44px;
+    padding: 12px 14px;
+  }
+
+  /* 口令彩蛋弹窗贴边但不顶满（合并自原 line 2688 段） */
+  .key-modal { padding: 12px; }
+  .key-modal-panel {
+    max-width: none;
+    border-radius: var(--radius-md, 14px);
+  }
+  #key-modal-input { font-size: 16px; }  /* 防 iOS focus zoom */
 }
 
 /* ---------- 降低动效 ---------- */
@@ -2693,12 +2706,4 @@ html.nav-back:not(.theme-anim)::view-transition-new(root) {
   }
 }
 
-/* ≤640：弹窗贴边但不顶满 */
-@media (max-width: 640px) {
-  .key-modal { padding: 12px; }
-  .key-modal-panel {
-    max-width: none;
-    border-radius: var(--radius-md, 14px);
-  }
-  #key-modal-input { font-size: 16px; }  /* 防 iOS focus zoom */
-}
+/* ≤640：弹窗贴边但不顶满 —— 已合并到上方 2225 段主 ≤640 媒体查询末尾 */

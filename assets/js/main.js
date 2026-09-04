@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260901k";
+  var DATA_VER = "20260901m";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -375,10 +375,12 @@
       }
     }
 
-    // 滚出首屏就停帧，回到视口再继续（首页往下阅读时动画不必空转）
+    // 滚出首屏就停帧，回到视口再继续（首页往下阅读时动画不必空转）。
+    // heroVisible 初始 true：刚加载时 hero 一定在视口里；如果支持 IO 会立刻回调纠正
+    //（避免 IO 首次回调前 visibilitychange 触发 scheduleFrame 时 heroVisible 仍是 false，
+    //导致 frame() 直接退出、动画永远不启动的 race）
     var heroVisible = true;
     if ("IntersectionObserver" in window && !reducedMotion && !staticMode) {
-      heroVisible = false;
       new IntersectionObserver(function (entries) {
         var now = entries[0].isIntersecting;
         if (now && !heroVisible) scheduleFrame();
@@ -1388,6 +1390,10 @@
           mobileInput.placeholder = input.placeholder;
           mobileInput.autocomplete = "off";
           mobileInput.setAttribute("aria-label", "搜索");
+          // ARIA combobox：与桌面端 nav input 一致，屏读器能识别"输入框 + 列表"模式
+          mobileInput.setAttribute("role", "combobox");
+          mobileInput.setAttribute("aria-autocomplete", "list");
+          mobileInput.setAttribute("aria-controls", panel.id || "nav-search-results");
           mobileInput.addEventListener("input", function () {
             // 防抖：避免每个键击都 fetch + filter
             clearTimeout(mobileDebounce);
@@ -1397,11 +1403,35 @@
           });
           mobileInput.addEventListener("keydown", function (e) {
             if (e.key === "Escape") { setOpen(false); return; }
+            // ↑↓ 在结果间移动（与桌面端 nav input 行为一致）
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              var opts = panel.querySelectorAll("[data-option]");
+              if (!opts.length) return;
+              e.preventDefault();
+              var current = panel.querySelector(".focused");
+              var idx = -1;
+              opts.forEach(function (o, i) { if (o === current) idx = i; });
+              var next = e.key === "ArrowDown"
+                ? opts[Math.min(idx + 1, opts.length - 1)]
+                : opts[Math.max(idx - 1, 0)];
+              // 同步 .focused + aria-selected + aria-activedescendant
+              opts.forEach(function (o) {
+                o.classList.toggle("focused", o === next);
+                o.setAttribute("aria-selected", o === next ? "true" : "false");
+              });
+              if (next) {
+                mobileInput.setAttribute("aria-activedescendant", next.id);
+                next.scrollIntoView({ block: "nearest" });
+              } else {
+                mobileInput.removeAttribute("aria-activedescendant");
+              }
+              return;
+            }
             if (e.key === "Enter") {
               e.preventDefault();
-              var focused = getMobileList().querySelector(".focused");
+              var focused = panel.querySelector(".focused");
               if (!focused) {
-                var cards = getMobileList().querySelectorAll(".post-card, .nav-project-card");
+                var cards = panel.querySelectorAll(".post-card, .nav-project");
                 focused = cards[0];
               }
               if (focused) focused.click();
@@ -1503,7 +1533,7 @@
             html = '<p class="search-empty">没有找到相关内容，换个关键词试试？</p>';
           }
           panel.hidden = false; // 有结果了，展开面板
-          panel.innerHTML = html;
+          list.innerHTML = html;  // 写进 getMobileList() 返回的子 div，不是 panel 自身（否则会清掉 mobile input）
           // 实时重渲染：跳过渐显避免闪烁（与 archive.search 一致）
           panel.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
           bindOptions();
