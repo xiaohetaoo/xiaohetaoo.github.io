@@ -53,7 +53,7 @@
   --z-progress: 99;    /* 阅读进度条（紧贴 nav 下方、不挡玻璃） */
   --z-nav: 100;        /* 固定导航栏 */
   --z-search: 101;     /* 搜索下拉浮层（.nav-search-results） */
-  --z-overlay: 200;    /* 钥匙按钮自身（在 modal 背景之下、nav 之上） */
+  --z-overlay: 200;    /* 覆盖层（skip-link 聚焦时浮于 nav 之上） */
   --z-modal: 220;      /* 口令彩蛋弹窗（最高层） */
 }
 
@@ -2283,7 +2283,7 @@ html.theme-anim::view-transition-new(root) {
      跟桌面端的"原地展开"路径分开（JS 里 matchMedia 路由）。 */
   .nav-search { margin-left: 2px; }
   /* 让位元素在 ≤640 直接从 flex 流中抽出（display: none），不参与 nav 布局 */
-  .nav-links.nav-search-open > a:not(.nav-search),
+  .nav-links.nav-search-open > a,
   .nav-links.nav-search-open .theme-toggle,
   .nav-links.nav-search-open .key-toggle {
     display: none;
@@ -2316,6 +2316,9 @@ html.theme-anim::view-transition-new(root) {
     border-radius: 0;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
     padding: 16px;
+    /* 禁用桌面端的 pop 进场动画：display none→渲染会重启它，且 fill-mode: both
+       会锁住 opacity/transform，把下面的 0.26s 下滑/收回 transition 全程压制 */
+    animation: none;
     /* transform: 优先 dvh，fallback vh（最后一条 transform 会生效，dvh 浏览器会忽略前一条） */
     transform: translateY(calc(-100vh + 64px));
     transform: translateY(calc(-100dvh + 64px));
@@ -2389,7 +2392,7 @@ html.theme-anim::view-transition-new(root) {
   .key-modal { padding: 12px; }
   .key-modal-panel {
     max-width: none;
-    border-radius: var(--radius-md, 14px);
+    border-radius: var(--radius);
   }
   #key-modal-input { font-size: 16px; }  /* 防 iOS focus zoom */
 }
@@ -2521,7 +2524,7 @@ html.nav-back:not(.theme-anim)::view-transition-new(root) {
 }
 
 /* ---------- 口令彩蛋弹窗 ---------- */
-/* 全屏遮罩 + 居中面板：z-index 220（高于 nav 的 200 和 nav-search-results 的 101） */
+/* 全屏遮罩 + 居中面板：z-index 220（高于 nav 的 100 和 nav-search-results 的 101） */
 .key-modal[hidden] { display: none; }
 
 .key-modal {

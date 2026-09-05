@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260901o";
+  var DATA_VER = "20260901q";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1046,52 +1046,47 @@
     //   - 找到 top ≤ 0 且 |top| 最小（最贴近顶部、已滚过）：高亮它
     //   - 全部 top ≤ 0（已滚过所有 h）：高亮最后一个（页面底端）
     // rAF 节流，scroll 触发
-    if ("IntersectionObserver" in window || true) {
-      var tocItems = Array.from(tocList.querySelectorAll(".toc-h"));
-      var lastCurrent = null;
-      var setCurrent = function (id) {
-        if (id === lastCurrent) return;
-        lastCurrent = id;
-        tocItems.forEach(function (a) {
-          if (a.getAttribute("href") === "#" + id) a.classList.add("current");
-          else a.classList.remove("current");
-        });
-        // 当前项在目录里滚到可见位置（nearest 不会牵动整页滚动）
-        var cur = tocList.querySelector(".toc-h.current");
-        if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
-      };
-      var ticking = false;
-      var updateToc = function () {
-        ticking = false;
-        if (!headings.length) return;
-        // 阈值：h2/h3 离视口顶 0 最近即为当前；这里把"0"放宽到 NAV 下方一点点（64px），
-        // 避免"h 正好贴着 0 但还在 reveal 动画 translateY 偏移"导致短暂选错。
-        var THRESHOLD = 80;
-        var chosen = headings[0].id; // 默认第一个（页面顶端）
-        var bestTop = -Infinity;     // 记录"top 最接近 THRESHOLD 但不超过"的差值
-        var allPast = true;
-        for (var i = 0; i < headings.length; i++) {
-          var top = headings[i].getBoundingClientRect().top;
-          if (top > THRESHOLD) { allPast = false; break; } // 还有 h 在屏幕下方 → 取已滚过里最靠下的
-          if (THRESHOLD - top > bestTop) {
-            bestTop = THRESHOLD - top;
-            chosen = headings[i].id;
-          }
-        }
-        // 全部 h 都已滚过顶部（allPast=true 且完整走完循环）：chosen = 最后一个
-        if (allPast) chosen = headings[headings.length - 1].id;
-        setCurrent(chosen);
-      };
-      var onScrollToc = function () {
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(updateToc);
-      };
-      window.addEventListener("scroll", onScrollToc, { passive: true });
-      window.addEventListener("resize", onScrollToc, { passive: true });
-      // 初始跑一次（首屏就显示正确高亮）
-      updateToc();
-    }
+    var tocItems = Array.from(tocList.querySelectorAll(".toc-h"));
+    var lastCurrent = null;
+    var setCurrent = function (id) {
+      if (id === lastCurrent) return;
+      lastCurrent = id;
+      tocItems.forEach(function (a) {
+        if (a.getAttribute("href") === "#" + id) a.classList.add("current");
+        else a.classList.remove("current");
+      });
+      // 当前项在目录里滚到可见位置（nearest 不会牵动整页滚动）
+      var cur = tocList.querySelector(".toc-h.current");
+      if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
+    };
+    var ticking = false;
+    var updateToc = function () {
+      ticking = false;
+      if (!headings.length) return;
+      // 阈值：h2/h3 离视口顶 0 最近即为当前；这里把"0"放宽到 NAV 下方一点点（64px），
+      // 避免"h 正好贴着 0 但还在 reveal 动画 translateY 偏移"导致短暂选错。
+      var THRESHOLD = 80;
+      var chosen = headings[0].id; // 默认第一个（页面顶端）
+      var bestTop = -Infinity;     // 已滚过线（top ≤ THRESHOLD）的标题里最靠下的 top
+      var allPast = true;
+      for (var i = 0; i < headings.length; i++) {
+        var top = headings[i].getBoundingClientRect().top;
+        if (top > THRESHOLD) { allPast = false; break; } // 还有 h 在屏幕下方 → 取已滚过里最靠下的
+        if (top > bestTop) { bestTop = top; chosen = headings[i].id; }
+      }
+      // 全部 h 都已滚过顶部（allPast=true 且完整走完循环）：chosen = 最后一个
+      if (allPast) chosen = headings[headings.length - 1].id;
+      setCurrent(chosen);
+    };
+    var onScrollToc = function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateToc);
+    };
+    window.addEventListener("scroll", onScrollToc, { passive: true });
+    window.addEventListener("resize", onScrollToc, { passive: true });
+    // 初始跑一次（首屏就显示正确高亮）
+    updateToc();
   })();
 
   /* ---------- 7.6 文章页文末「推荐阅读」3 篇（按 tag 相似度） ---------- */
@@ -1241,7 +1236,6 @@
     var debounce = null;
     var mobileDebounce = null;  // 移动端下拉面板 mobile input 的防抖 timer
     var open = false;
-    var optionSeq = 0;
 
     // 面板挂到 body：留在 .nav（backdrop-filter）子树里，元素的 VT 快照会被
     // Chromium 跳过，搜索结果的共享元素过渡就飞不起来
@@ -1267,14 +1261,11 @@
     viewportMq.addEventListener("change", function () {
       var isMobile = viewportMq.matches;
       if (isMobile !== lastIsMobile) {
-        clearPanelInline();
         lastIsMobile = isMobile;
-        if (open && !isMobile) {
-          // 切到桌面，input 还在 0.22s 宽度过渡中。过渡跑完再算 panel 位置。
-          setTimeout(function () {
-            if (open && !viewportMq.matches) positionPanel();
-          }, 250);
-        }
+        clearPanelInline();
+        // 跨断点时面板内容（mobile input 副本/旧结果）和定位方式都跟断点走，
+        // 直接关掉最干净，避免"桌面壳装着移动端内容"的错乱状态
+        if (open) setOpen(false);
       }
     });
     window.addEventListener("resize", function () {
@@ -1402,8 +1393,6 @@
       var nav = wrap.closest("nav");
       if (nav) nav.classList.toggle("nav-search-open", open);
       // ===== 移动特有部分 =====
-      // 用 .open class 触发 CSS translateY/opacity 动画
-      panel.classList.toggle("open", open);
       // panel 默认有 hidden 属性会 display:none 盖住动画，先清掉
       panel.hidden = false;
       if (open) {
@@ -1465,20 +1454,24 @@
           });
           panel.insertBefore(mobileInput, panel.firstChild);
         }
+        // display:none → 渲染的瞬间 transition 不会启动；先以收起位强制 reflow 拿到
+        // 过渡起点，再挂 .open，0.26s 下滑才能真正播出来（移动端已禁用桌面 pop 动画）
+        void panel.offsetWidth;
+        panel.classList.add("open");
         // 等下拉出现后聚焦 mobile input
         setTimeout(function () {
           var mi = panel.querySelector(".nav-search-mobile-input");
           if (mi && open) mi.focus({ preventScroll: true });
         }, 230);
       } else {
-        // 关闭：清空内容，等动画结束后再 hidden
+        panel.classList.remove("open");
+        // 关闭：清空内容，等收回动画（0.26s）结束后再 hidden（280ms 留缓冲，不截尾）
         var mi2 = panel.querySelector(".nav-search-mobile-input");
         if (mi2) mi2.value = "";
         getMobileList().innerHTML = "";
-        // 收回动画结束后再 hidden（避免动画过程中 display: none 突然消失）
         setTimeout(function () {
           if (!open) panel.hidden = true;
-        }, 230);
+        }, 280);
       }
     }
 
@@ -1528,7 +1521,9 @@
             html = '<p class="search-empty">没有找到相关内容，换个关键词试试？</p>';
           }
           list.innerHTML = html;
-        });
+          bindOptions();
+        })
+        .catch(function () {});
     }
 
     function renderResults(query) {
@@ -1559,7 +1554,7 @@
             html = '<p class="search-empty">没有找到相关内容，换个关键词试试？</p>';
           }
           panel.hidden = false; // 有结果了，展开面板
-          list.innerHTML = html;  // 写进 getMobileList() 返回的子 div，不是 panel 自身（否则会清掉 mobile input）
+          panel.innerHTML = html; // 桌面端没有 mobile input 副本，直接写 panel 自身（list 只存在于移动端作用域）
           // 实时重渲染：跳过渐显避免闪烁（与 archive.search 一致）
           panel.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
           bindOptions();
@@ -1640,7 +1635,7 @@
 
   /* ---------- 4.5. 口令彩蛋弹窗 ----------
      设计：点击钥匙按钮 → 弹窗打开 → 输入口令 → 命中输出"冒号后"内容；
-     不区分大小写、不 trim、完全匹配。
+     不区分大小写、trim 首尾空白、完全匹配。
      数据明文常量（彩蛋属性 > 加密），存放在源码里被人看到也是预期行为。 */
   (function () {
     // 钥匙弹窗主体：所有 DOM 绑定 / 事件 / 渲染逻辑都在 init() 里。
@@ -1707,12 +1702,16 @@
 
     function setOpen(next) {
       var willOpen = !!next;
+      var main = document.querySelector("main");
+      var nav = document.querySelector("header.nav");
+      var footer = document.querySelector("footer.footer");
       if (willOpen) {
         lastFocus = document.activeElement;
         modal.hidden = false;
-        // 把主内容锁住，键盘焦点不会逃到背后的 nav 链接（免费 focus trap）
-        var main = document.querySelector("main");
+        // 背后的 main / nav / footer 全部锁住，键盘焦点不会逃出弹窗（免费 focus trap）
         if (main) main.setAttribute("inert", "");
+        if (nav) nav.setAttribute("inert", "");
+        if (footer) footer.setAttribute("inert", "");
         btn.setAttribute("aria-expanded", "true");
         // 下一帧聚焦，等动画跑一拍
         requestAnimationFrame(function () {
@@ -1722,13 +1721,16 @@
         renderResult(input.value);
       } else {
         modal.hidden = true;
-        var main2 = document.querySelector("main");
-        if (main2) main2.removeAttribute("inert");
+        // 搜索面板若还开着，main 要保持 inert（它自己的 focus trap 仍需生效）
+        var searchOpen = !!document.querySelector(".nav-links.nav-search-open");
+        if (main && !searchOpen) main.removeAttribute("inert");
+        if (nav) nav.removeAttribute("inert");
+        if (footer) footer.removeAttribute("inert");
         btn.setAttribute("aria-expanded", "false");
         // 清空状态，避免下次打开残留旧结果
         input.value = "";
         renderResult("");
-        // 把焦点还给触发按钮（无障碍约定）
+        // 把焦点还给触发按钮（无障碍约定；nav 已解除 inert，可安全聚焦）
         if (lastFocus && typeof lastFocus.focus === "function") {
           try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
         } else {
