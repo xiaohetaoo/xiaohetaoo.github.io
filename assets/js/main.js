@@ -10,8 +10,9 @@
   "use strict";
 
   var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // ?static：跳过所有动画，直接渲染最终状态（用于截图/打印等确定性场景）
-  var staticMode = window.location.search.indexOf("static") !== -1;
+  // ?static：跳过所有动画，直接渲染最终状态（用于截图/打印等确定性场景）。
+  // 必须按完整参数名精确匹配——子串匹配会被 archive.html?q=static 这类搜索词误触发
+  var staticMode = /[?&]static(?:=1)?(?=&|$)/.test(window.location.search);
 
   // 渐进增强：只有 JS 正常运行时才启用进场动画的初始隐藏
   if (!reducedMotion && !staticMode) {
@@ -20,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260901u";
+  var DATA_VER = "20260905a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -401,6 +402,8 @@
         resize();
         updateHeroRect();
         if (reducedMotion || staticMode) {
+          // 静态重绘同样要手动同步调色板（不走 frame()）
+          syncPalette();
           ctx.clearRect(0, 0, W, H);
           orbits.forEach(function (o) { drawOrbit(o, 0); });
           drawCube(0.5);
@@ -414,7 +417,9 @@
     resize();
     updateHeroRect();
     if (reducedMotion || staticMode) {
-      // 静态渲染一帧
+      // 静态渲染一帧。static/reduced 路径不走 frame()，调色板要手动同步，
+      // 否则亮色主题下画的是深色调色板版
+      syncPalette();
       ctx.clearRect(0, 0, W, H);
       orbits.forEach(function (o) { drawOrbit(o, 0); });
       drawCube(0.5);
@@ -614,12 +619,21 @@
     });
   };
 
+  // 站点根前缀：文章页在 /posts/ 子目录要回上一级；404 页会被服务在任意深度的
+  // 路径下（如 /a/b 也返回 404.html，页面里声明了 window.XHT_AT_404），相对路径
+  // 会解析进不存在的子目录，必须改用站点绝对根。forHref=true 给链接拼接用
+  //（根页面返回 ""，404 页返回 "/"），false 给 fetch 拼接用——两条路径都恰好
+  // 拼出 "/posts.json" 这样的绝对根，绝不产生 "//posts.json" 协议相对 URL
+  function siteRoot(forHref) {
+    if (window.XHT_AT_404) return forHref ? "/" : "";
+    return window.location.pathname.indexOf("/posts/") !== -1 ? "../" : (forHref ? "" : ".");
+  }
+
   // 同一页面多处列表共用一次请求；文章页在 /posts/ 子目录，要回到站点根再取
   var postsCache = null;
   function loadPosts() {
     if (!postsCache) {
-      var root = window.location.pathname.indexOf("/posts/") !== -1 ? ".." : ".";
-      postsCache = fetch(root + "/posts.json?v=" + DATA_VER).then(function (r) { return r.json(); });
+      postsCache = fetch(siteRoot(false) + "/posts.json?v=" + DATA_VER).then(function (r) { return r.json(); });
     }
     return postsCache;
   }
@@ -775,9 +789,8 @@
   var projectsCache = null;
   function loadProjects() {
     if (!projectsCache) {
-      // 与 loadPosts 同样的子目录处理：文章页在 /posts/ 下要回上一级拿 json
-      var root = window.location.pathname.indexOf("/posts/") !== -1 ? ".." : ".";
-      projectsCache = fetch(root + "/projects.json?v=" + DATA_VER).then(function (r) { return r.json(); });
+      // 与 loadPosts 同样的根前缀规则（含 404 页绝对根兜底）
+      projectsCache = fetch(siteRoot(false) + "/projects.json?v=" + DATA_VER).then(function (r) { return r.json(); });
     }
     return projectsCache;
   }
@@ -926,9 +939,10 @@
   }
 
   /* ---------- 8.5 阅读进度条（仅文章页） ---------- */
-  // 顶部 2px 蓝线，rAF 节流 + scaleX 走合成层；只挂 .post-page 存在时
+  // 顶部 2px 蓝线，rAF 节流 + scaleX 走合成层；只挂文章页——archive/projects 的
+  // main 也复用 .post-page 做布局，只认它会把进度条注到列表页去
   (function () {
-    if (!document.querySelector(".post-page")) return;
+    if (!document.querySelector(".post-page .prose")) return;
     var bar = document.createElement("div");
     bar.className = "reading-progress";
     bar.setAttribute("aria-hidden", "true");
@@ -994,8 +1008,9 @@
     headings.forEach(function (h, i) {
       if (!h.id) {
         var id = "toc-" + i;
-        // 极端情况兜底
-        while (used[id] || document.getElementById(id)) { id = "toc-" + i + "-" + Object.keys(used).length; }
+        // 递增后缀兜底（循环内计数器必须变化，否则撞名时会原地死循环）
+        var n = 0;
+        while (used[id] || document.getElementById(id)) { n += 1; id = "toc-" + i + "-" + n; }
         h.id = id;
       }
       used[h.id] = true;
@@ -1201,12 +1216,13 @@
     if (mq.addEventListener) mq.addEventListener("change", syncPlaceholder);
     else if (mq.addListener) mq.addListener(syncPlaceholder);  // 老 Safari 兼容
 
-    // 文章页在 /posts/ 子目录，卡片和项目页 href 要加 ../
-    var root = window.location.pathname.indexOf("/posts/") !== -1 ? "../" : "";
+    // 文章页在 /posts/ 子目录，卡片和项目页 href 要加 ../；404 页用绝对根（见 siteRoot）
+    var root = siteRoot(true);
     var MAX_POSTS = 4;
     var MAX_PROJECTS = 3;
     var debounce = null;
     var mobileDebounce = null;  // 移动端下拉面板 mobile input 的防抖 timer
+    var mobileCloseTimer = null; // 移动端收回动画结束后的清理定时器（重开时要清掉，防止腰斩下一段收回动画）
     var open = false;
 
     // 面板挂到 body：留在 .nav（backdrop-filter）子树里，元素的 VT 快照会被
@@ -1230,7 +1246,9 @@
     // 跨断点切换：< → > 时清 inline style 让桌面 positionPanel 接管；> → < 时清
     // inline style 让 mobile CSS 接管。避免残留。
     var lastIsMobile = viewportMq.matches;
-    viewportMq.addEventListener("change", function () {
+    // 旧 Safari（<14）的 MediaQueryList 只有 addListener（与上面 syncPlaceholder 同款兜底），
+    // 缺了它这里抛 TypeError 会中断整个搜索 IIFE（按钮/快捷键全失效）
+    var onMqChange = function () {
       var isMobile = viewportMq.matches;
       if (isMobile !== lastIsMobile) {
         lastIsMobile = isMobile;
@@ -1239,7 +1257,9 @@
         // 直接关掉最干净，避免"桌面壳装着移动端内容"的错乱状态
         if (open) setOpen(false);
       }
-    });
+    };
+    if (viewportMq.addEventListener) viewportMq.addEventListener("change", onMqChange);
+    else if (viewportMq.addListener) viewportMq.addListener(onMqChange);
     window.addEventListener("resize", function () {
       if (!open) return;
       if (viewportMq.matches) {
@@ -1297,12 +1317,12 @@
       }
     }
 
-    function setOpen(next, keepPanel) {
+    function setOpen(next) {
       open = !!next;
       var isMobile = window.matchMedia("(max-width: 640px)").matches;
       // 移动端（≤640）走下拉式：跳到独立分支，不污染桌面端
       if (isMobile) {
-        setMobileOpen(next, keepPanel);
+        setMobileOpen(next);
         return;
       }
       // ===== 公共部分：桌面 + 移动都用 =====
@@ -1331,12 +1351,8 @@
       } else {
         input.value = "";
         input.removeAttribute("aria-activedescendant");
-        // keepPanel：点结果卡片跳转时面板留在渲染树里，旧页面快照拍得到卡片，
-        // 共享元素过渡才不会因为元素消失而被跳过
-        if (!keepPanel) {
-          panel.hidden = true;
-          panel.innerHTML = "";
-        }
+        panel.hidden = true;
+        panel.innerHTML = "";
       }
     }
 
@@ -1352,7 +1368,7 @@
       }
       return list;
     }
-    function setMobileOpen(next, keepPanel) {
+    function setMobileOpen(next) {
       open = !!next;
       // ===== 公共部分：与 setOpen 桌面分支共享 =====
       // 1) ARIA 状态
@@ -1368,6 +1384,9 @@
       // panel 默认有 hidden 属性会 display:none 盖住动画，先清掉
       panel.hidden = false;
       if (open) {
+        // 重开时先清掉上一轮关闭安排的清理定时器，否则快速 关→开→关 会让旧定时器
+        // 在新一段收回动画中途把面板 hidden（动画被腰斩）
+        if (mobileCloseTimer) { clearTimeout(mobileCloseTimer); mobileCloseTimer = null; }
         // 首次打开时插入 mobile input
         if (!panel.querySelector(".nav-search-mobile-input")) {
           var mobileInput = document.createElement("input");
@@ -1438,7 +1457,9 @@
       } else {
         // 收回动画期间保留内容——同步清空会让面板高度瞬间塌掉，只剩空壳在滑（等于没有收回动画）
         panel.classList.remove("open");
-        setTimeout(function () {
+        if (mobileCloseTimer) clearTimeout(mobileCloseTimer);
+        mobileCloseTimer = setTimeout(function () {
+          mobileCloseTimer = null;
           if (!open) {
             // 动画播完（0.26s）再清空内容 + hidden（280ms 留缓冲）
             var mi2 = panel.querySelector(".nav-search-mobile-input");
@@ -1605,6 +1626,34 @@
       if (t && t.closest && t.closest("input, textarea, select, [contenteditable]")) return;
       e.preventDefault();
       setOpen(!open);
+    });
+
+    // bfcache 返回恢复：点结果卡片跳走时 panel 是刻意留在渲染树里的（给共享元素
+    // 过渡拍快照，见上方 document click 处理器），open 也没复位。带 bfcache 的
+    // 浏览器（桌面 Chrome/Edge）返回时会原样恢复这个"外壳已收、浮层还开着"的
+    // 半关状态——旧结果浮层叠在页面上。这里整体复位。（morph 标记的同类清理
+    // 在文件前部的 pagereveal 处理器里）
+    window.addEventListener("pageshow", function (e) {
+      if (!e.persisted || !open) return;
+      open = false;
+      wrap.classList.remove("open");
+      panel.classList.remove("open");
+      panel.hidden = true;
+      panel.innerHTML = "";
+      clearPanelInline();
+      input.value = "";
+      input.removeAttribute("aria-activedescendant");
+      // 键盘 Enter 跳转时焦点仍留在输入框（程序化 click 不移焦点），bfcache 恢复后
+      // 它藏在收起的外壳里：打字进隐形框、Ctrl+K 被自家守卫拦住，必须先摘掉焦点
+      input.blur();
+      btn.setAttribute("aria-expanded", "false");
+      input.setAttribute("aria-expanded", "false");
+      var nav = wrap.closest("nav");
+      if (nav) nav.classList.remove("nav-search-open");
+      var main = document.querySelector("main");
+      var keyModal = document.getElementById("key-modal");
+      // 口令弹窗若也开着，main 的 inert 归它管，不能顺手摘
+      if (main && (!keyModal || keyModal.hidden)) main.removeAttribute("inert");
     });
   })();
 

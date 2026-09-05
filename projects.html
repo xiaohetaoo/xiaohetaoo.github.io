@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
   <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":"#000000"}}catch(e){}</script>
   <noscript><style>[data-loading]{display:none}</style></noscript>
@@ -20,6 +20,7 @@
   <meta name="twitter:description" content="小核桃工作室做过的所有项目：网页、工具、游戏。" />
   <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
 
+  <!-- ItemList 顺序 = 页面实际显示顺序：置顶优先（json 顺序），其余按日期倒序 -->
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -29,38 +30,38 @@
     {
       "@type": "ListItem",
       "position": 1,
-      "name": "地理标识",
-      "url": "https://xiaohetaoo.github.io/projects.html#p=地理标识"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "粒子轨道可视化",
-      "url": "https://xiaohetaoo.github.io/projects.html#p=粒子轨道可视化"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
       "name": "终觉之战",
       "url": "https://xiaohetaoo.github.io/projects.html#p=终觉之战"
     },
     {
       "@type": "ListItem",
-      "position": 4,
+      "position": 2,
       "name": "视频创作",
       "url": "https://xiaohetaoo.github.io/projects.html#p=视频创作"
     },
     {
       "@type": "ListItem",
+      "position": 3,
+      "name": "神秘礼物",
+      "url": "https://xiaohetaoo.github.io/projects.html#p=神秘礼物"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "支持我",
+      "url": "https://xiaohetaoo.github.io/projects.html#p=支持我"
+    },
+    {
+      "@type": "ListItem",
       "position": 5,
-      "name": "三角洲行动视频",
-      "url": "https://xiaohetaoo.github.io/projects.html#p=三角洲行动视频"
+      "name": "地理标识",
+      "url": "https://xiaohetaoo.github.io/projects.html#p=地理标识"
     },
     {
       "@type": "ListItem",
       "position": 6,
-      "name": "神秘礼物",
-      "url": "https://xiaohetaoo.github.io/projects.html#p=神秘礼物"
+      "name": "三角洲行动视频",
+      "url": "https://xiaohetaoo.github.io/projects.html#p=三角洲行动视频"
     },
     {
       "@type": "ListItem",
@@ -71,8 +72,8 @@
     {
       "@type": "ListItem",
       "position": 8,
-      "name": "支持我",
-      "url": "https://xiaohetaoo.github.io/projects.html#p=支持我"
+      "name": "粒子轨道可视化",
+      "url": "https://xiaohetaoo.github.io/projects.html#p=粒子轨道可视化"
     }
   ]
 }
@@ -83,7 +84,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20260901u" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260905a" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -184,7 +185,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20260901u"></script>
+  <script src="assets/js/main.js?v=20260905a"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
   <script>try{var m=location.search.match(/theme=(light|dark)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":"#000000"}}catch(e){}</script>
   <noscript><style>[data-loading]{display:none}</style></noscript>
@@ -25,11 +25,15 @@
 
 <meta name="description" content="你访问的页面不存在，或者已经被搬走了。" />
   <meta name="robots" content="noindex" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
-  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
-  <link rel="shortcut icon" href="assets/img/favicon.ico" />
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20260901u" />
+  <!-- 404 页会被 GitHub Pages 服务在任意深度的路径下（如 /a/b），所有资源与链接
+       必须用站点绝对根，否则会解析进不存在的子目录导致页面裸奔；
+       window.XHT_AT_404 供 main.js 把 json fetch / 搜索结果 href 切到绝对根 -->
+  <script>window.XHT_AT_404 = true;</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/img/favicon-64.png" />
+  <link rel="shortcut icon" href="/assets/img/favicon.ico" />
+  <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=20260905a" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -47,17 +51,17 @@ var _hmt = _hmt || [];
 
   <header class="nav">
     <div class="container nav-inner">
-      <a class="brand" href="index.html">
-        <img src="assets/img/logo-mark.png" alt="小核桃工作室 logo" />
+      <a class="brand" href="/index.html">
+        <img src="/assets/img/logo-mark.png" alt="小核桃工作室 logo" />
         <span>
           <span class="brand-name">小核桃工作室</span>
           <span class="brand-sub">XIAOHETAO</span>
         </span>
       </a>
       <nav class="nav-links" aria-label="站内导航">
-        <a href="index.html#posts">文章</a>
-        <a href="index.html#projects">项目</a>
-        <a href="index.html#contact">联系</a>
+        <a href="/index.html#posts">文章</a>
+        <a href="/index.html#projects">项目</a>
+        <a href="/index.html#contact">联系</a>
         <div class="nav-search" id="nav-search">
           <button class="nav-search-btn" type="button" aria-label="搜索（Ctrl+K）" aria-expanded="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -83,12 +87,12 @@ var _hmt = _hmt || [];
       <h1 style="font-size: clamp(40px, 7vw, 72px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin: 12px 0 4px;">404</h1>
       <p class="mono" style="color: var(--text-2); font-size: 15px; margin: 0 0 28px;">not found — 你访问的页面不存在，或者已经被搬走了。</p>
       <div style="display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center;">
-        <a class="back-link" href="index.html" style="margin-bottom: 0;">
+        <a class="back-link" href="/index.html" style="margin-bottom: 0;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
           返回首页
         </a>
-        <a class="back-link" href="archive.html" style="margin-bottom: 0;">$ ls ~/posts --all</a>
-        <a class="back-link" href="projects.html" style="margin-bottom: 0;">$ ls ~/projects --all</a>
+        <a class="back-link" href="/archive.html" style="margin-bottom: 0;">$ ls ~/posts --all</a>
+        <a class="back-link" href="/projects.html" style="margin-bottom: 0;">$ ls ~/projects --all</a>
       </div>
     </div>
   </main>
@@ -97,23 +101,23 @@ var _hmt = _hmt || [];
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <img loading="lazy" decoding="async" src="assets/img/logo-mark.png" alt="小核桃工作室 logo" />
+          <img loading="lazy" decoding="async" src="/assets/img/logo-mark.png" alt="小核桃工作室 logo" />
           <div>
             <div class="n">小核桃工作室</div>
             <div class="s">XIAOHETAO STUDIO</div>
           </div>
         </div>
         <nav class="footer-links" aria-label="页脚导航">
-          <a href="index.html#posts">文章</a>
-          <a href="index.html#projects">项目</a>
-          <a href="index.html#contact">联系</a>
+          <a href="/index.html#posts">文章</a>
+          <a href="/index.html#projects">项目</a>
+          <a href="/index.html#contact">联系</a>
         </nav>
       </div>
       <p class="footer-caption">© <span id="year">2026</span> 小核桃工作室 · 记录 = 输入 × 输出 · 用好奇心驱动</p>
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20260901u"></script>
+  <script src="/assets/js/main.js?v=20260905a"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

@@ -1743,15 +1743,20 @@ html.theme-anim::view-transition-new(root) {
    收起时延迟到输入框收完（0.22s）再渐显回来 */
 .nav-links > a:not(.nav-cta) {
   transform-origin: center;
-  transition: opacity 0.2s var(--ease-out), transform 0.22s var(--ease-out);
+  transition: opacity 0.2s var(--ease-out), transform 0.22s var(--ease-out),
+    visibility 0s 0.22s;
 }
 .nav-links.nav-search-open > a:not(.nav-cta) {
   opacity: 0;
   pointer-events: none;
   transform: scaleX(0);
+  /* opacity/transform 不把元素移出 Tab 序列，搜索展开时键盘焦点会掉进
+     这三个隐形链接；visibility: hidden 才真正移出。延迟 0.22s 翻转让收起动画先播完 */
+  visibility: hidden;
 }
 .nav-links:not(.nav-search-open) > a:not(.nav-cta) {
-  transition: opacity 0.25s var(--ease-out) 0.22s, transform 0.22s var(--ease-out) 0.22s;
+  transition: opacity 0.25s var(--ease-out) 0.22s, transform 0.22s var(--ease-out) 0.22s,
+    visibility 0s 0.22s;
 }
 
 .theme-toggle,
@@ -2693,4 +2698,4 @@ html.nav-back:not(.theme-anim)::view-transition-new(root) {
   }
 }
 
-/* ≤640：弹窗贴边但不顶满 —— 已合并到上方 2225 段主 ≤640 媒体查询末尾 */
+/* ≤640：弹窗贴边但不顶满 —— 已合并到「响应式」≤640 主媒体查询末尾的 .key-modal 规则 */
