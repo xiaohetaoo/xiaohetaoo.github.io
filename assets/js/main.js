@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260905a";
+  var DATA_VER = "20260905d";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1659,7 +1659,7 @@
 
   /* ---------- 4.5. 口令彩蛋弹窗 ----------
      设计：点击钥匙按钮 → 弹窗打开 → 输入口令 → 命中输出"冒号后"内容；
-     不区分大小写、trim 首尾空白、完全匹配。
+     不区分大小写、忽略全部空白（含内部空格）、完全匹配。
      数据明文常量（彩蛋属性 > 加密），存放在源码里被人看到也是预期行为。 */
   (function () {
     // 钥匙弹窗主体：所有 DOM 绑定 / 事件 / 渲染逻辑都在 init() 里。
@@ -1667,7 +1667,7 @@
     // 里 key-modal 节点（注入在 </body> 前）还没解析完，getElementById 拿 null。
     // 兜底：如果 main.js 加载时已 DCL，直接跑。
     function init() {
-    // K：口令 → V：显示内容。键为小写匹配键，原口令原样用于回显。
+    // K：口令 → V：命中后显示的内容。匹配时忽略大小写与全部空白。
     var KEYS = [
       { k: "施瑶涵",         v: "宝贝你好呀awa" },
       { k: "睡一会",         v: "宝贝你好呀awa" },
@@ -1681,10 +1681,14 @@
       { k: "小核桃",          v: "找我什么事呀awa" },
       { k: "小核桃哦",        v: "哦？找我什么事呀awa" },
       { k: "小核桃哦哦",      v: "哦哦？！你干嘛~~" },
+      { k: "牢核",           v: "你该罚！" },
+      { k: "牢核蛋",         v: "你该罚！" },
+      { k: "oldriveregg",    v: "你该罚！" },
       { k: "妈咪",            v: "想妈咪了qwq" },
       { k: "杭州电子科技大学",  v: "笃学力行、守正求新" },
       { k: "杭电",            v: "笃学力行、守正求新" },
-      { k: "HUD",             v: "笃学力行、守正求新" }
+      { k: "HUD",             v: "笃学力行、守正求新" },
+      { k: "awa",             v: "awa" }
     ];
 
     var btn = document.getElementById("key-toggle");
@@ -1696,9 +1700,10 @@
     var submit = document.getElementById("key-modal-submit");
     var lastFocus = null;
 
-    // 查询：原样 trim 比较（去首尾空白以容忍复制带换行的场景），但不折叠内部空白
+    // 查询：忽略输入中的全部空白（含内部空格，如「施 瑶涵」「小 核 桃」也能命中）；
+    // 不区分大小写、完全匹配（awa/AWA 任意大小写都命中同一条）
     function lookup(raw) {
-      var q = String(raw || "").trim();
+      var q = String(raw || "").replace(/\s+/g, "");
       if (!q) return null;
       var ql = q.toLowerCase();
       for (var i = 0; i < KEYS.length; i++) {

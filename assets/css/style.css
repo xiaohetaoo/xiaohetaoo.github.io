@@ -1361,7 +1361,10 @@ button {
   box-shadow: 0 0 24px rgba(103, 158, 254, 0.18);
 }
 
-.tier-badge.tier-a {
+/* B / C 档徽章与 A 档同款中性配色（S 档独享高亮蓝） */
+.tier-badge.tier-a,
+.tier-badge.tier-b,
+.tier-badge.tier-c {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-2);
   border: 1px solid var(--border-strong);
@@ -1859,7 +1862,9 @@ html.theme-anim::view-transition-new(root) {
   background: rgba(47, 108, 235, 0.08);
   border-color: rgba(47, 108, 235, 0.25);
 }
-:root[data-theme="light"] .tier-badge.tier-a { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .tier-badge.tier-a,
+:root[data-theme="light"] .tier-badge.tier-b,
+:root[data-theme="light"] .tier-badge.tier-c { background: rgba(16, 24, 40, 0.04); }
 /* 亮色模式下二维码反相成白底深色码（hue-rotate 保持蓝色系、不破坏可扫描性） */
 :root[data-theme="light"] .contact-card .qr-box img {
   filter: invert(1) hue-rotate(180deg);
