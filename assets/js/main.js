@@ -21,15 +21,22 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260905d";
+  var DATA_VER = "20260906c";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
   var MOON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+  var CN_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>';
   var syncTheme = function () {
-    var light = document.documentElement.getAttribute("data-theme") === "light";
-    themeBtn.innerHTML = light ? MOON_ICON : SUN_ICON;
-    themeBtn.setAttribute("aria-label", light ? "切换到深色主题" : "切换到亮色主题");
+    var cur = document.documentElement.getAttribute("data-theme");
+    if (cur === "cn-red") {
+      themeBtn.innerHTML = CN_ICON;
+      themeBtn.setAttribute("aria-label", "中国红主题（点击切回明暗）");
+    } else {
+      var light = cur === "light";
+      themeBtn.innerHTML = light ? MOON_ICON : SUN_ICON;
+      themeBtn.setAttribute("aria-label", light ? "切换到深色主题" : "切换到亮色主题");
+    }
   };
 
   // 切换主题；浏览器支持 View Transitions 时从点击位置做圆形扩散动画
@@ -38,7 +45,7 @@
       document.documentElement.setAttribute("data-theme", next);
       try { localStorage.setItem("theme", next); } catch (e) {}
       var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute("content", next === "light" ? "#f5f6f8" : "#000000");
+      if (meta) meta.setAttribute("content", next === "light" ? "#f5f6f8" : next === "cn-red" ? "#faf4f0" : "#000000");
       syncTheme();
       document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: next } }));
     };
@@ -163,9 +170,50 @@
 
   if (themeBtn) {
     syncTheme();
+    var suppressClick = false; // 长按触发后吞掉随之而来的那次 click
+    var exitCnRed = function (x, y) {
+      var back = "dark";
+      try { back = localStorage.getItem("themePrev") || "dark"; } catch (e) {}
+      try { localStorage.removeItem("themePrev"); } catch (e) {}
+      applyTheme(back === "cn-red" ? "dark" : back, { x: x, y: y });
+    };
     themeBtn.addEventListener("click", function (e) {
-      var next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
-      applyTheme(next, { x: e.clientX, y: e.clientY });
+      if (suppressClick) { suppressClick = false; return; }
+      var cur = document.documentElement.getAttribute("data-theme");
+      if (cur === "cn-red") { exitCnRed(e.clientX, e.clientY); return; }
+      applyTheme(cur === "light" ? "dark" : "light", { x: e.clientX, y: e.clientY });
+    });
+
+    // 隐藏彩蛋：长按主题按钮 2.5s 进入「中国红」主题；在中国红里普通点击（或长按）切回原明暗主题。
+    // 进入时把原主题存进 localStorage.themePrev，退出时还原。
+    var armTimer = null;
+    themeBtn.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0) return;
+      var px = e.clientX, py = e.clientY;
+      themeBtn.classList.add("arming");
+      armTimer = setTimeout(function () {
+        armTimer = null;
+        themeBtn.classList.remove("arming");
+        suppressClick = true;
+        try { if (navigator.vibrate) navigator.vibrate(30); } catch (err) {}
+        var cur = document.documentElement.getAttribute("data-theme");
+        if (cur === "cn-red") {
+          exitCnRed(px, py);
+        } else {
+          try { localStorage.setItem("themePrev", cur || "dark"); } catch (err) {}
+          applyTheme("cn-red", { x: px, y: py });
+        }
+      }, 2500);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) {
+      themeBtn.addEventListener(ev, function () {
+        if (armTimer) { clearTimeout(armTimer); armTimer = null; }
+        themeBtn.classList.remove("arming");
+      });
+    });
+    // 长按期间拦住移动端的右键/选择菜单
+    themeBtn.addEventListener("contextmenu", function (e) {
+      if (armTimer) e.preventDefault();
     });
   }
 
@@ -211,13 +259,23 @@
         cubeStroke: "rgba(37, 99, 235, 0.55)",
         cubeDot: "rgba(30, 79, 174, 0.8)",
         orbitColors: ["#2f6ceb", "#1e4fae", "#5b8def"]
+      },
+      "cn-red": {
+        orbitStroke: "rgba(222, 41, 16, 0.35)",
+        glowMid: "rgba(222, 41, 16, 0.32)",
+        glowEnd: "rgba(222, 41, 16, 0)",
+        electronCore: "#b81c11",
+        cubeStroke: "rgba(184, 28, 17, 0.55)",
+        cubeDot: "rgba(140, 20, 12, 0.8)",
+        orbitColors: ["#de2910", "#b81c11", "#e86a3a"]
       }
     };
     var currentPal = CANVAS_PALETTES.dark;
     function syncPalette() {
-      var pal = document.documentElement.getAttribute("data-theme") === "light"
+      var cur = document.documentElement.getAttribute("data-theme");
+      var pal = cur === "light"
         ? CANVAS_PALETTES.light
-        : CANVAS_PALETTES.dark;
+        : cur === "cn-red" ? CANVAS_PALETTES["cn-red"] : CANVAS_PALETTES.dark;
       if (pal !== currentPal) {
         currentPal = pal;
         orbits.forEach(function (o, i) { o.color = pal.orbitColors[i]; });
@@ -447,7 +505,8 @@
     // 深浅主题各自的粒子配色；发光粒子用缓存的精灵图，避免每帧重建径向渐变
     var DUST_PALETTES = {
       dark: { glow: "140, 185, 255", dot: "205, 224, 255" },
-      light: { glow: "47, 108, 235", dot: "62, 90, 148" }
+      light: { glow: "47, 108, 235", dot: "62, 90, 148" },
+      "cn-red": { glow: "222, 41, 16", dot: "146, 42, 34" }
     };
     var dustPal = DUST_PALETTES.dark;
     var glowSprite = null;
@@ -462,9 +521,10 @@
       gctx.fillRect(0, 0, 64, 64);
     }
     function syncDustPalette() {
-      var pal = document.documentElement.getAttribute("data-theme") === "light"
+      var cur = document.documentElement.getAttribute("data-theme");
+      var pal = cur === "light"
         ? DUST_PALETTES.light
-        : DUST_PALETTES.dark;
+        : cur === "cn-red" ? DUST_PALETTES["cn-red"] : DUST_PALETTES.dark;
       if (pal !== dustPal) {
         dustPal = pal;
         buildGlowSprite();
@@ -907,7 +967,9 @@
         giscusScript.setAttribute("data-reactions-enabled", "1");
         giscusScript.setAttribute("data-emit-metadata", "0");
         giscusScript.setAttribute("data-input-position", "top");
-        giscusScript.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
+        // 中国红是亮色基底，评论区同样用 light
+        var themeCur = document.documentElement.getAttribute("data-theme");
+        giscusScript.setAttribute("data-theme", themeCur === "dark" ? "dark" : "light");
         giscusScript.setAttribute("data-lang", "zh-CN");
         giscusScript.setAttribute("data-loading", "lazy");
         giscusScript.crossOrigin = "anonymous";
@@ -927,7 +989,7 @@
       }
       // 评论区跟随站内深浅主题切换（监听主题事件，动画路径下也能拿到切换后的值）
       document.addEventListener("themechange", function (ev) {
-        var t = ev.detail && ev.detail.theme === "light" ? "light" : "dark";
+        var t = ev.detail && ev.detail.theme === "dark" ? "dark" : "light";
         var frame = document.querySelector("iframe.giscus-frame");
         if (frame && frame.contentWindow) {
           frame.contentWindow.postMessage({ giscus: { setConfig: { theme: t } } }, "https://giscus.app");

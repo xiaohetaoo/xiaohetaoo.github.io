@@ -1801,6 +1801,17 @@ html.theme-anim::view-transition-new(root) {
   background: var(--accent-dim);
 }
 
+/* 长按主题按钮 2.5s 进入「中国红」的蓄力反馈（红色描边 + 呼吸光环） */
+.theme-toggle.arming {
+  color: var(--accent-bright);
+  border-color: var(--accent-border);
+  animation: theme-arm 0.75s ease-in-out infinite;
+}
+@keyframes theme-arm {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 72, 77, 0); }
+  50% { box-shadow: 0 0 0 7px rgba(229, 72, 77, 0.16); }
+}
+
 /* 置顶徽标放进项目卡片右上角日期旁时的间距 */
 .project-card .p-date .pin-badge {
   margin-left: 8px;
@@ -1833,41 +1844,114 @@ html.theme-anim::view-transition-new(root) {
   --btn-on-primary: #0b0d12;
 }
 
-:root[data-theme="light"] .nav { background: rgba(245, 246, 248, 0.82); }
-:root[data-theme="light"] .nav-links a:hover { background: rgba(16, 24, 40, 0.06); }
-:root[data-theme="light"] .nav-links a.nav-cta { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .nav,
+:root[data-theme="cn-red"] .nav { background: rgba(245, 246, 248, 0.82); }
+:root[data-theme="light"] .nav-links a:hover,
+:root[data-theme="cn-red"] .nav-links a:hover { background: rgba(16, 24, 40, 0.06); }
+:root[data-theme="light"] .nav-links a.nav-cta,
+:root[data-theme="cn-red"] .nav-links a.nav-cta { background: rgba(16, 24, 40, 0.04); }
 :root[data-theme="light"] .theme-toggle,
-:root[data-theme="light"] .key-toggle { background: rgba(16, 24, 40, 0.04); }
-:root[data-theme="light"] .nav-search-btn { background: rgba(16, 24, 40, 0.04); }
-:root[data-theme="light"] .nav-search.open .nav-search-input { background: rgba(16, 24, 40, 0.05); }
-:root[data-theme="light"] .nav-search.open .nav-search-input:focus { background: rgba(16, 24, 40, 0.07); }
-:root[data-theme="light"] .nav-search-results { box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14); }
+:root[data-theme="light"] .key-toggle,
+:root[data-theme="cn-red"] .theme-toggle,
+:root[data-theme="cn-red"] .key-toggle { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .nav-search-btn,
+:root[data-theme="cn-red"] .nav-search-btn { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .nav-search.open .nav-search-input,
+:root[data-theme="cn-red"] .nav-search.open .nav-search-input { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="light"] .nav-search.open .nav-search-input:focus,
+:root[data-theme="cn-red"] .nav-search.open .nav-search-input:focus { background: rgba(16, 24, 40, 0.07); }
+:root[data-theme="light"] .nav-search-results,
+:root[data-theme="cn-red"] .nav-search-results { box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14); }
 :root[data-theme="light"] .hero-glow::before {
   background: radial-gradient(circle, rgba(47, 108, 235, 0.10) 0%, rgba(47, 108, 235, 0.04) 40%, transparent 70%);
 }
 :root[data-theme="light"] .hero-glow::after {
   background: radial-gradient(circle, rgba(47, 108, 235, 0.07) 0%, transparent 70%);
 }
-:root[data-theme="light"] .hero-badge { background: rgba(16, 24, 40, 0.04); }
-:root[data-theme="light"] .btn-secondary { background: rgba(16, 24, 40, 0.03); }
-:root[data-theme="light"] .side-item:hover { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="light"] .hero-badge,
+:root[data-theme="cn-red"] .hero-badge { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .btn-secondary,
+:root[data-theme="cn-red"] .btn-secondary { background: rgba(16, 24, 40, 0.03); }
+:root[data-theme="light"] .side-item:hover,
+:root[data-theme="cn-red"] .side-item:hover { background: rgba(16, 24, 40, 0.05); }
 :root[data-theme="light"] .post-card,
-:root[data-theme="light"] .project-card {
+:root[data-theme="light"] .project-card,
+:root[data-theme="cn-red"] .post-card,
+:root[data-theme="cn-red"] .project-card {
   background: var(--bg-panel);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
-:root[data-theme="light"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
-:root[data-theme="light"] .prose code { background: rgba(16, 24, 40, 0.06); }
+:root[data-theme="light"] .project-card:hover,
+:root[data-theme="cn-red"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
+:root[data-theme="light"] .prose code,
+:root[data-theme="cn-red"] .prose code { background: rgba(16, 24, 40, 0.06); }
 :root[data-theme="light"] .prof-lv2 {
   background: rgba(47, 108, 235, 0.08);
   border-color: rgba(47, 108, 235, 0.25);
 }
 :root[data-theme="light"] .tier-badge.tier-a,
 :root[data-theme="light"] .tier-badge.tier-b,
-:root[data-theme="light"] .tier-badge.tier-c { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="light"] .tier-badge.tier-c,
+:root[data-theme="cn-red"] .tier-badge.tier-a,
+:root[data-theme="cn-red"] .tier-badge.tier-b,
+:root[data-theme="cn-red"] .tier-badge.tier-c { background: rgba(16, 24, 40, 0.04); }
 /* 亮色模式下二维码反相成白底深色码（hue-rotate 保持蓝色系、不破坏可扫描性） */
-:root[data-theme="light"] .contact-card .qr-box img {
+:root[data-theme="light"] .contact-card .qr-box img,
+:root[data-theme="cn-red"] .contact-card .qr-box img {
   filter: invert(1) hue-rotate(180deg);
+}
+
+/* ---------- 中国红主题（隐藏彩蛋：长按主题按钮 2.5s 触发） ----------
+   亮色基底：米白底 + 中国红强调；亮色主题的背景适配规则已共享（见上），
+   这里只放 token 覆盖 + 红色强调特有规则 */
+:root[data-theme="cn-red"] {
+  --bg: #faf4f0;
+  --bg-panel: #ffffff;
+  --bg-panel-2: #f3e5e0;
+  --bg-code: #f8eeea;
+
+  --border: rgba(90, 30, 20, 0.12);
+  --border-strong: rgba(90, 30, 20, 0.22);
+
+  --text-1: #2a1613;
+  --text-2: #5f4640;
+  --text-3: #8a6b64;
+
+  --accent: #de2910;
+  --accent-bright: #b81c11;
+  --accent-dim: rgba(222, 41, 16, 0.08);
+  --accent-border: rgba(222, 41, 16, 0.32);
+
+  --glow-deep: #f3d9d2;
+  --glow-mid: #e0a99e;
+  --glow-hi: #8c1f28;
+
+  --grad-start: #e0532b;
+  --text-strong: #2a1613;
+  --code-text: #5a3a34;
+  --btn-on-primary: #ffffff;
+}
+:root[data-theme="cn-red"] .nav { background: rgba(250, 244, 240, 0.82); }
+:root[data-theme="cn-red"] ::selection { background: rgba(222, 41, 16, 0.28); }
+:root[data-theme="cn-red"] .hero-glow::before {
+  background: radial-gradient(circle, rgba(222, 41, 16, 0.10) 0%, rgba(140, 20, 12, 0.05) 40%, transparent 70%);
+}
+:root[data-theme="cn-red"] .hero-glow::after {
+  background: radial-gradient(circle, rgba(222, 41, 16, 0.07) 0%, transparent 70%);
+}
+:root[data-theme="cn-red"] .btn-primary:hover { box-shadow: 0 6px 26px rgba(222, 41, 16, 0.30); }
+:root[data-theme="cn-red"] .project-card::before {
+  background: linear-gradient(90deg, transparent, rgba(222, 41, 16, 0.45), transparent);
+}
+:root[data-theme="cn-red"] .prose a { text-decoration-color: rgba(222, 41, 16, 0.40); }
+:root[data-theme="cn-red"] .tier-badge.tier-s { box-shadow: 0 0 24px rgba(222, 41, 16, 0.22); }
+:root[data-theme="cn-red"] .prof-lv2 {
+  background: rgba(222, 41, 16, 0.08);
+  border: 1px solid rgba(222, 41, 16, 0.25);
+}
+:root[data-theme="cn-red"] .placeholder-box {
+  border: 1.5px dashed rgba(222, 41, 16, 0.45);
+  background: rgba(222, 41, 16, 0.05);
 }
 
 /* ---------- Giscus 评论区（文章页末尾） ---------- */
