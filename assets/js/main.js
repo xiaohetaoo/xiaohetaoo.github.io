@@ -2,8 +2,7 @@
    小核桃工作室 · 博客交互脚本
    1) Hero 原子轨道动画（呼应工作室 logo：原子环绕立方体）
    2) 滚动进场（位移 + 模糊，对齐 harness 的 --enter-y/--enter-blur）
-   3) 代码复制按钮
-   4) 导航滚动高亮
+   3) 导航滚动高亮
    5) 文章列表渲染（posts.json：置顶优先，其余按日期倒序）
    ============================================================ */
 
@@ -21,7 +20,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260901q";
+  var DATA_VER = "20260901u";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -737,7 +736,7 @@
       })
       .join("");
     var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
-    var delay = ' style="--d:' + Math.min(i * 0.08, 0.48).toFixed(2) + 's"';
+    var delay = ' style="--d:' + Math.min(i * 0.05, 0.3).toFixed(2) + 's"';
     var icon = PROJECT_ICONS[p.icon] || PROJECT_ICONS.cube;
     var inner =
       '<div class="p-icon" aria-hidden="true">' + icon + "</div>" +
@@ -1150,33 +1149,6 @@
       .catch(function () { /* posts.json 加载失败时静默跳过 */ });
   })();
 
-  /* ---------- 3. 代码复制按钮 ---------- */
-  document.querySelectorAll(".copy-btn[data-copy]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var text = btn.getAttribute("data-copy");
-      var done = function () {
-        var original = btn.innerHTML;
-        btn.classList.add("copied");
-        btn.innerHTML = "已复制 ✓";
-        setTimeout(function () {
-          btn.classList.remove("copied");
-          btn.innerHTML = original;
-        }, 1600);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(done, done);
-      } else {
-        var ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        try { document.execCommand("copy"); } catch (e) {}
-        document.body.removeChild(ta);
-        done();
-      }
-    });
-  });
-
   /* ---------- 4. 导航滚动高亮 ---------- */
   var sections = ["posts", "projects", "contact"]
     .map(function (id) { return document.getElementById(id); })
@@ -1464,13 +1436,16 @@
           if (mi && open) mi.focus({ preventScroll: true });
         }, 230);
       } else {
+        // 收回动画期间保留内容——同步清空会让面板高度瞬间塌掉，只剩空壳在滑（等于没有收回动画）
         panel.classList.remove("open");
-        // 关闭：清空内容，等收回动画（0.26s）结束后再 hidden（280ms 留缓冲，不截尾）
-        var mi2 = panel.querySelector(".nav-search-mobile-input");
-        if (mi2) mi2.value = "";
-        getMobileList().innerHTML = "";
         setTimeout(function () {
-          if (!open) panel.hidden = true;
+          if (!open) {
+            // 动画播完（0.26s）再清空内容 + hidden（280ms 留缓冲）
+            var mi2 = panel.querySelector(".nav-search-mobile-input");
+            if (mi2) mi2.value = "";
+            getMobileList().innerHTML = "";
+            panel.hidden = true;
+          }
         }, 280);
       }
     }

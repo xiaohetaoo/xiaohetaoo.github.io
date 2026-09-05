@@ -26,11 +26,10 @@
   --glow-mid: #2d5f9e;
   --glow-hi: #4a8ac4;
 
-  /* hero 渐变起色 + 文本强/代码字/成功/按钮主文字 */
+  /* hero 渐变起色 + 文本强/代码字/按钮主文字 */
   --grad-start: #3ec2dd;
   --text-strong: #ffffff;
   --code-text: #cdd3da;
-  --success: #28c840;
   --btn-on-primary: #0b0d12;
 
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
@@ -1280,41 +1279,6 @@ button {
   overflow: hidden;
 }
 
-.prose pre .code-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 16px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-3);
-}
-
-.copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--text-3);
-  padding: 8px 12px;
-  min-height: 28px; /* 让上下 padding 撑到 44 不算美观，留文字小一点；移动端覆盖 */
-  border-radius: var(--radius-xs);
-  border: 1px solid transparent;
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
-}
-.copy-btn:hover {
-  color: var(--text-1);
-  border-color: var(--border-strong);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.copy-btn.copied {
-  color: var(--success);
-}
-
 .prose pre code {
   display: block;
   padding: 18px 20px;
@@ -1682,6 +1646,10 @@ html.theme-anim::view-transition-new(root) {
   min-height: 0;
   padding: 12px 14px;
 }
+/* 面板里没有 .post-list 容器提供 gap，文章卡间距自己兜（桌面面板 / 移动端 mobile-list 都在此选择器范围内） */
+.nav-search-results .post-card + .post-card {
+  margin-top: 10px;
+}
 .nav-search-results .post-card h3 {
   font-size: 14.5px;
 }
@@ -1854,7 +1822,6 @@ html.theme-anim::view-transition-new(root) {
   --grad-start: #1893b4;
   --text-strong: #171b22;
   --code-text: #3a4149;
-  --success: #1aa64f;
   --btn-on-primary: #0b0d12;
 }
 
@@ -1883,8 +1850,6 @@ html.theme-anim::view-transition-new(root) {
 }
 :root[data-theme="light"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
 :root[data-theme="light"] .prose code { background: rgba(16, 24, 40, 0.06); }
-:root[data-theme="light"] .prose pre .code-head { background: rgba(16, 24, 40, 0.03); }
-:root[data-theme="light"] .copy-btn:hover { background: rgba(16, 24, 40, 0.05); }
 :root[data-theme="light"] .prof-lv2 {
   background: rgba(47, 108, 235, 0.08);
   border-color: rgba(47, 108, 235, 0.25);
@@ -2255,7 +2220,7 @@ html.theme-anim::view-transition-new(root) {
     gap: 2px;
   }
   .nav-links a {
-    padding: 8px 12px;
+    padding: 8px 10px; /* 12→10：360 屏也能放下，375+ 右对齐观感不变 */
     font-size: 13.5px;
     white-space: nowrap;  /* 窄屏下禁止"文章"等两字竖排换行 */
   }
@@ -2276,6 +2241,11 @@ html.theme-anim::view-transition-new(root) {
   .nav-search {
     flex-shrink: 0;
     margin-left: 2px;
+  }
+  /* 桌面 10px；窄屏收 6px 给文字链接让位（360 屏放得下、不压 logo） */
+  .theme-toggle,
+  .key-toggle {
+    margin-left: 4px;
   }
 
   /* ≤640 移动端：手机端全局搜索用「下拉式」交互 —— 点放大镜后，搜索面板从 nav
@@ -2382,12 +2352,6 @@ html.theme-anim::view-transition-new(root) {
     align-items: flex-start;
   }
 
-  /* 代码复制按钮：44px 触摸目标（合并自原 line 1298 段） */
-  .copy-btn {
-    min-height: 44px;
-    padding: 12px 14px;
-  }
-
   /* 口令彩蛋弹窗贴边但不顶满（合并自原 line 2688 段） */
   .key-modal { padding: 12px; }
   .key-modal-panel {
@@ -2395,6 +2359,16 @@ html.theme-anim::view-transition-new(root) {
     border-radius: var(--radius);
   }
   #key-modal-input { font-size: 16px; }  /* 防 iOS focus zoom */
+}
+
+/* ---------- 超窄屏（<360）：再收一档，保证「文章」不压 logo、不被裁出屏 ---------- */
+@media (max-width: 359px) {
+  .container { padding: 0 12px; }
+  .nav-links { gap: 0; }
+  .nav-links a { padding: 8px 7px; }
+  .nav-search { margin-left: 0; }
+  .theme-toggle,
+  .key-toggle { margin-left: 4px; }
 }
 
 /* ---------- 降低动效 ---------- */
