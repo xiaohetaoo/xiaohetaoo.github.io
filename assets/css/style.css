@@ -1841,7 +1841,8 @@ html.theme-anim::view-transition-new(root) {
   --grad-start: #1893b4;
   --text-strong: #171b22;
   --code-text: #3a4149;
-  --btn-on-primary: #0b0d12;
+  /* 饱和蓝主按钮上用白字（4.7:1）；hover 深蓝底白字 6.8:1。深字只适合深色模式的浅蓝底 */
+  --btn-on-primary: #ffffff;
 }
 
 :root[data-theme="light"] .nav,
