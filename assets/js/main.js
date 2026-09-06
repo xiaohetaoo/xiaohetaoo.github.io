@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260906q";
+  var DATA_VER = "20260906s";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -755,11 +755,13 @@
   // 站点根前缀：文章页在 /posts/ 子目录要回上一级；404 页会被服务在任意深度的
   // 路径下（如 /a/b 也返回 404.html，页面里声明了 window.XHT_AT_404），相对路径
   // 会解析进不存在的子目录，必须改用站点绝对根。forHref=true 给链接拼接用
-  //（根页面返回 ""，404 页返回 "/"），false 给 fetch 拼接用——两条路径都恰好
-  // 拼出 "/posts.json" 这样的绝对根，绝不产生 "//posts.json" 协议相对 URL
+  //（根页面 "" / 文章页 "../" / 404 页 "/"），false 给 fetch 拼接用——三种页面
+  // 恰好拼出 "./posts.json"、"../posts.json"、"/posts.json"。fetch 分支的文章页
+  // 必须返回不带尾斜杠的 ".."：写成 "../" 会拼出 "..//"，解析成 //posts.json
+  //（仅因 GitHub Pages 归一化根级双斜杠才 200，/posts//x 形态是实打实的 404）
   function siteRoot(forHref) {
     if (window.XHT_AT_404) return forHref ? "/" : "";
-    return window.location.pathname.indexOf("/posts/") !== -1 ? "../" : (forHref ? "" : ".");
+    return window.location.pathname.indexOf("/posts/") !== -1 ? (forHref ? "../" : "..") : (forHref ? "" : ".");
   }
 
   // 同一页面多处列表共用一次请求；文章页在 /posts/ 子目录，要回到站点根再取
@@ -1040,9 +1042,10 @@
         giscusScript.setAttribute("data-reactions-enabled", "1");
         giscusScript.setAttribute("data-emit-metadata", "0");
         giscusScript.setAttribute("data-input-position", "top");
-        // 中国红是亮色基底，评论区同样用 light
+        // 中国红是亮色基底，评论区同样用 light；首访（无 data-theme）是暗色默认，
+        // 必须落 dark——判定要按"是亮色基底才给 light"，不能按"≠dark 给 light"
         var themeCur = document.documentElement.getAttribute("data-theme");
-        giscusScript.setAttribute("data-theme", themeCur === "dark" ? "dark" : "light");
+        giscusScript.setAttribute("data-theme", themeCur === "light" || themeCur === "cn-red" ? "light" : "dark");
         giscusScript.setAttribute("data-lang", "zh-CN");
         giscusScript.setAttribute("data-loading", "lazy");
         giscusScript.crossOrigin = "anonymous";
@@ -1801,6 +1804,10 @@
       if (!(e.ctrlKey || e.metaKey) || (e.key !== "k" && e.key !== "K")) return;
       var t = e.target;
       if (t && t.closest && t.closest("input, textarea, select, [contenteditable]")) return;
+      // 口令弹窗打开时键盘属于弹窗（nav 处于 inert，input.focus 无效），
+      // 不去拉起藏在弹窗（z 220）后面（z 101）的搜索面板，避免留下半开残态
+      var keyModal = document.getElementById("key-modal");
+      if (keyModal && !keyModal.hidden) return;
       e.preventDefault();
       setOpen(!open);
     });

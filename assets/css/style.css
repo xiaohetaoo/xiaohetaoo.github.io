@@ -1898,6 +1898,9 @@ html.theme-anim::view-transition-new(root) {
 :root[data-theme="cn-red"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
 :root[data-theme="light"] .prose code,
 :root[data-theme="cn-red"] .prose code { background: rgba(16, 24, 40, 0.06); }
+/* pipe-table 偶数行斑马纹：暗色的白 2% 在亮色基底上不可见，各换各的深色低透明度 */
+:root[data-theme="light"] .prose .pipe-table tbody tr:nth-child(even) { background: rgba(16, 24, 40, 0.03); }
+:root[data-theme="cn-red"] .prose .pipe-table tbody tr:nth-child(even) { background: rgba(90, 30, 20, 0.04); }
 :root[data-theme="light"] .prof-lv2 {
   background: rgba(47, 108, 235, 0.08);
   border-color: rgba(47, 108, 235, 0.25);
