@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260906s";
+  var DATA_VER = "20260906t";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -151,15 +151,26 @@
     }
   });
 
-  // 浏览器返回键：从列表页离开且是后退遍历时，也走反向滑动（点返回链接走上面的 click 路径）
+  // 浏览器返回键：从列表页/文章页离开且是后退遍历时，也走反向滑动
+  //（点返回链接走上面的 click 路径）。首页不参与：它是站点根，后退进文章的
+  // 场景方向语义不成立，回首页的反向滑动由文章页这条覆盖。
+  // 旧 pagehide 监听是"即将离开"触发，但因历史 API 限制（fwd/back 都给同
+  // 一信号）会误标前进；pageswap 在新页 pagereveal 前触发、activation.
+  // navigationType='traverse' 才是真正的历史遍历；'push'/'replace' 是新导航
+  // 入口。配合 fromList/fromPost 双向拦截：只有 history.back 离开这两个页面
+  // 才落 back，其它 push（首页/文章卡片前进）一律不标——可避免误把前进标成 back
   window.addEventListener("pageswap", function (e) {
     try {
       var path = window.location.pathname;
-      if (path.indexOf("archive.html") === -1 && path.indexOf("projects.html") === -1) return;
+      var fromList = path.indexOf("archive.html") !== -1 || path.indexOf("projects.html") !== -1;
+      var fromPost = path.indexOf("/posts/") !== -1;
+      if (!fromList && !fromPost) return;
       var act = e.activation;
-      if (act && act.entry && act.oldEntry && act.entry.index < act.oldEntry.index) {
-        markNavDir("back");
-      }
+      if (!act) return;
+      if (act.navigationType !== "traverse") return; // 过滤 push/replace
+      if (typeof act.entry.index === "number" && typeof act.oldEntry.index === "number"
+          && act.entry.index >= act.oldEntry.index) return; // 前进遍历（兜底）
+      markNavDir("back");
     } catch (err) {}
   });
 
@@ -764,11 +775,15 @@
     return window.location.pathname.indexOf("/posts/") !== -1 ? (forHref ? "../" : "..") : (forHref ? "" : ".");
   }
 
-  // 同一页面多处列表共用一次请求；文章页在 /posts/ 子目录，要回到站点根再取
+  // 同一页面多处列表共用一次请求；文章页在 /posts/ 子目录，要回到站点根再取。
+  // 失败时清空缓存并 rethrow：提示照常显示，但缓存不再锁死——下次任何消费方
+  // （搜索输入、重新渲染）调用即重新 fetch，页面不必整页刷新就能自愈
   var postsCache = null;
   function loadPosts() {
     if (!postsCache) {
-      postsCache = fetch(siteRoot(false) + "/posts.json?v=" + DATA_VER).then(function (r) { return r.json(); });
+      postsCache = fetch(siteRoot(false) + "/posts.json?v=" + DATA_VER)
+        .then(function (r) { return r.json(); })
+        .catch(function (e) { postsCache = null; throw e; });
     }
     return postsCache;
   }
@@ -924,8 +939,10 @@
   var projectsCache = null;
   function loadProjects() {
     if (!projectsCache) {
-      // 与 loadPosts 同样的根前缀规则（含 404 页绝对根兜底）
-      projectsCache = fetch(siteRoot(false) + "/projects.json?v=" + DATA_VER).then(function (r) { return r.json(); });
+      // 与 loadPosts 同样的根前缀规则（含 404 页绝对根兜底）+ 同样的失败自愈
+      projectsCache = fetch(siteRoot(false) + "/projects.json?v=" + DATA_VER)
+        .then(function (r) { return r.json(); })
+        .catch(function (e) { projectsCache = null; throw e; });
     }
     return projectsCache;
   }
