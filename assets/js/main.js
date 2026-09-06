@@ -21,12 +21,12 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260906e";
+  var DATA_VER = "20260906h";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
   var MOON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
-  var CN_ICON = '<svg viewBox="0 0 24 24" fill="none"><polygon points="12,2 14.47,8.6 21.51,8.91 15.99,13.3 17.88,20.09 12,16.2 6.12,20.09 8.01,13.3 2.49,8.91 9.53,8.6" fill="#ffde00" stroke="#de2910" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+  var CN_ICON = '<svg viewBox="0 0 24 24" fill="none"><polygon points="12,2 14.47,8.6 21.51,8.91 15.99,13.3 17.88,20.09 12,16.2 6.12,20.09 8.01,13.3 2.49,8.91 9.53,8.6" fill="#de2910"/></svg>';
   var syncTheme = function () {
     var cur = document.documentElement.getAttribute("data-theme");
     if (cur === "cn-red") {
@@ -367,14 +367,27 @@
     var heroRect = null;
     function updateHeroRect() { heroRect = canvas.getBoundingClientRect(); }
 
+    // 拖拽旋转状态：baseYaw = 自转累计角（拖拽时暂停累加），dragYaw/Pitch = 用户拖拽姿态（保留不回正），
+    // spinVel = 松手惯性角速度（指数衰减，衰减完无级交还自转）
+    var baseYaw = 0;
+    var dragYaw = 0, dragPitch = 0, spinVel = 0;
+    var dragging = false, dragPid = null;
+    var lastPX = 0, lastPY = 0, lastPT = 0;
+
     function drawCube(t, dt) {
       dt = dt || 0;
       var s = W * 0.085;
-      var tiltX = -0.42;
-      var rotY = t * 0.3;
-      // 鼠标偏转：立方体朝光标方向轻微倾斜（最大约 0.3 弧度），松手回弹
+      if (!dragging) {
+        baseYaw += 0.3 * dt;
+        dragYaw += spinVel * dt;
+        spinVel *= Math.pow(0.04, dt); // 松手惯性：每秒衰到 4%，低于 0.05 rad/s 归零、无级回到自转
+        if (Math.abs(spinVel) < 0.05) spinVel = 0;
+      }
+      var tiltX = -0.42 + dragPitch;
+      var rotY = baseYaw + dragYaw;
+      // 鼠标偏转：立方体朝光标方向轻微倾斜（最大约 0.3 弧度）；拖拽期间归零，避免和拖拽打架
       var lx = 0, ly = 0;
-      if (heroMouse.active && heroRect) {
+      if (!dragging && heroMouse.active && heroRect) {
         lx = Math.max(-1, Math.min(1, (heroMouse.x - (heroRect.left + heroRect.width / 2)) / (heroRect.width / 2)));
         ly = Math.max(-1, Math.min(1, (heroMouse.y - (heroRect.top + heroRect.height / 2)) / (heroRect.height / 2)));
       }
@@ -426,13 +439,18 @@
       lastTs = ts;
       var t = (ts - start) / 1000;
       syncPalette();
+      drawScene(t, dt);
+      if (!reducedMotion && !staticMode && !document.hidden && heroVisible) {
+        scheduleFrame();
+      }
+    }
+
+    // 一帧的完整绘制（轨道 + 立方体 + 电子）；static/reduced 的拖拽重绘也走这里
+    function drawScene(t, dt) {
       ctx.clearRect(0, 0, W, H);
       orbits.forEach(function (o) { drawOrbit(o, t); });
       drawCube(t, dt);
       orbits.forEach(function (o) { drawElectron(o, t, dt); });
-      if (!reducedMotion && !staticMode && !document.hidden && heroVisible) {
-        scheduleFrame();
-      }
     }
 
     // 滚出首屏就停帧，回到视口再继续（首页往下阅读时动画不必空转）。
@@ -462,15 +480,60 @@
         if (reducedMotion || staticMode) {
           // 静态重绘同样要手动同步调色板（不走 frame()）
           syncPalette();
-          ctx.clearRect(0, 0, W, H);
-          orbits.forEach(function (o) { drawOrbit(o, 0); });
-          drawCube(0.5);
-          orbits.forEach(function (o) { drawElectron(o, 0); });
+          drawScene(0, 0);
         }
       }, 120);
     });
 
     window.addEventListener("scroll", updateHeroRect, { passive: true });
+
+    // 拖拽旋转立方体：命中区收窄到立方体本体附近（中心半径 16% 画布宽），不是整块画布；
+    // 横拖偏航、竖拖俯仰，松手带惯性，衰减完无级回到自转。
+    // touch-action: pan-y（style.css）保证手机上竖向仍可滚屏
+    function inCubeZone(e) {
+      var r = canvas.getBoundingClientRect();
+      var dx = e.clientX - (r.left + r.width / 2);
+      var dy = e.clientY - (r.top + r.height / 2);
+      var hit = r.width * 0.16; // 立方体最大投影半径 ≈ 0.12W，留少量余量
+      return dx * dx + dy * dy <= hit * hit;
+    }
+    canvas.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0 || !inCubeZone(e)) return;
+      dragging = true;
+      dragPid = e.pointerId;
+      lastPX = e.clientX; lastPY = e.clientY;
+      lastPT = performance.now();
+      spinVel = 0;
+      canvas.style.cursor = "grabbing";
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    canvas.addEventListener("pointermove", function (e) {
+      // 光标只在立方体附近变 grab，其余区域恢复默认
+      if (dragging) return;
+      canvas.style.cursor = inCubeZone(e) ? "grab" : "";
+    });
+    canvas.addEventListener("pointerleave", function () {
+      if (!dragging) canvas.style.cursor = "";
+    });
+    window.addEventListener("pointermove", function (e) {
+      if (!dragging || e.pointerId !== dragPid) return;
+      var now = performance.now();
+      var dtm = Math.max(8, now - lastPT) / 1000;
+      var dx = e.clientX - lastPX, dy = e.clientY - lastPY;
+      lastPX = e.clientX; lastPY = e.clientY; lastPT = now;
+      dragYaw += dx * 0.01;
+      dragPitch = Math.max(-1.35, Math.min(1.35, dragPitch + dy * 0.008));
+      spinVel = (dx * 0.01) / dtm; // 松手惯性取最近一段的拖拽角速度
+      if (reducedMotion || staticMode) drawScene(0, 0); // 无帧循环时手动重绘
+    });
+    ["pointerup", "pointercancel"].forEach(function (ev) {
+      window.addEventListener(ev, function (e) {
+        if (!dragging || e.pointerId !== dragPid) return;
+        dragging = false;
+        dragPid = null;
+        canvas.style.cursor = inCubeZone(e) ? "grab" : "";
+      });
+    });
 
     resize();
     updateHeroRect();
@@ -478,10 +541,7 @@
       // 静态渲染一帧。static/reduced 路径不走 frame()，调色板要手动同步，
       // 否则亮色主题下画的是深色调色板版
       syncPalette();
-      ctx.clearRect(0, 0, W, H);
-      orbits.forEach(function (o) { drawOrbit(o, 0); });
-      drawCube(0.5);
-      orbits.forEach(function (o) { drawElectron(o, 0); });
+      drawScene(0, 0);
     } else {
       scheduleFrame();
     }

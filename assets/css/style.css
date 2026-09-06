@@ -516,6 +516,9 @@ button {
   width: min(100%, 520px);
   aspect-ratio: 1;
   mix-blend-mode: screen;
+  /* 立方体可拖拽旋转：grab 光标由 JS 按命中区（中心 16%）切换，不设整片 grab；
+     pan-y 让手机竖向滚屏留给页面、横向拖动归画布 */
+  touch-action: pan-y;
 }
 
 /* ---------- 理念三栏（对齐 harness 理念区） ---------- */
