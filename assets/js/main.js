@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260906k";
+  var DATA_VER = "20260906m";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -130,13 +130,15 @@
     // 下面 el.closest() 在元素上调用天然有效；guard 是为 null / 非 Element 兜底
     var el = e.target && e.target.closest ? e.target : null;
     var deep = el ? el.closest(".all-posts-link[href], .all-projects-link[href]") : null;
+    var side = el ? el.closest(".side-item[href]") : null;
     var backLink = null;
-    if (!deep) {
+    if (!deep && !side) {
       var path = window.location.pathname;
       var onList = path.indexOf("archive.html") !== -1 || path.indexOf("projects.html") !== -1;
       backLink = onList && el ? el.closest(".back-link[href]") : null;
     }
     if (deep) markNavDir("deep");
+    else if (side) markNavDir("side");
     else if (backLink) markNavDir("back");
     else {
       // 点了别的入口：清掉残留标记，避免方向滑动污染下一次普通导航
@@ -159,9 +161,10 @@
   window.addEventListener("pagereveal", function (e) {
     var dir = null;
     try { dir = sessionStorage.getItem("xht-nav-dir"); } catch (err) {}
-    if (dir !== "deep" && dir !== "back") return;
+    if (dir !== "deep" && dir !== "back" && dir !== "side") return;
     try { sessionStorage.removeItem("xht-nav-dir"); } catch (err) {}
-    var dirCls = dir === "deep" ? "nav-deep" : "nav-back";
+    // side = 侧栏切文章：新页（含导航栏）直接就位，不上浮渐显；morph 照常
+    var dirCls = dir === "deep" ? "nav-deep" : dir === "side" ? "nav-side" : "nav-back";
     document.documentElement.classList.add(dirCls);
     var dirDone = function () { document.documentElement.classList.remove(dirCls); };
     if (e.viewTransition) e.viewTransition.finished.then(dirDone, dirDone);
@@ -1347,6 +1350,7 @@
     var debounce = null;
     var mobileDebounce = null;  // 移动端下拉面板 mobile input 的防抖 timer
     var mobileCloseTimer = null; // 移动端收回动画结束后的清理定时器（重开时要清掉，防止腰斩下一段收回动画）
+    var panelCloseTimer = null;  // 桌面端面板收回动画结束后的隐藏定时器（重开时要清掉并摘 closing）
     var open = false;
 
     // 面板挂到 body：留在 .nav（backdrop-filter）子树里，元素的 VT 快照会被
@@ -1462,6 +1466,9 @@
       // ===== 桌面特有部分 =====
       wrap.classList.toggle("open", open);
       if (open) {
+        // 重开时取消上一轮未完成的收起动画，移除 closing 让 pop 动画重新播
+        if (panelCloseTimer) { clearTimeout(panelCloseTimer); panelCloseTimer = null; }
+        panel.classList.remove("closing");
         // 没输入内容前不显示空面板（悬空一个圆角框很怪），打了字由 renderResults 展开
         panel.hidden = input.value.trim() === "";
         positionPanel();
@@ -1475,8 +1482,17 @@
       } else {
         input.value = "";
         input.removeAttribute("aria-activedescendant");
-        panel.hidden = true;
-        panel.innerHTML = "";
+        // 收回动画：面板淡出上移 0.16s 后再隐藏（期间重开由 open 分支取消）
+        panel.classList.add("closing");
+        if (panelCloseTimer) clearTimeout(panelCloseTimer);
+        panelCloseTimer = setTimeout(function () {
+          panelCloseTimer = null;
+          panel.classList.remove("closing");
+          if (!open) {
+            panel.hidden = true;
+            panel.innerHTML = "";
+          }
+        }, 170);
       }
     }
 

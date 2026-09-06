@@ -1648,6 +1648,14 @@ html.theme-anim::view-transition-new(root) {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+/* 桌面端面板收回：淡出上移后再由 JS 隐藏（.closing 期间 fill both 锁住终态不闪） */
+.nav-search-results.closing {
+  animation: nav-search-drop 0.16s ease-in both;
+}
+@keyframes nav-search-drop {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
 /* 浮层内的卡片更紧凑 */
 .nav-search-results .post-card {
   min-height: 0;
@@ -2558,6 +2566,11 @@ html.nav-back:not(.theme-anim)::view-transition-old(root) {
 
 html.nav-back:not(.theme-anim)::view-transition-new(root) {
   animation: vt-slide-in-left 0.3s ease-out both;
+}
+
+/* 侧栏切文章：新页（含 fixed 导航栏）直接就位，不做上浮渐显；旧页照常淡出，morph 保留 */
+html.nav-side:not(.theme-anim)::view-transition-new(root) {
+  animation: none;
 }
 
 @keyframes vt-slide-out-left {
