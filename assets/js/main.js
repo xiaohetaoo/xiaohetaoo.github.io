@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260906h";
+  var DATA_VER = "20260906j";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -522,7 +522,9 @@
       var dx = e.clientX - lastPX, dy = e.clientY - lastPY;
       lastPX = e.clientX; lastPY = e.clientY; lastPT = now;
       dragYaw += dx * 0.01;
-      dragPitch = Math.max(-1.35, Math.min(1.35, dragPitch + dy * 0.008));
+      // 纵向取反号：向下拖 = 抓住正面往下拉（正面下沉、顶面转向视线），与抓取隐喻一致。
+      // clamp 让总俯角（-0.42 + dragPitch）留在 [-1.5, +0.5]，拖过头不会翻过顶点呈倒置
+      dragPitch = Math.max(-1.08, Math.min(0.92, dragPitch - dy * 0.008));
       spinVel = (dx * 0.01) / dtm; // 松手惯性取最近一段的拖拽角速度
       if (reducedMotion || staticMode) drawScene(0, 0); // 无帧循环时手动重绘
     });
