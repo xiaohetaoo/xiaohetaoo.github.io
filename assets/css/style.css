@@ -2791,11 +2791,13 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   to   { opacity: 1; transform: none; }
 }
 
-/* 浅色主题：遮罩稍浅，阴影更柔和 */
-:root[data-theme="light"] .key-modal-backdrop {
+/* 浅色主题：遮罩稍浅，阴影更柔和（中国红是亮色基底，同享） */
+:root[data-theme="light"] .key-modal-backdrop,
+:root[data-theme="cn-red"] .key-modal-backdrop {
   background: rgba(16, 24, 40, 0.32);
 }
-:root[data-theme="light"] .key-modal-panel {
+:root[data-theme="light"] .key-modal-panel,
+:root[data-theme="cn-red"] .key-modal-panel {
   box-shadow: 0 20px 48px rgba(16, 24, 40, 0.20);
 }
 

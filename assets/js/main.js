@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260906m";
+  var DATA_VER = "20260906o";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -130,16 +130,20 @@
     // 下面 el.closest() 在元素上调用天然有效；guard 是为 null / 非 Element 兜底
     var el = e.target && e.target.closest ? e.target : null;
     var deep = el ? el.closest(".all-posts-link[href], .all-projects-link[href]") : null;
-    var side = el ? el.closest(".side-item[href]") : null;
-    var backLink = null;
-    if (!deep && !side) {
-      var path = window.location.pathname;
-      var onList = path.indexOf("archive.html") !== -1 || path.indexOf("projects.html") !== -1;
-      backLink = onList && el ? el.closest(".back-link[href]") : null;
+    // post-nav 的 ghost 占位（无上/下篇时显示）指向首页，与返回首页按钮同语义，同走反向滑动
+    var backLink = el ? el.closest(".back-link[href], .post-nav .ghost[href]") : null;
+    // 进文章（侧栏/首页与归档卡片/推荐/上下篇/文内链接）一律不整页上浮：
+    // side 标记 → 新页挂 nav-side 抑制 vt-page-in，morph 保留。按解析后的
+    // pathname 判定，相对（posts/x、../posts/x、裸文件名 post-nav）与绝对根
+    // （404 页）写法通吃；排除 # 开头的页内锚点和指向当前页自身的链接
+    var a = el ? el.closest("a[href]") : null;
+    var toPost = false;
+    if (a && a.getAttribute("href").charAt(0) !== "#") {
+      toPost = a.pathname.indexOf("/posts/") !== -1 && a.pathname !== window.location.pathname;
     }
     if (deep) markNavDir("deep");
-    else if (side) markNavDir("side");
     else if (backLink) markNavDir("back");
+    else if (toPost) markNavDir("side");
     else {
       // 点了别的入口：清掉残留标记，避免方向滑动污染下一次普通导航
       try { sessionStorage.removeItem("xht-nav-dir"); } catch (err) {}
@@ -192,6 +196,9 @@
     var armTimer = null;
     themeBtn.addEventListener("pointerdown", function (e) {
       if (e.button !== 0) return;
+      // 上一轮长按的吞击标记若没等到 click（长按后手指滑出按钮），在新的
+      // 一次按下时作废，免得下一次正常点击被白吞
+      suppressClick = false;
       var px = e.clientX, py = e.clientY;
       themeBtn.classList.add("arming");
       armTimer = setTimeout(function () {
@@ -377,7 +384,7 @@
     var dragging = false, dragPid = null;
     var lastPX = 0, lastPY = 0, lastPT = 0;
 
-    function drawCube(t, dt) {
+    function drawCube(dt) {
       dt = dt || 0;
       var s = W * 0.085;
       if (!dragging) {
@@ -452,7 +459,7 @@
     function drawScene(t, dt) {
       ctx.clearRect(0, 0, W, H);
       orbits.forEach(function (o) { drawOrbit(o, t); });
-      drawCube(t, dt);
+      drawCube(dt);
       orbits.forEach(function (o) { drawElectron(o, t, dt); });
     }
 
@@ -536,7 +543,9 @@
         if (!dragging || e.pointerId !== dragPid) return;
         dragging = false;
         dragPid = null;
-        canvas.style.cursor = inCubeZone(e) ? "grab" : "";
+        // pointercancel 的坐标不可信（常是 0,0），不拿它做命中判定——恢复默认，
+        // 下次 pointermove 进立方体区再给 grab
+        canvas.style.cursor = ev === "pointerup" && inCubeZone(e) ? "grab" : "";
       });
     });
 
@@ -643,8 +652,6 @@
     }
 
     function dustDraw(t, dt) {
-      if (dLastScroll === undefined) dLastScroll = window.scrollY;
-
       // 滚动时整体微微加速（随滚动速度衰减）
       var sy = window.scrollY;
       dScrollBoost = dScrollBoost * 0.88 + (sy - dLastScroll) * 0.10;
@@ -1114,6 +1121,35 @@
         var currentItem = sideList.querySelector(".side-item.current");
         if (currentItem && currentItem.scrollIntoView) {
           currentItem.scrollIntoView({ block: "nearest" });
+        }
+        // post-nav 与侧栏同源：静态 HTML 里的上/下篇是写死的，posts.json 增删或
+        // 改日期后会过期（显示顺序≠JSON书写顺序），这里按 sortPosts 结果重算
+        // 邻居回填（无上/下篇回填 ghost 态），保证 post-nav 和侧栏永远一个顺序
+        var nav = document.querySelector(".post-nav");
+        if (nav) {
+          var sorted = sortPosts(posts);
+          var cur = -1;
+          sorted.forEach(function (p, i) {
+            if (path.indexOf("/" + p.slug + ".html") !== -1) cur = i;
+          });
+          var syncSlot = function (a, target, ghostText, isNext) {
+            if (!a || !a.querySelector(".t")) return;
+            if (target) {
+              a.className = isNext ? "next" : "";
+              a.removeAttribute("aria-hidden");
+              a.setAttribute("href", root + "/posts/" + target.slug + ".html");
+              a.querySelector(".t").textContent = target.title;
+            } else {
+              a.className = isNext ? "next ghost" : "ghost";
+              a.setAttribute("aria-hidden", "true");
+              a.setAttribute("href", root + "/index.html#posts");
+              a.querySelector(".t").textContent = ghostText;
+            }
+          };
+          if (cur !== -1) {
+            syncSlot(nav.querySelector("a:not(.next)"), sorted[cur - 1], "这是最新的一篇", false);
+            syncSlot(nav.querySelector("a.next"), sorted[cur + 1], "还没有下一篇", true);
+          }
         }
       })
       .catch(function () {
