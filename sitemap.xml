@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://xiaohetaoo.github.io/</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-08</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
@@ -12,7 +12,7 @@
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-08</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -94,6 +94,16 @@
     <loc>https://xiaohetaoo.github.io/posts/delta-operators.html</loc>
     <lastmod>2026-09-06</lastmod>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://xiaohetaoo.github.io/projects.html#p=巅峰竞技场</loc>
+    <lastmod>2026-09-08</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://xiaohetaoo.github.io/projects.html#p=抗击病毒</loc>
+    <lastmod>2026-09-08</lastmod>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html#p=地理标识</loc>
