@@ -1792,6 +1792,11 @@ html.theme-anim::view-transition-new(root) {
      锁定后按钮保持 44×44 完整正方形。 */
   flex-shrink: 0;
   transition: color 0.2s, border-color 0.2s, background 0.2s;
+  /* iOS 长按主题按钮进 cn-red 彩蛋时，系统会弹电话/拷贝菜单打断蓄力，
+     显式关掉长按呼出菜单和文字选中 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .theme-toggle:hover,
@@ -2218,11 +2223,6 @@ html.theme-anim::view-transition-new(root) {
   color: var(--text-2);
   letter-spacing: 0.02em;
 }
-.related-empty {
-  color: var(--text-3);
-  font-size: 13.5px;
-  font-family: var(--font-mono);
-}
 @media (max-width: 900px) {
   .related-grid { grid-template-columns: 1fr; }
 }
@@ -2363,7 +2363,6 @@ html.theme-anim::view-transition-new(root) {
   /* ≤640 移动端：手机端全局搜索用「下拉式」交互 —— 点放大镜后，搜索面板从 nav
      下方往下弹出。面板 + 背景都用毛玻璃质感（半透明 + backdrop-filter blur）。
      跟桌面端的"原地展开"路径分开（JS 里 matchMedia 路由）。 */
-  .nav-search { margin-left: 2px; }
   /* 让位元素在 ≤640 直接从 flex 流中抽出（display: none），不参与 nav 布局 */
   .nav-links.nav-search-open > a,
   .nav-links.nav-search-open .theme-toggle,
@@ -2446,7 +2445,6 @@ html.theme-anim::view-transition-new(root) {
     background-color: rgba(255, 255, 255, 0.08);
   }
   /* 移动端不需要单独遮罩 —— 面板本身已经覆盖剩余屏幕 + 毛玻璃模糊 */
-  .nav-search-mobile-backdrop { display: none; }
 
   /* 窄屏 placeholder 用更短字号避免截断 */
   .nav-search.open .nav-search-input {
@@ -2813,3 +2811,53 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 }
 
 /* ≤640：弹窗贴边但不顶满 —— 已合并到「响应式」≤640 主媒体查询末尾的 .key-modal 规则 */
+
+/* ---------- 打印样式：正文优先，去装饰去交互 ----------
+   颜色直接覆写变量（暗色是 :root 默认），装饰层/导航/评论整体隐藏 */
+@media print {
+  :root {
+    --bg: #ffffff;
+    --bg-panel: #ffffff;
+    --bg-panel-2: #f7f7f8;
+    --bg-code: #f4f4f5;
+    --border: #d9d9de;
+    --border-strong: #c3c3c9;
+    --text-1: #111111;
+    --text-2: #3d3d42;
+    --text-3: #59595f;
+    --accent: #1d4ed8;
+    --accent-bright: #1d4ed8;
+    --accent-dim: transparent;
+    --accent-border: #94b4f0;
+    --text-strong: #000000;
+    --code-text: #1f2328;
+  }
+  @page { margin: 1.8cm 1.6cm; }
+  html, body { background: #fff !important; }
+
+  /* 装饰层与交互组件：纸面上无意义 */
+  #dust-canvas,
+  .nav, .footer, .skip-link, .key-modal,
+  .nav-search, .reading-progress,
+  .hero, .concept,
+  .post-search, .project-search,
+  .all-posts-link, .all-projects-link,
+  .back-link, .post-sidebar, .post-nav, .comments, .related {
+    display: none !important;
+  }
+  .container { max-width: none; padding: 0; }
+  /* 渐显动画没被滚动触发（打印不走 IntersectionObserver）时不能让内容消失 */
+  .js .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+  h1, h2, h3 { color: var(--text-strong); page-break-after: avoid; }
+  a { color: inherit; }
+  /* 外链打印时附上真实地址，纸面上也能"点" */
+  .prose a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #59595f;
+    word-break: break-all;
+  }
+  .prose pre, .prose code { background: var(--bg-code) !important; }
+  .prose blockquote, .prose table, .prose th, .prose td { border-color: var(--border) !important; }
+  .prose img, .prose pre { page-break-inside: avoid; }
+}

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>小核桃的个人博客</title>
+  <subtitle>记录 = 输入 × 输出 · 用好奇心驱动</subtitle>
+  <link href="https://xiaohetaoo.github.io/"/>
+  <link rel="self" href="https://xiaohetaoo.github.io/feed.xml"/>
+  <id>https://xiaohetaoo.github.io/</id>
+  <updated>2026-09-06T00:00:00+08:00</updated>
+  <author>
+    <name>小核桃</name>
+    <uri>https://xiaohetaoo.github.io/</uri>
+  </author>
+  <generator uri="https://xiaohetaoo.github.io/">小核桃工作室静态站</generator>
+  <rights>© 2026 小核桃工作室</rights>
+
+  <entry>
+    <title>我玩过的游戏（双语）</title>
+    <link href="https://xiaohetaoo.github.io/posts/games-i-played.html"/>
+    <id>https://xiaohetaoo.github.io/posts/games-i-played.html</id>
+    <updated>2026-09-06T00:00:00+08:00</updated>
+    <summary>想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。</summary>
+    <category term="游戏"/>
+    <category term="了解我"/>
+  </entry>
+  <entry>
+    <title>lemonge（柠檬鸡）</title>
+    <link href="https://xiaohetaoo.github.io/posts/lemonge.html"/>
+    <id>https://xiaohetaoo.github.io/posts/lemonge.html</id>
+    <updated>2026-09-06T00:00:00+08:00</updated>
+    <summary>高中课余写的lemon中文黑子填词，自认为写的比某团好</summary>
+    <category term="ikun"/>
+    <category term="歌词"/>
+  </entry>
+  <entry>
+    <title>我怎么老被~啊！</title>
+    <link href="https://xiaohetaoo.github.io/posts/delta-operators.html"/>
+    <id>https://xiaohetaoo.github.io/posts/delta-operators.html</id>
+    <updated>2026-09-06T00:00:00+08:00</updated>
+    <summary>三角洲每个干员的特色</summary>
+    <category term="三角洲"/>
+  </entry>
+  <entry>
+    <title>非法网站打击公示</title>
+    <link href="https://xiaohetaoo.github.io/posts/illegal-sites-report.html"/>
+    <id>https://xiaohetaoo.github.io/posts/illegal-sites-report.html</id>
+    <updated>2026-09-04T00:00:00+08:00</updated>
+    <summary>小核桃工作室致力于响应国家清朗网络行动，坚决打击违法违规网站！</summary>
+    <category term="举报"/>
+    <category term="查询码"/>
+  </entry>
+  <entry>
+    <title>核氏数字拼音中文加密法</title>
+    <link href="https://xiaohetaoo.github.io/posts/he-shi-numeral-pinyin-cipher.html"/>
+    <id>https://xiaohetaoo.github.io/posts/he-shi-numeral-pinyin-cipher.html</id>
+    <updated>2026-09-04T00:00:00+08:00</updated>
+    <summary>初中课余研究的中文加密法，对发音进行加密</summary>
+    <category term="加密"/>
+    <category term="介绍"/>
+  </entry>
+  <entry>
+    <title>核氏汉字结构加密法</title>
+    <link href="https://xiaohetaoo.github.io/posts/he-shi-structure-cipher.html"/>
+    <id>https://xiaohetaoo.github.io/posts/he-shi-structure-cipher.html</id>
+    <updated>2026-09-04T00:00:00+08:00</updated>
+    <summary>高中课余研究的汉字加密法，对汉字结构进行加密</summary>
+    <category term="加密"/>
+    <category term="介绍"/>
+  </entry>
+  <entry>
+    <title>江南永存</title>
+    <link href="https://xiaohetaoo.github.io/posts/jiangnan-forever.html"/>
+    <id>https://xiaohetaoo.github.io/posts/jiangnan-forever.html</id>
+    <updated>2026-08-31T00:00:00+08:00</updated>
+    <summary>高中写的科幻微小说，参赛作品，主题“江南”，虽然什么奖都没拿就是了QwQ</summary>
+    <category term="科幻"/>
+    <category term="小说"/>
+  </entry>
+  <entry>
+    <title>抽象杯</title>
+    <link href="https://xiaohetaoo.github.io/posts/abstract-cup.html"/>
+    <id>https://xiaohetaoo.github.io/posts/abstract-cup.html</id>
+    <updated>2026-08-31T00:00:00+08:00</updated>
+    <summary>高中写的乒乓球比赛规则，主打抽象和趣味。</summary>
+    <category term="乒乓球"/>
+    <category term="规则"/>
+  </entry>
+  <entry>
+    <title>悦独</title>
+    <link href="https://xiaohetaoo.github.io/posts/yuedu.html"/>
+    <id>https://xiaohetaoo.github.io/posts/yuedu.html</id>
+    <updated>2026-08-31T00:00:00+08:00</updated>
+    <summary>高中写的现代诗，参赛作品，主题“阅读”，虽然也什么奖都没拿就是了QwQ</summary>
+    <category term="现代诗"/>
+  </entry>
+  <entry>
+    <title>游戏第九艺术</title>
+    <link href="https://xiaohetaoo.github.io/posts/ninth-art.html"/>
+    <id>https://xiaohetaoo.github.io/posts/ninth-art.html</id>
+    <updated>2026-08-31T00:00:00+08:00</updated>
+    <summary>高中班会演示PPT的剧情文案。</summary>
+    <category term="游戏"/>
+    <category term="剧本"/>
+  </entry>
+  <entry>
+    <title>内卷的本质</title>
+    <link href="https://xiaohetaoo.github.io/posts/involution.html"/>
+    <id>https://xiaohetaoo.github.io/posts/involution.html</id>
+    <updated>2026-08-30T00:00:00+08:00</updated>
+    <summary>高中课余写的思辨性议论文，反思内卷现象。</summary>
+    <category term="思考"/>
+    <category term="议论文"/>
+  </entry>
+  <entry>
+    <title>面具社会</title>
+    <link href="https://xiaohetaoo.github.io/posts/mask-society.html"/>
+    <id>https://xiaohetaoo.github.io/posts/mask-society.html</id>
+    <updated>2026-08-30T00:00:00+08:00</updated>
+    <summary>高中课余写的思辨性议论文，反思信息时代人的伪装和表里不一。</summary>
+    <category term="思考"/>
+    <category term="议论文"/>
+  </entry>
+  <entry>
+    <title>论无效努力</title>
+    <link href="https://xiaohetaoo.github.io/posts/on-ineffective-effort.html"/>
+    <id>https://xiaohetaoo.github.io/posts/on-ineffective-effort.html</id>
+    <updated>2026-08-30T00:00:00+08:00</updated>
+    <summary>高中课余写的思辨性议论文，探讨究竟该如何努力，努力多少。</summary>
+    <category term="思考"/>
+    <category term="议论文"/>
+  </entry>
+  <entry>
+    <title>论功利</title>
+    <link href="https://xiaohetaoo.github.io/posts/on-utility.html"/>
+    <id>https://xiaohetaoo.github.io/posts/on-utility.html</id>
+    <updated>2026-08-30T00:00:00+08:00</updated>
+    <summary>高中课余写的思辨性议论文，探讨读书学习的真谛。</summary>
+    <category term="思考"/>
+    <category term="议论文"/>
+  </entry>
+  <entry>
+    <title>存在错误</title>
+    <link href="https://xiaohetaoo.github.io/posts/exist-error.html"/>
+    <id>https://xiaohetaoo.github.io/posts/exist-error.html</id>
+    <updated>2026-08-29T00:00:00+08:00</updated>
+    <summary>初高中构思四年写的中长篇科幻小说，感谢领路人刘慈欣老师。</summary>
+    <category term="科幻"/>
+    <category term="小说"/>
+  </entry>
+  <entry>
+    <title>善恶论</title>
+    <link href="https://xiaohetaoo.github.io/posts/good-and-evil.html"/>
+    <id>https://xiaohetaoo.github.io/posts/good-and-evil.html</id>
+    <updated>2026-08-29T00:00:00+08:00</updated>
+    <summary>高中课余写的思辨性议论文，跳出人类视角来思考问题。</summary>
+    <category term="思考"/>
+    <category term="议论文"/>
+  </entry>
+</feed>

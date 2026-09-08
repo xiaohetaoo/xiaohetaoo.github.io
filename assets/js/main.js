@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260906v";
+  var DATA_VER = "20260908b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -926,7 +926,7 @@
       target = raw.slice(3);
     }
     if (!target) return;
-    var card = document.querySelector('.project-card[data-project="' + target.replace(/"/g, '\\"') + '"]');
+    var card = document.querySelector('.project-card[data-project="' + (window.CSS && CSS.escape ? CSS.escape(target) : target.replace(/["\\]/g, "\\$&")) + '"]');
     if (!card) return;
     card.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
     card.classList.add("highlight");
@@ -1341,9 +1341,7 @@
           postNav.parentNode.appendChild(wrap);
         }
         // 触发 reveal 动画
-        if (typeof watchReveal === "function") {
-          wrap.querySelectorAll(".reveal").forEach(function (el) { watchReveal(el); });
-        }
+        wrap.querySelectorAll(".reveal").forEach(watchReveal);
       })
       .catch(function () { /* posts.json 加载失败时静默跳过 */ });
   })();
@@ -1654,14 +1652,18 @@
       } else {
         // 收回动画期间保留内容——同步清空会让面板高度瞬间塌掉，只剩空壳在滑（等于没有收回动画）
         panel.classList.remove("open");
+        // 桌面端跨断点拖窗过来时 wrap 上可能残留 .open（导航输入框 600px 展开态）。
+        // 移动端不用这个类，不摘的话 nav 里输入框会一直保持展开宽度
+        wrap.classList.remove("open");
         if (mobileCloseTimer) clearTimeout(mobileCloseTimer);
         mobileCloseTimer = setTimeout(function () {
           mobileCloseTimer = null;
           if (!open) {
-            // 动画播完（0.26s）再清空内容 + hidden（280ms 留缓冲）
-            var mi2 = panel.querySelector(".nav-search-mobile-input");
-            if (mi2) mi2.value = "";
-            getMobileList().innerHTML = "";
+            // 动画播完（0.26s）再清空内容 + hidden（280ms 留缓冲）。
+            // 清整个 panel 而不是只清 mobile-list：桌面端渲染的结果直接写在
+            // panel 根上，跨断点拖窗关面板后会残留到下次重开；mobile input
+            // 不用保，重开时检测不到会自动重建
+            panel.innerHTML = "";
             panel.hidden = true;
           }
         }, 280);
@@ -1686,45 +1688,16 @@
       setOpen(false);
     });
 
-    // 移动端版本 renderResults：把结果写进 panel 内的子 div，不动 mobile input
-    function renderResultsMobile(query) {
-      var q = (query || "").trim().toLowerCase();
-      var list = getMobileList();
-      if (!q) {
-        list.innerHTML = "";
-        return;
-      }
-      Promise.all([loadPosts(), loadProjects()])
-        .then(function (res) {
-          var posts = sortPosts(res[0]).filter(function (p) { return postMatches(p, q); }).slice(0, MAX_POSTS);
-          var projects = sortProjects(res[1]).filter(function (p) { return projectMatches(p, q); }).slice(0, MAX_PROJECTS);
-          if (!open) return;
-          var html = "";
-          if (posts.length || projects.length) {
-            html += '<p class="search-hint">找到 <b>' + posts.length + "</b> 篇文章 · <b>" + projects.length + "</b> 个项目与「" + esc(query.trim()) + "」相关</p>";
-            if (posts.length) {
-              html += '<p class="nav-search-label">$ posts</p>';
-              html += posts.map(function (p, i) { return postCardHtml(p, i, root); }).join("");
-            }
-            if (projects.length) {
-              html += '<p class="nav-search-label">$ projects</p>';
-              html += projects.map(navProjectHtml).join("");
-            }
-          } else {
-            html = '<p class="search-empty">没有找到相关内容，换个关键词试试？</p>';
-          }
-          list.innerHTML = html;
-          bindOptions();
-        })
-        .catch(function () {});
-    }
-
-    function renderResults(query) {
+    // 桌面/移动共用一套渲染：结果 html 完全同源，差异只有三处 —— 写入目标
+    // （panel 自身 vs panel 内的 mobile-list 子 div）、面板开合、渐显跳过
+    function renderResultsInto(target, query, isMobile) {
       var q = (query || "").trim().toLowerCase();
       if (!q) {
-        panel.innerHTML = "";
-        panel.hidden = true; // 空查询不显示空面板
-        input.removeAttribute("aria-activedescendant");
+        target.innerHTML = "";
+        if (!isMobile) {
+          panel.hidden = true; // 空查询不显示空面板（移动端面板开合由 setMobileOpen 管）
+          input.removeAttribute("aria-activedescendant");
+        }
         return;
       }
       Promise.all([loadPosts(), loadProjects()])
@@ -1746,14 +1719,28 @@
           } else {
             html = '<p class="search-empty">没有找到相关内容，换个关键词试试？</p>';
           }
-          panel.hidden = false; // 有结果了，展开面板
-          panel.innerHTML = html; // 桌面端没有 mobile input 副本，直接写 panel 自身（list 只存在于移动端作用域）
-          // 实时重渲染：跳过渐显避免闪烁（与 archive.search 一致）
-          panel.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
+          if (isMobile) {
+            // 只写 list 子 div，保住里面的 mobile input；渐显由 ≤640 CSS 直显
+            target.innerHTML = html;
+          } else {
+            panel.hidden = false; // 有结果了，展开面板
+            // 桌面端没有 mobile input 副本，直接写 panel 自身
+            target.innerHTML = html;
+            // 实时重渲染：跳过渐显避免闪烁（与 archive.search 一致）
+            target.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
+            setActive(null);
+          }
           bindOptions();
-          setActive(null);
         })
         .catch(function () {});
+    }
+
+    function renderResultsMobile(query) {
+      renderResultsInto(getMobileList(), query, true);
+    }
+
+    function renderResults(query) {
+      renderResultsInto(panel, query, false);
     }
 
     btn.addEventListener("click", function (e) {
