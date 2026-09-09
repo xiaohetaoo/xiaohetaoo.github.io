@@ -1,5 +1,5 @@
 /* ============================================================
-   小核桃工作室 · 博客交互脚本
+   小核桃的个人博客 · 交互脚本
    1) Hero 原子轨道动画（呼应工作室 logo：原子环绕立方体）
    2) 滚动进场（位移 + 模糊，对齐 harness 的 --enter-y/--enter-blur）
    3) 导航滚动高亮
@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260908d";
+  var DATA_VER = "20260909c";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -338,7 +338,7 @@
       return [x + o._ox, y + o._oy];
     }
 
-    function drawOrbit(o, t) {
+    function drawOrbit(o) {
       ctx.save();
       ctx.translate(W / 2, H / 2);
       ctx.rotate(o.rot);
@@ -470,7 +470,7 @@
     // 一帧的完整绘制（轨道 + 立方体 + 电子）；static/reduced 的拖拽重绘也走这里
     function drawScene(t, dt) {
       ctx.clearRect(0, 0, W, H);
-      orbits.forEach(function (o) { drawOrbit(o, t); });
+      orbits.forEach(function (o) { drawOrbit(o); });
       drawCube(dt);
       orbits.forEach(function (o) { drawElectron(o, t, dt); });
     }
@@ -1702,18 +1702,22 @@
       }
       Promise.all([loadPosts(), loadProjects()])
         .then(function (res) {
-          var posts = sortPosts(res[0]).filter(function (p) { return postMatches(p, q); }).slice(0, MAX_POSTS);
-          var projects = sortProjects(res[1]).filter(function (p) { return projectMatches(p, q); }).slice(0, MAX_PROJECTS);
+          // 提示语里的条数用「全库匹配数」，展示才截断到 MAX_*。直接拿 slice 后的长度
+          // 会谎报：关键词「高中」实际匹配 12 篇，却显示「找到 4 篇文章」（20260909b 修）
+          var postHits = sortPosts(res[0]).filter(function (p) { return postMatches(p, q); });
+          var projectHits = sortProjects(res[1]).filter(function (p) { return projectMatches(p, q); });
+          var posts = postHits.slice(0, MAX_POSTS);
+          var projects = projectHits.slice(0, MAX_PROJECTS);
           if (!open) return; // 浮层已经关掉就不用渲染了
           var html = "";
           if (posts.length || projects.length) {
-            html += '<p class="search-hint">找到 <b>' + posts.length + "</b> 篇文章 · <b>" + projects.length + "</b> 个项目与「" + esc(query.trim()) + "」相关</p>";
+            html += '<p class="search-hint" role="presentation">找到 <b>' + postHits.length + "</b> 篇文章 · <b>" + projectHits.length + "</b> 个项目与「" + esc(query.trim()) + "」相关</p>";
             if (posts.length) {
-              html += '<p class="nav-search-label">$ posts</p>';
+              html += '<p class="nav-search-label" role="presentation">$ posts</p>';
               html += posts.map(function (p, i) { return postCardHtml(p, i, root); }).join("");
             }
             if (projects.length) {
-              html += '<p class="nav-search-label">$ projects</p>';
+              html += '<p class="nav-search-label" role="presentation">$ projects</p>';
               html += projects.map(navProjectHtml).join("");
             }
           } else {

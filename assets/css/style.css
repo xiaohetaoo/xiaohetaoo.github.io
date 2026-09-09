@@ -1,5 +1,5 @@
 /* ============================================================
-   小核桃工作室 · 个人博客
+   小核桃的个人博客
    风格参照 deepseek.com/harness —— 纯黑底 / 蓝色强调 / 玻璃卡片
    ============================================================ */
 
@@ -22,8 +22,6 @@
   --accent-dim: rgba(103, 158, 254, 0.14);
   --accent-border: rgba(103, 158, 254, 0.32);
 
-  --glow-deep: #1a3870;
-  --glow-mid: #2d5f9e;
   --glow-hi: #4a8ac4;
 
   /* hero 渐变起色 + 文本强/代码字/按钮主文字 */
@@ -1529,6 +1527,9 @@ html.theme-anim::view-transition-new(root) {
 }
 .nav-search.open {
   width: 600px;
+  /* 窄桌面视口（641–1063px）放不下 600px：不设上限会把导航挤爆，输入框右端和
+     GitHub 入口被挤出屏幕（20260909b 修）。用视口宽度算可用空间，宽屏仍是 600px。 */
+  max-width: calc(100vw - 470px);
 }
 .nav-search-btn {
   display: inline-flex;
@@ -1754,24 +1755,16 @@ html.theme-anim::view-transition-new(root) {
   background: var(--accent-dim);
 }
 /* 搜索展开时三个页面链接让位（JS 在 nav 上挂 nav-search-open），GitHub 入口保留。
-   让位用 transform: scaleX(0) 收起，避开 max-width/padding 触发 nav 内 reflow；
-   收起时延迟到输入框收完（0.22s）再渐显回来 */
+   必须真正让出布局宽度：transform: scaleX(0) 只改绘制、不释放占位，600px 输入框会把
+   导航挤爆（641–1063px 视口下输入框被裁、GitHub 入口出屏，20260909b 修）。
+   display: none 直接移出 flex 流，宽度归零，同时移出 Tab 序列与无障碍树。
+   代价是链接瞬时消失（不再有缩放淡出），但搜索框展开的几何完全不变、无跳变：
+   链接让出的宽度恰好等于搜索框左移的距离。 */
 .nav-links > a:not(.nav-cta) {
-  transform-origin: center;
-  transition: opacity 0.2s var(--ease-out), transform 0.22s var(--ease-out),
-    visibility 0s 0.22s;
+  transition: opacity 0.2s var(--ease-out);
 }
 .nav-links.nav-search-open > a:not(.nav-cta) {
-  opacity: 0;
-  pointer-events: none;
-  transform: scaleX(0);
-  /* opacity/transform 不把元素移出 Tab 序列，搜索展开时键盘焦点会掉进
-     这三个隐形链接；visibility: hidden 才真正移出。延迟 0.22s 翻转让收起动画先播完 */
-  visibility: hidden;
-}
-.nav-links:not(.nav-search-open) > a:not(.nav-cta) {
-  transition: opacity 0.25s var(--ease-out) 0.22s, transform 0.22s var(--ease-out) 0.22s,
-    visibility 0s 0.22s;
+  display: none;
 }
 
 .theme-toggle,
@@ -1945,8 +1938,6 @@ html.theme-anim::view-transition-new(root) {
   --accent-dim: rgba(222, 41, 16, 0.08);
   --accent-border: rgba(222, 41, 16, 0.32);
 
-  --glow-deep: #f3d9d2;
-  --glow-mid: #e0a99e;
   --glow-hi: #8c1f28;
 
   --grad-start: #e0532b;
@@ -1972,11 +1963,6 @@ html.theme-anim::view-transition-new(root) {
   background: rgba(222, 41, 16, 0.08);
   border: 1px solid rgba(222, 41, 16, 0.25);
 }
-:root[data-theme="cn-red"] .placeholder-box {
-  border: 1.5px dashed rgba(222, 41, 16, 0.45);
-  background: rgba(222, 41, 16, 0.05);
-}
-
 /* ---------- Giscus 评论区（文章页末尾） ---------- */
 .comments {
   margin-top: 56px;
@@ -2038,15 +2024,6 @@ html.theme-anim::view-transition-new(root) {
   font-weight: 550;
 }
 
-.prose .pipe {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  line-height: 2;
-  color: var(--text-3);
-  overflow-x: auto;
-  white-space: nowrap;
-}
-
 /* 文字表格（还原为两列对照表） */
 .prose .pipe-table {
   display: block;
@@ -2085,24 +2062,6 @@ html.theme-anim::view-transition-new(root) {
 
 .prose .pipe-table p {
   margin: 0;
-}
-
-/* 占位提示框 */
-.placeholder-box {
-  border: 1.5px dashed rgba(103, 158, 254, 0.4);
-  border-radius: var(--radius);
-  background: rgba(103, 158, 254, 0.05);
-  padding: 26px 28px;
-  color: var(--text-2);
-  font-size: 14.5px;
-}
-
-.placeholder-box .ph-title {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  letter-spacing: 0.1em;
-  color: var(--accent-bright);
-  margin-bottom: 8px;
 }
 
 /* ---------- 文末导航 ---------- */
@@ -2446,12 +2405,6 @@ html.theme-anim::view-transition-new(root) {
   }
   /* 移动端不需要单独遮罩 —— 面板本身已经覆盖剩余屏幕 + 毛玻璃模糊 */
 
-  /* 窄屏 placeholder 用更短字号避免截断 */
-  .nav-search.open .nav-search-input {
-    font-size: 13px;
-    padding-left: 34px;
-  }
-
   .hero-cta .btn {
     flex: 1;
     justify-content: center;
@@ -2776,13 +2729,6 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   font-weight: 500;
 }
 
-.key-modal-hint {
-  margin: 14px 0 0;
-  font-size: 12px;
-  color: var(--text-3);
-  line-height: 1.5;
-}
-
 @keyframes key-modal-fade {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -2840,7 +2786,7 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   .nav, .footer, .skip-link, .key-modal,
   .nav-search, .reading-progress,
   .hero, .concept,
-  .post-search, .project-search,
+  .post-search,
   .all-posts-link, .all-projects-link,
   .back-link, .post-sidebar, .post-nav, .comments, .related {
     display: none !important;
