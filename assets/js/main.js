@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910a";
+  var DATA_VER = "20260910d";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -203,7 +203,7 @@
       applyTheme(cur === "light" ? "dark" : "light", { x: e.clientX, y: e.clientY });
     });
 
-    // 隐藏彩蛋：长按主题按钮 2.5s 进入「中国红」主题；在中国红里普通点击（或长按）切回原明暗主题。
+    // 隐藏彩蛋：长按主题按钮 1s 进入「中国红」主题；在中国红里普通点击（或长按）切回原明暗主题。
     // 进入时把原主题存进 localStorage.themePrev，退出时还原。
     var armTimer = null;
     themeBtn.addEventListener("pointerdown", function (e) {
@@ -225,7 +225,7 @@
           try { localStorage.setItem("themePrev", cur || "dark"); } catch (err) {}
           applyTheme("cn-red", { x: px, y: py });
         }
-      }, 2500);
+      }, 1000);
     });
     ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) {
       themeBtn.addEventListener(ev, function () {
@@ -572,6 +572,55 @@
       scheduleFrame();
     }
   }
+
+  /* ---------- 1.5 自我介绍页名片卡：3D 倾斜跟随光标 ---------- */
+  // 只在精确指针（鼠标/触控笔）+ 动效可用时启用；触屏与 reduced/static 环境整段跳过。
+  // 跟随用内联 transform 1:1 无过渡（紧贴光标），移开时临时挂 0.55s 弹性曲线回弹
+  // （--ease-spring 带过冲，见 1.5 节 CSS），动画播完清掉内联样式——内联 transform
+  // 会压过 .reveal 的进场 transform，不清的话回弹结束后会把入场动画与类规则一起锁死
+  (function () {
+    var card = document.querySelector(".about-card");
+    if (!card) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (reducedMotion || staticMode) return;
+
+    var MAX = 7; // 最大倾斜角（度），双向各 7°
+    var resetTimer = null;
+    var live = false;
+
+    function onMove(e) {
+      if (!live) {
+        live = true;
+        card.style.transition = ""; // 跟随期间 1:1，不要过渡拖尾
+        clearTimeout(resetTimer);
+      }
+      var r = card.getBoundingClientRect();
+      var px = (e.clientX - r.left) / r.width; // 0..1：光标在卡内的横向位置
+      var py = (e.clientY - r.top) / r.height;
+      card.style.setProperty("--rx", (-(py - 0.5) * 2 * MAX).toFixed(2) + "deg");
+      card.style.setProperty("--ry", ((px - 0.5) * 2 * MAX).toFixed(2) + "deg");
+      card.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
+      card.style.setProperty("--my", (py * 100).toFixed(1) + "%");
+      card.style.transform =
+        "perspective(900px) rotateX(var(--rx)) rotateY(var(--ry))";
+    }
+
+    function onLeave() {
+      if (!live) return;
+      live = false;
+      // 回弹：0.55s 弹性曲线，先冲过归位点再落回（比纯 ease-out 更像物理回弹）
+      card.style.transition = "transform 0.55s var(--ease-spring)";
+      card.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg)";
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(function () {
+        card.style.transition = "";
+        card.style.transform = ""; // 交还给 .reveal / 类规则
+      }, 620);
+    }
+
+    card.addEventListener("pointermove", onMove, { passive: true });
+    card.addEventListener("pointerleave", onLeave);
+  })();
 
   /* ---------- 6. 星尘粒子层（全站固定背景，鼠标推开 + 滚动微加速） ---------- */
   if (!reducedMotion) {
