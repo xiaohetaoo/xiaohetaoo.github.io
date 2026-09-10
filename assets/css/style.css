@@ -1317,12 +1317,12 @@ button {
   transition: opacity 0.35s var(--ease-out), transform 0.35s var(--ease-out);
 }
 
-/* 校徽白底圆片：图标本身多为白底，深色卡上直接摆会露白方块，套白圆片反而干净 */
+/* 校徽白底圆片：图标本身多为白底，深色卡上直接摆会露白方块，套白圆片反而干净；
+   不加描边外环——图标自己的蓝色圆环就是边界，加灰框会多出一圈"相框" */
 .about-badge-img {
   border-radius: 50%;
   background: #fff;
   padding: 6px;
-  box-shadow: 0 0 0 1px rgba(127, 127, 127, 0.3);
   opacity: 0;
   transform: scale(0.92);
 }
@@ -1501,21 +1501,31 @@ button {
   background: radial-gradient(circle, rgba(222, 41, 16, 0.10) 0%, rgba(140, 20, 12, 0.05) 42%, transparent 70%);
 }
 
-/* 暗色底下那层 5% 白在浅底上不可见，两套浅底各换深色低透明度 */
-:root[data-theme="light"] .alias-chip,
-:root[data-theme="cn-red"] .alias-chip {
+/* 暗色底下那层 5% 白在浅底上不可见，两套浅底各换深色低透明度。
+   中国红是暖底：冷灰 rgba(16,24,40) 叠在暖米色上会发灰，单独换暖褐 rgba(90,30,20) */
+:root[data-theme="light"] .alias-chip {
   background: rgba(16, 24, 40, 0.04);
 }
 
-:root[data-theme="light"] .about-card,
-:root[data-theme="cn-red"] .about-card {
+:root[data-theme="cn-red"] .alias-chip {
+  background: rgba(90, 30, 20, 0.06);
+}
+
+:root[data-theme="light"] .about-card {
   box-shadow: 0 14px 36px rgba(16, 24, 40, 0.10);
 }
 
-/* 名片卡光斑：暗色的白 10% 在浅底上看不见，两套浅底各换深色低透明度 */
-:root[data-theme="light"] .about-card::after,
-:root[data-theme="cn-red"] .about-card::after {
+:root[data-theme="cn-red"] .about-card {
+  box-shadow: 0 14px 36px rgba(90, 30, 20, 0.14);
+}
+
+/* 名片卡光斑：暗色的白 10% 在浅底上看不见；中国红同样换暖褐，避免暖底上发灰 */
+:root[data-theme="light"] .about-card::after {
   background: radial-gradient(240px circle at var(--mx) var(--my), rgba(16, 24, 40, 0.08), transparent 65%);
+}
+
+:root[data-theme="cn-red"] .about-card::after {
+  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(90, 30, 20, 0.07), transparent 65%);
 }
 
 /* ---------- 自我介绍页响应式 ---------- */
@@ -2130,7 +2140,8 @@ html.theme-anim::view-transition-new(root) {
   border-color: var(--accent-border);
   background: var(--accent-dim);
 }
-/* 全局搜索点项目跳转：全部项目页里目标卡片的高亮态（2.6s 后由 JS 摘掉） */
+/* 全局搜索点项目跳转：全部项目页里目标卡片的高亮态（2.6s 后由 JS 摘掉）。
+   暗色下 14% 蓝 + 32% 蓝边框在深底上够看；浅底主题在下方「浅色覆写区」补强 */
 .project-card.highlight {
   border-color: var(--accent-border);
   background: var(--accent-dim);
@@ -2275,6 +2286,17 @@ html.theme-anim::view-transition-new(root) {
 }
 :root[data-theme="light"] .project-card:hover,
 :root[data-theme="cn-red"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
+
+/* 搜索落点高亮补强：浅底主题的 --accent-dim 只有 8–10%，只换底色几乎看不出来，
+   加实色描边 + 同色外环 + 台面阴影，一眼能定位到卡片。放 hover 覆写之后——
+   specificity 与 hover 打平（同为 0,4,0），靠顺序压过 hover 阴影，悬停时环不丢 */
+:root[data-theme="light"] .project-card.highlight,
+:root[data-theme="cn-red"] .project-card.highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-border), 0 18px 44px rgba(16, 24, 40, 0.14);
+}
+:root[data-theme="light"] .project-card.highlight { background: rgba(47, 108, 235, 0.12); }
+:root[data-theme="cn-red"] .project-card.highlight { background: rgba(222, 41, 16, 0.10); }
 :root[data-theme="light"] .prose code,
 :root[data-theme="cn-red"] .prose code { background: rgba(16, 24, 40, 0.06); }
 /* pipe-table 偶数行斑马纹：暗色的白 2% 在亮色基底上不可见，各换各的深色低透明度 */
@@ -2319,7 +2341,8 @@ html.theme-anim::view-transition-new(root) {
   --accent-dim: rgba(222, 41, 16, 0.08);
   --accent-border: rgba(222, 41, 16, 0.32);
 
-  --glow-hi: #8c1f28;
+  /* 标题渐变收尾用 accent-bright 同值：原 #8c1f28 在暖米底上发闷发黑 */
+  --glow-hi: #b81c11;
 
   --grad-start: #e0532b;
   --text-strong: #2a1613;
