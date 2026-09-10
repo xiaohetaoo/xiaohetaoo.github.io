@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910n";
+  var DATA_VER = "20260910r";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -152,7 +152,9 @@
     // el 直接是 e.target（不是 closest('.something')）—— 这里只需要 Element 引用，
     // 下面 el.closest() 在元素上调用天然有效；guard 是为 null / 非 Element 兜底
     var el = e.target && e.target.closest ? e.target : null;
-    var deep = el ? el.closest(".all-posts-link[href], .all-projects-link[href]") : null;
+    // 「查看全部文章/项目」= 下钻；自我介绍页（hero 的蓝色主按钮指向 about.html）同样按"进入子页"处理，
+    // 这样它的进入动画和全部文章/全部项目一致（旧页左滑走、新页自右滑入）
+    var deep = el ? el.closest(".all-posts-link[href], .all-projects-link[href], a[href$='about.html']") : null;
     // post-nav 的 ghost 占位（无上/下篇时显示）指向首页，与返回首页按钮同语义，同走反向滑动
     var backLink = el ? el.closest(".back-link[href], .post-nav .ghost[href]") : null;
     // 进文章（侧栏/首页与归档卡片/推荐/上下篇/文内链接）一律不整页上浮：
@@ -196,18 +198,18 @@
     } catch (err) {}
   });
 
-  window.addEventListener("pagereveal", function (e) {
-    var dir = null;
-    try { dir = sessionStorage.getItem("xht-nav-dir"); } catch (err) {}
-    if (dir !== "deep" && dir !== "back" && dir !== "side") return;
-    try { sessionStorage.removeItem("xht-nav-dir"); } catch (err) {}
-    // side = 侧栏切文章：新页（含导航栏）直接就位，不上浮渐显；morph 照常
-    var dirCls = dir === "deep" ? "nav-deep" : dir === "side" ? "nav-side" : "nav-back";
-    document.documentElement.classList.add(dirCls);
-    var dirDone = function () { document.documentElement.classList.remove(dirCls); };
-    if (e.viewTransition) e.viewTransition.finished.then(dirDone, dirDone);
-    else dirDone();
-  });
+  // 方向类（nav-deep / nav-back / nav-side）由各页 <head> 里的内联脚本挂上——必须那么早：
+  // pagereveal 有时早于 body 末尾脚本执行，那时才挂类，过渡已经从默认淡入开始了，中途换规则
+  // 会突变成横滑（表现为"淡入之后一段瞬移"）。这里只负责过渡结束后把类摘掉。
+  (function () {
+    var dirCls = null;
+    ["nav-deep", "nav-back", "nav-side"].forEach(function (c) {
+      if (document.documentElement.classList.contains(c)) dirCls = c;
+    });
+    if (!dirCls) return;
+    // 过渡约 0.3s；类只需撑过过渡，之后必须摘掉，否则会污染下一次导航的方向
+    setTimeout(function () { document.documentElement.classList.remove(dirCls); }, 800);
+  })();
 
   if (themeBtn) {
     syncTheme();

@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
   <script>try{var m=location.search.match(/theme=(light|dark|cn-red)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":t==="cn-red"?"#faf4f0":"#000000"}}catch(e){}</script>
+  <script>/* 方向性滑动：nav-deep / nav-back / nav-side 必须在新页第一次渲染前挂到 <html> 上。
+     pagereveal 有时早于 body 末尾脚本执行，那时才挂类会让过渡从默认淡入突变成横滑（看着像"淡入后瞬移"），
+     所以方向标记的消费放在 head 里同步做，和上面的主题预置脚本同思路。 */
+  try{var _d=sessionStorage.getItem("xht-nav-dir");
+    if(_d==="deep"||_d==="back"||_d==="side"){sessionStorage.removeItem("xht-nav-dir");
+      document.documentElement.classList.add(_d==="deep"?"nav-deep":_d==="side"?"nav-side":"nav-back");}
+    else if(/\/teacher-[a-z]+\.html(?:[?#]|$)/.test(document.referrer||"")){
+      document.documentElement.classList.add("nav-back");}}catch(e){}</script>
   <title>悦独 · 小核桃的个人博客</title>
   <link rel="canonical" href="https://xiaohetaoo.github.io/posts/yuedu.html" />
   <meta property="og:title" content="悦独" />
@@ -82,7 +90,7 @@
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20260910n" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260910r" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -211,7 +219,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20260910n"></script>
+  <script src="../assets/js/main.js?v=20260910r"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

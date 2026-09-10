@@ -193,6 +193,17 @@
       to   { transform: translateX(8%); }
     }
 
+    /* 山脚暗雾：把山体下沿和远山一起埋进暗部，避免出现一条横向的硬边 */
+    .base-haze {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 18%;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(4, 7, 13, 0) 0%, rgba(4, 7, 13, 0.55) 55%, rgba(3, 5, 10, 0.92) 100%);
+    }
+
     /* 诗：柔和暗底保证对比度 */
     .scene-copy {
       position: relative;
@@ -322,9 +333,11 @@
           <stop offset="1" stop-color="rgba(160, 190, 240, 0)" />
         </radialGradient>
         <linearGradient id="mMain" x1="0.2" y1="0" x2="0.55" y2="1">
-          <stop offset="0" stop-color="#2f4259" />
-          <stop offset="0.45" stop-color="#19253c" />
-          <stop offset="1" stop-color="#070c16" />
+          <!-- 山体要比天空暗才像"实心山"，原来顶端 #2f4259 比地平线的天空还亮，
+               看着像一层半透明色块盖上去（用户反馈"透明的割裂"） -->
+          <stop offset="0" stop-color="#1c2536" />
+          <stop offset="0.4" stop-color="#0e1727" />
+          <stop offset="1" stop-color="#03060c" />
         </linearGradient>
         <linearGradient id="mFace" x1="0" y1="0" x2="1" y2="0.55">
           <stop offset="0" stop-color="rgba(198, 216, 244, 0.16)" />
@@ -355,8 +368,8 @@
         <path fill="url(#snow)"
           d="M400,30 L800,30 L800,206 L762,252 L730,214 L698,256 L664,216 L630,258 L598,216 L566,254 L534,214 L502,248 Z" />
       </g>
-      <!-- 山脊亮边 -->
-      <path fill="none" stroke="rgba(216, 234, 255, 0.42)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"
+      <!-- 山脊亮边：只在月光侧留一条很淡的边（原来太亮太硬，像一道割痕） -->
+      <path fill="none" stroke="rgba(200, 222, 255, 0.18)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
         d="M556,178 L520,214 L460,300 L360,392 L250,510 L150,470" />
       <!-- 峰顶高光（沿圆弧走一小段） -->
       <path fill="none" stroke="rgba(255, 255, 255, 0.85)" stroke-width="2.8" stroke-linecap="round"
@@ -365,6 +378,7 @@
 
     <div class="mist m1" aria-hidden="true"></div>
     <div class="mist m2" aria-hidden="true"></div>
+    <div class="base-haze" aria-hidden="true"></div>
 
     <article class="scene-copy">
       <h1 class="scene-title">山顶</h1>
