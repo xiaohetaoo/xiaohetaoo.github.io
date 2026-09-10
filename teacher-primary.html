@@ -204,10 +204,12 @@
     .scene-copy::before {
       content: "";
       position: absolute;
-      inset: -30% -20%;
+      inset: -70% -55%;
       z-index: -1;
-      background: radial-gradient(58% 56% at 44% 44%, rgba(5, 8, 18, 0.72), rgba(5, 8, 18, 0.34) 62%, transparent 100%);
-      filter: blur(3px);
+      /* closest-side = 内切椭圆：淡出正好落在盒子边缘内，不会被盒子裁出直边。
+         原来写死 58% 56% 的椭圆比盒子还大，右/下边被裁 → 看着就是一块"矩形蒙版" */
+      background: radial-gradient(closest-side at 50% 50%, rgba(5, 8, 18, 0.78), rgba(5, 8, 18, 0.42) 58%, transparent 100%);
+      filter: blur(12px);
     }
     .scene-copy > * { animation: rise 0.9s var(--ease) both; }
     .scene-copy > *:nth-child(1) { animation-delay: 0.14s; }

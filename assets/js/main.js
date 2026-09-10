@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910m";
+  var DATA_VER = "20260910n";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -68,6 +68,18 @@
     var vt = document.startViewTransition(commit);
     vt.ready.then(function () {
       var x = origin.x, y = origin.y;
+      // 覆盖层的坐标锚定方式随浏览器实现而不同：
+      //   新版 ::view-transition 是视口锚定（覆盖层高度 == 视口高）→ 直接用 client 坐标；
+      //   早期实现锚在文档原点（覆盖层高度 == 文档高）→ clip-path 坐标要补上滚动量。
+      // 不校准的话，早期实现下页面一滚动圆心就整体偏移（用户实测：进恩师页返回后、页面停在
+      // 下方时切主题最明显）。这里用覆盖层自身高度做运行时自校准，两种实现都正确。
+      try {
+        var overlayH = parseFloat(getComputedStyle(document.documentElement, "::view-transition").height);
+        if (overlayH > window.innerHeight + 1) {
+          x += window.scrollX || 0;
+          y += window.scrollY || 0;
+        }
+      } catch (e) {}
       var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
       document.documentElement.animate(
         {

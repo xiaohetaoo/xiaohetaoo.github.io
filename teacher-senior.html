@@ -118,10 +118,11 @@
     .scene-copy::before {
       content: "";
       position: absolute;
-      inset: -30% -20%;
+      inset: -70% -55%;
       z-index: -1;
-      background: radial-gradient(58% 56% at 44% 48%, rgba(12, 7, 24, 0.78), rgba(12, 7, 24, 0.42) 62%, transparent 100%);
-      filter: blur(3px);
+      /* closest-side = 内切椭圆，淡出落在盒内，避免被盒子裁出直边（同山顶页的"矩形蒙版"问题） */
+      background: radial-gradient(closest-side at 50% 50%, rgba(12, 7, 24, 0.8), rgba(12, 7, 24, 0.44) 58%, transparent 100%);
+      filter: blur(12px);
     }
     .scene-copy > * { animation: rise 0.9s var(--ease) both; }
     .scene-copy > *:nth-child(1) { animation-delay: 0.14s; }
