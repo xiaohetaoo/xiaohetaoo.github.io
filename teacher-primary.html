@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#05070f" />
+  <title>山顶 | 我的恩师 · 小核桃的个人博客</title>
+  <meta name="description" content="小学语文老师——那年我们站在山脚，您站在山顶。" />
+  <link rel="canonical" href="https://xiaohetaoo.github.io/teacher-primary.html" />
+  <meta property="og:title" content="山顶" />
+  <meta property="og:description" content="那年我们站在山脚，您站在山顶。" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://xiaohetaoo.github.io/teacher-primary.html" />
+  <meta property="og:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
+  <meta property="og:site_name" content="小核桃的个人博客" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="山顶" />
+  <meta name="twitter:description" content="那年我们站在山脚，您站在山顶。" />
+  <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "山顶 · 我的恩师",
+  "description": "献给小学语文老师的一首诗。",
+  "inLanguage": "zh-CN",
+  "url": "https://xiaohetaoo.github.io/teacher-primary.html",
+  "isPartOf": { "@type": "WebSite", "name": "小核桃的个人博客", "url": "https://xiaohetaoo.github.io" }
+}
+  </script>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
+  <link rel="shortcut icon" href="assets/img/favicon.ico" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <!-- 独立主题页（山）：自包含（无站点样式/脚本/导航/主题按钮），纯 CSS 氛围。
+       主角是山顶：一座居中的陡峰 + 雪冠 + 峰顶光晕 + 月光勾出的山脊亮边，远山与薄雾只做陪衬。 -->
+  <style>
+    :root { --ease: cubic-bezier(0.22, 1, 0.36, 1); --ink: #eef3ff; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg,
+        #05070f 0%, #0a1226 36%, #14294a 60%, #24395a 80%, #3a4863 92%, #625c50 100%);
+    }
+    .stage {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    /* 月：挂在峰顶右上方，给山脊提供一侧光源 */
+    .moon {
+      position: absolute;
+      left: 66%;
+      top: 12%;
+      width: min(10vw, 82px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 34%, #fdfbf4 0%, #dfe4ef 62%, #b9c2d4 100%);
+      box-shadow: 0 0 66px 16px rgba(214, 226, 255, 0.16);
+      animation: moon-breathe 13s ease-in-out infinite;
+    }
+    @keyframes moon-breathe {
+      0%, 100% { box-shadow: 0 0 66px 16px rgba(214, 226, 255, 0.14); }
+      50%      { box-shadow: 0 0 86px 22px rgba(214, 226, 255, 0.24); }
+    }
+
+    .star {
+      position: absolute;
+      width: 2.5px;
+      height: 2.5px;
+      border-radius: 50%;
+      background: #dce7ff;
+      opacity: 0.5;
+      animation: twinkle 8s ease-in-out infinite;
+    }
+    .star:nth-of-type(1) { left: 12%; top: 16%; animation-delay: -1.5s; }
+    .star:nth-of-type(2) { left: 24%; top: 7%;  animation-delay: -4.2s; }
+    .star:nth-of-type(3) { left: 38%; top: 20%; animation-delay: -6.1s; }
+    .star:nth-of-type(4) { left: 52%; top: 8%;  animation-delay: -2.6s; }
+    .star:nth-of-type(5) { left: 81%; top: 24%; animation-delay: -5.4s; }
+    .star:nth-of-type(6) { left: 92%; top: 11%; animation-delay: -3.3s; }
+    .star:nth-of-type(7) { left: 44%; top: 33%; animation-delay: -7.2s; }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.16; }
+      50%      { opacity: 0.72; }
+    }
+
+    /* 云：几团圆鼓叠出的积云，聚在山旁边，只做轻微左右摆动（不会漂出屏幕） */
+    .cloud {
+      position: absolute;
+      left: var(--x, 20%);
+      top: var(--y, 18%);
+      width: var(--w, 420px);
+      height: var(--h, 150px);
+      pointer-events: none;
+      opacity: var(--o, 0.72);
+      filter: blur(9px);
+      background:
+        radial-gradient(closest-side circle at 17% 76%, rgba(228, 238, 255, 0.55), transparent),
+        radial-gradient(closest-side circle at 37% 50%, rgba(240, 246, 255, 0.66), transparent),
+        radial-gradient(closest-side circle at 57% 60%, rgba(228, 238, 255, 0.54), transparent),
+        radial-gradient(closest-side circle at 78% 74%, rgba(212, 226, 250, 0.46), transparent),
+        radial-gradient(closest-side circle at 47% 86%, rgba(196, 212, 242, 0.44), transparent);
+      animation: cloud-sway var(--dur, 52s) ease-in-out var(--delay, 0s) infinite alternate;
+    }
+    /* 只摆 ±4.5vw（另加一点上下浮动），幅度明显但仍不会离开画面 */
+    @keyframes cloud-sway {
+      from { transform: translate3d(-4.5vw, 0, 0); }
+      to   { transform: translate3d(4.5vw, -13px, 0); }
+    }
+    /* 一小片薄云从月亮前掠过（更淡、更慢，做出前后景深） */
+    .cloud-veil {
+      position: absolute;
+      left: 60%;
+      top: 8%;
+      width: 340px;
+      height: 110px;
+      pointer-events: none;
+      opacity: 0.4;
+      filter: blur(12px);
+      background:
+        radial-gradient(closest-side circle at 30% 66%, rgba(236, 242, 255, 0.42), transparent),
+        radial-gradient(closest-side circle at 62% 56%, rgba(236, 242, 255, 0.36), transparent);
+      animation: cloud-sway 84s ease-in-out -30s infinite alternate;
+    }
+
+    /* 极淡噪点：抹平暗色渐变在大片区域上的色阶断层（banding） */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0.045;
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 160px 160px;
+    }
+
+    /* 远山：横向铺满整幅（拉宽对远山是自然的），给主峰垫一层 */
+    .ridge-far {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 30%;
+      display: block;
+      animation: ridge-drift 74s ease-in-out infinite alternate;
+    }
+    /* 主峰：xMidYMax meet —— 等比缩放、完整显示、底部对齐。
+       用 slice 会在超宽屏把峰顶裁掉（这就是"山顶不见了"的原因）。 */
+    .peak {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 78%;
+      display: block;
+    }
+    @keyframes ridge-drift {
+      from { transform: translateX(-0.9%); }
+      to   { transform: translateX(0.9%); }
+    }
+
+    /* 山脚薄雾：不是硬边光带，而是四向渐隐的柔光团（模糊拉大、透明度压低） */
+    .mist {
+      position: absolute;
+      left: -20%;
+      width: 140%;
+      height: 16%;
+      pointer-events: none;
+      background: radial-gradient(58% 50% at 50% 50%,
+        rgba(206, 222, 244, 0.15), rgba(206, 222, 244, 0.05) 55%, transparent 78%);
+      filter: blur(18px);
+    }
+    .mist.m1 { bottom: 18%; animation: mist-flow 64s linear infinite; }
+    .mist.m2 { bottom: 4%; height: 12%; opacity: 0.6; animation: mist-flow 92s linear infinite reverse; }
+    @keyframes mist-flow {
+      from { transform: translateX(-8%); }
+      to   { transform: translateX(8%); }
+    }
+
+    /* 诗：柔和暗底保证对比度 */
+    .scene-copy {
+      position: relative;
+      z-index: 4;
+      align-self: start;
+      margin-top: 15vh;
+      width: min(92vw, 560px);
+    }
+    .scene-copy::before {
+      content: "";
+      position: absolute;
+      inset: -30% -20%;
+      z-index: -1;
+      background: radial-gradient(58% 56% at 44% 44%, rgba(5, 8, 18, 0.72), rgba(5, 8, 18, 0.34) 62%, transparent 100%);
+      filter: blur(3px);
+    }
+    .scene-copy > * { animation: rise 0.9s var(--ease) both; }
+    .scene-copy > *:nth-child(1) { animation-delay: 0.14s; }
+    .scene-copy > *:nth-child(2) { animation-delay: 0.3s; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* 排版统一（与「船帆」页一致）：系统无衬线 + 650 字重标题 */
+    .scene-title {
+      margin-bottom: 16px;
+      font-size: clamp(24px, 3.8vw, 37px);
+      font-weight: 650;
+      line-height: 1.38;
+      letter-spacing: 0.01em;
+      color: #f2f6ff;
+      text-shadow: 0 0 30px rgba(150, 190, 230, 0.32);
+    }
+    .poem {
+      font-size: clamp(15.5px, 1.6vw, 18px);
+      line-height: 2.15;
+      letter-spacing: 0.04em;
+      color: rgba(236, 242, 255, 0.88);
+    }
+    .poem span { display: block; }
+    .poem span + span.stanza { margin-top: 0.9em; }
+
+    /* 左上角：返回上一页（触控目标 ≥44px） */
+    .scene-back {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      left: max(16px, env(safe-area-inset-left));
+      z-index: 6;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 18px 10px 13px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.88);
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      transition: background-color 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+    }
+    .scene-back:hover { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.34); transform: translateY(-1px); }
+    .scene-back:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.75); outline-offset: 3px; }
+    .scene-back svg { width: 15px; height: 15px; }
+
+    @media (max-width: 640px) {
+      .scene-copy { margin-top: 12vh; }
+      .scene-copy::before { inset: -20% -10%; }
+      .peak { height: 68%; }
+    }
+    @media (max-height: 620px) {
+      .scene-copy { margin-top: 9vh; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .moon, .star, .cloud, .cloud-veil, .ridge-far, .mist, .scene-copy > * { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="scene-back" href="about.html#teachers">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    返回上一页
+  </a>
+
+  <main class="stage">
+    <!-- 云聚在山周围（山顶在画面中部） -->
+    <div class="cloud" style="--x:28%; --y:13%; --w:430px; --h:158px; --dur:34s; --delay:-6s;  --o:0.7;" aria-hidden="true"></div>
+    <div class="cloud" style="--x:50%; --y:8%;  --w:310px; --h:114px; --dur:44s; --delay:-30s; --o:0.6;" aria-hidden="true"></div>
+    <div class="cloud" style="--x:38%; --y:25%; --w:520px; --h:180px; --dur:54s; --delay:-48s; --o:0.48;" aria-hidden="true"></div>
+    <div class="cloud" style="--x:58%; --y:19%; --w:290px; --h:106px; --dur:40s; --delay:-20s; --o:0.44;" aria-hidden="true"></div>
+
+    <div class="moon" aria-hidden="true"></div>
+    <!-- 薄云从月亮前掠过 -->
+    <div class="cloud-veil" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+
+    <!-- 远山：横向铺满，只做背景 -->
+    <svg class="ridge-far" viewBox="0 0 1440 300" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="mFar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5f7498" />
+          <stop offset="1" stop-color="#2e4062" />
+        </linearGradient>
+      </defs>
+      <path fill="url(#mFar)" opacity="0.34"
+        d="M0,210 L120,146 L210,192 L300,126 L420,196 L540,154 L660,204 L780,150 L900,200 L1020,156 L1140,202 L1260,162 L1380,200 L1440,182 L1440,300 L0,300 Z" />
+    </svg>
+
+    <!-- 主峰：宽厚山体 + 圆润（不尖）的山顶；雪用 clipPath 裁在山体内，不会脱节 -->
+    <svg class="peak" viewBox="0 0 1200 620" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+      <defs>
+        <radialGradient id="summitGlow">
+          <stop offset="0" stop-color="rgba(226, 238, 255, 0.42)" />
+          <stop offset="0.45" stop-color="rgba(180, 205, 245, 0.15)" />
+          <stop offset="1" stop-color="rgba(160, 190, 240, 0)" />
+        </radialGradient>
+        <linearGradient id="mMain" x1="0.2" y1="0" x2="0.55" y2="1">
+          <stop offset="0" stop-color="#2f4259" />
+          <stop offset="0.45" stop-color="#19253c" />
+          <stop offset="1" stop-color="#070c16" />
+        </linearGradient>
+        <linearGradient id="mFace" x1="0" y1="0" x2="1" y2="0.55">
+          <stop offset="0" stop-color="rgba(198, 216, 244, 0.16)" />
+          <stop offset="1" stop-color="rgba(198, 216, 244, 0)" />
+        </linearGradient>
+        <linearGradient id="snow" x1="0.15" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.97" />
+          <stop offset="1" stop-color="#cfe0f5" stop-opacity="0.62" />
+        </linearGradient>
+        <clipPath id="peakClip">
+          <path d="M-40,620 L150,470 L250,510 L360,392 L460,300 L520,214 L556,178
+                   Q588,150 620,174 L664,208 L760,290 L880,398 L1010,492 L1160,620 Z" />
+        </clipPath>
+      </defs>
+
+      <!-- 峰顶光晕 -->
+      <circle cx="588" cy="176" r="330" fill="url(#summitGlow)" />
+
+      <!-- 山体：宽厚主峰；山顶是圆润弧（Q 曲线），不是针尖也不是平顶 -->
+      <path fill="url(#mMain)"
+        d="M-40,620 L150,470 L250,510 L360,392 L460,300 L520,214 L556,178
+           Q588,150 620,174 L664,208 L760,290 L880,398 L1010,492 L1160,620 Z" />
+      <!-- 月光照亮的左坡：让山有厚度 -->
+      <path fill="url(#mFace)"
+        d="M556,178 L520,214 L460,300 L360,392 L250,510 L150,470 L-40,620 L360,620 Z" />
+      <!-- 雪：盖住整个峰顶，锯齿雪线；裁在山体轮廓里 -->
+      <g clip-path="url(#peakClip)">
+        <path fill="url(#snow)"
+          d="M400,30 L800,30 L800,206 L762,252 L730,214 L698,256 L664,216 L630,258 L598,216 L566,254 L534,214 L502,248 Z" />
+      </g>
+      <!-- 山脊亮边 -->
+      <path fill="none" stroke="rgba(216, 234, 255, 0.42)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"
+        d="M556,178 L520,214 L460,300 L360,392 L250,510 L150,470" />
+      <!-- 峰顶高光（沿圆弧走一小段） -->
+      <path fill="none" stroke="rgba(255, 255, 255, 0.85)" stroke-width="2.8" stroke-linecap="round"
+        d="M560,180 Q588,152 614,176" />
+    </svg>
+
+    <div class="mist m1" aria-hidden="true"></div>
+    <div class="mist m2" aria-hidden="true"></div>
+
+    <article class="scene-copy">
+      <h1 class="scene-title">山顶</h1>
+      <div class="poem">
+        <span>那年我们站在山脚</span>
+        <span>您站在山顶</span>
+        <span>把远处的云指给我们看</span>
+        <span class="stanza">后来我也爬到了山顶</span>
+        <span>才明白最难的不是登顶</span>
+        <span>而是在山脚时</span>
+        <span>就有人给你描绘山顶的模样</span>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

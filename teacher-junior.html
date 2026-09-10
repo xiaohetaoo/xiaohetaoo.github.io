@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#04101f" />
+  <title>船帆 | 我的恩师 · 小核桃的个人博客</title>
+  <meta name="description" content="初中科学老师——别怕大风，船就是依风前行的。" />
+  <link rel="canonical" href="https://xiaohetaoo.github.io/teacher-junior.html" />
+  <meta property="og:title" content="船帆" />
+  <meta property="og:description" content="别怕大风，船就是依风前行的。" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://xiaohetaoo.github.io/teacher-junior.html" />
+  <meta property="og:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
+  <meta property="og:site_name" content="小核桃的个人博客" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="船帆" />
+  <meta name="twitter:description" content="别怕大风，船就是依风前行的。" />
+  <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "船帆 · 我的恩师",
+  "description": "献给初中科学老师的一页。",
+  "inLanguage": "zh-CN",
+  "url": "https://xiaohetaoo.github.io/teacher-junior.html",
+  "isPartOf": { "@type": "WebSite", "name": "小核桃的个人博客", "url": "https://xiaohetaoo.github.io" }
+}
+  </script>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
+  <link rel="shortcut icon" href="assets/img/favicon.ico" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <!-- 独立主题页：自包含（无站点样式/脚本/导航/主题按钮），纯 CSS 氛围。
+       夜海：星空 → 地平线微光 → 三层视差海浪 → 帆船（提灯）+ 倒影 → 文案。 -->
+  <style>
+    :root { --ease: cubic-bezier(0.22, 1, 0.36, 1); --ink: #eaf4ff; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+      background: #04101f;
+    }
+    .stage {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .sky {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 58.6%;
+      background: linear-gradient(180deg, #040b16 0%, #071d33 40%, #0e3a58 74%, #1a6380 100%);
+    }
+    .sea {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 58%;
+      bottom: 0;
+      /* 顶端取天空收尾色，交界处不留色差（原来偏深，看着像一条空带） */
+      background: linear-gradient(180deg, #1a6380 0%, #0e4160 42%, #061b2c 100%);
+    }
+    /* 最后一缕天光：一条细亮的暖线贴在水平线上（不是太阳，只是分界） */
+    .horizon-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 58%;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, rgba(255, 198, 142, 0.5), transparent);
+      box-shadow: 0 0 42px 9px rgba(255, 182, 122, 0.16);
+      filter: blur(0.5px);
+    }
+
+    /* 星：疏疏几点，缓慢明灭 */
+    .star {
+      position: absolute;
+      width: 2.5px;
+      height: 2.5px;
+      border-radius: 50%;
+      background: #dceaff;
+      opacity: 0.5;
+      animation: twinkle 7s ease-in-out infinite;
+    }
+    .star:nth-child(1) { left: 9%;  top: 12%; animation-delay: -1s; }
+    .star:nth-child(2) { left: 21%; top: 26%; animation-delay: -3.4s; }
+    .star:nth-child(3) { left: 33%; top: 9%;  animation-delay: -5.1s; }
+    .star:nth-child(4) { left: 46%; top: 21%; animation-delay: -2.2s; }
+    .star:nth-child(5) { left: 57%; top: 7%;  animation-delay: -6.3s; }
+    .star:nth-child(6) { left: 68%; top: 30%; animation-delay: -0.6s; }
+    .star:nth-child(7) { left: 78%; top: 15%; animation-delay: -4.5s; }
+    .star:nth-child(8) { left: 88%; top: 33%; animation-delay: -2.9s; }
+    .star:nth-child(9) { left: 15%; top: 41%; animation-delay: -7s; }
+    .star:nth-child(10){ left: 82%; top: 44%; animation-delay: -3.7s; }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.18; }
+      50%      { opacity: 0.75; }
+    }
+
+    /* 三层海浪：单段三次贝塞尔构成 1440 周期（两端切线同向），整体左移 1440 无缝循环。
+       远层慢、近层快，做视差。 */
+    .waves {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 42%;
+      display: block;
+    }
+    .waves path { will-change: transform; }
+    .w1 { animation: swell 34s linear infinite; }
+    .w2 { animation: swell 24s linear infinite; }
+    .w3 { animation: swell 17s linear infinite; }
+    .w4 { animation: swell 12s linear infinite; }
+    .foam-3 {
+      fill: none;
+      stroke: rgba(198, 230, 246, 0.22);
+      stroke-width: 1.8;
+      animation: swell 17s linear infinite;
+    }
+    .foam-4 {
+      fill: none;
+      stroke: rgba(208, 238, 252, 0.42);
+      stroke-width: 2.2;
+      animation: swell 12s linear infinite;
+    }
+    @keyframes swell {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-720px); }
+    }
+
+    /* 帆船：放大并加细节（船体高光、帆缝、三角旗、船灯），随浪起伏 */
+    .boat {
+      position: absolute;
+      left: 50%;
+      bottom: 15%;
+      width: min(46vw, 340px);
+      filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.38));
+      animation: bob 8s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateX(-50%) translateY(0) rotate(-1.6deg); }
+      50%      { transform: translateX(-50%) translateY(-12px) rotate(1.6deg); }
+    }
+    /* 船灯在水面的倒影 */
+    .glint {
+      position: absolute;
+      left: 50%;
+      bottom: 4%;
+      width: min(16vw, 120px);
+      height: 15%;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, rgba(255, 206, 150, 0.4), rgba(255, 190, 120, 0));
+      filter: blur(8px);
+      animation: glint 8s ease-in-out infinite;
+    }
+    @keyframes glint {
+      0%, 100% { opacity: 0.5; }
+      50%      { opacity: 0.78; }
+    }
+
+    /* 文案：放在上半屏，与下方海面/帆船不打架 */
+    .scene-copy {
+      position: relative;
+      z-index: 4;
+      align-self: start;
+      margin-top: 15vh;
+      width: min(92vw, 620px);
+    }
+    .scene-copy::before {
+      content: "";
+      position: absolute;
+      inset: -30% -18%;
+      z-index: -1;
+      background: radial-gradient(60% 58% at 42% 46%, rgba(3, 12, 22, 0.74), rgba(3, 12, 22, 0.34) 62%, transparent 100%);
+      filter: blur(3px);
+    }
+    .scene-copy > * { animation: rise 0.9s var(--ease) both; }
+    .scene-copy > *:nth-child(1) { animation-delay: 0.14s; }
+    .scene-copy > *:nth-child(2) { animation-delay: 0.3s; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* 科学老师 → 无衬线标题，干净、有结构感 */
+    .scene-title {
+      margin-bottom: 18px;
+      font-size: clamp(24px, 3.8vw, 37px);
+      font-weight: 650;
+      line-height: 1.38;
+      letter-spacing: 0.01em;
+      color: #f2f8ff;
+      text-shadow: 0 2px 18px rgba(6, 26, 42, 0.6);
+    }
+    .poem {
+      font-size: clamp(15.5px, 1.6vw, 18px);
+      line-height: 2.15;
+      letter-spacing: 0.04em;
+      color: rgba(232, 242, 255, 0.88);
+    }
+    .poem span { display: block; }
+    .poem span + span.stanza { margin-top: 0.9em; }
+
+    /* 左上角：返回上一页（触控目标 ≥44px） */
+    .scene-back {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      left: max(16px, env(safe-area-inset-left));
+      z-index: 6;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 18px 10px 13px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.88);
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      transition: background-color 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+    }
+    .scene-back:hover { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.34); transform: translateY(-1px); }
+    .scene-back:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.75); outline-offset: 3px; }
+    .scene-back svg { width: 15px; height: 15px; }
+
+    @media (max-width: 640px) {
+      .scene-copy { margin-top: 11vh; }
+      .scene-copy::before { inset: -20% -10%; }
+      .boat { width: 62vw; bottom: 13%; }
+    }
+    @media (max-height: 620px) {
+      .scene-copy { margin-top: 8vh; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .star, .waves path, .boat, .glint, .scene-copy > * { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="scene-back" href="about.html#teachers">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    返回上一页
+  </a>
+
+  <main class="stage">
+    <div class="sky" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+    <div class="star" aria-hidden="true"></div>
+
+    <div class="sea" aria-hidden="true"></div>
+    <div class="horizon-line" aria-hidden="true"></div>
+
+    <svg class="waves waves-back" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="wg1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3a8aa4" />
+          <stop offset="1" stop-color="#17536e" />
+        </linearGradient>
+        <linearGradient id="wg2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#24617f" />
+          <stop offset="1" stop-color="#0e3d59" />
+        </linearGradient>
+        <linearGradient id="wg3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#164c69" />
+          <stop offset="1" stop-color="#082c42" />
+        </linearGradient>
+      </defs>
+      <!-- 每层一个 720 周期、向右复制一份（共 1440），左移 720 后与自身重合；
+           后层压住前层的下沿，画面里不会露出空背景 -->
+      <!-- 每层三个 720 周期（共 2160）：动画左移 720 后仍铺满整个视口，
+           不会在右侧露出海面底色（两个周期时右半边会空 → 看起来像"断层"） -->
+      <path class="w1" fill="url(#wg1)" d="M0,44 C180,4 540,84 720,44 C900,4 1260,84 1440,44 C1620,4 1980,84 2160,44 L2160,320 L0,320 Z" />
+      <path class="w2" fill="url(#wg2)" d="M0,116 C180,72 540,160 720,116 C900,72 1260,160 1440,116 C1620,72 1980,160 2160,116 L2160,320 L0,320 Z" />
+      <path class="w3" fill="url(#wg3)" d="M0,186 C180,138 540,234 720,186 C900,138 1260,234 1440,186 C1620,138 1980,234 2160,186 L2160,320 L0,320 Z" />
+      <path class="foam-3" d="M0,186 C180,138 540,234 720,186 C900,138 1260,234 1440,186 C1620,138 1980,234 2160,186" />
+    </svg>
+
+    <div class="glint" aria-hidden="true"></div>
+
+    <!-- 帆船：主帆 + 前帆 + 三角旗 + 船灯 -->
+    <svg class="boat" viewBox="0 0 260 230" aria-hidden="true">
+      <defs>
+        <linearGradient id="sailMain" x1="0" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#fffdf7" />
+          <stop offset="1" stop-color="#e8cfa4" />
+        </linearGradient>
+        <linearGradient id="sailJib" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fdf6e8" />
+          <stop offset="1" stop-color="#d9bd93" />
+        </linearGradient>
+        <linearGradient id="hullGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1c3d55" />
+          <stop offset="1" stop-color="#0a1a29" />
+        </linearGradient>
+        <radialGradient id="lampGlow">
+          <stop offset="0" stop-color="rgba(255, 206, 150, 0.85)" />
+          <stop offset="1" stop-color="rgba(255, 190, 120, 0)" />
+        </radialGradient>
+      </defs>
+
+      <!-- 桅杆 -->
+      <rect x="126" y="16" width="6" height="152" rx="2.5" fill="#16344a" />
+      <!-- 三角旗 -->
+      <path d="M132 18 L168 27 L132 36 Z" fill="#ffb27a" opacity="0.9" />
+      <!-- 前帆 -->
+      <path d="M120 46 L120 162 L52 162 Z" fill="url(#sailJib)" opacity="0.92" />
+      <!-- 主帆 -->
+      <path d="M138 24 L138 162 L218 162 Z" fill="url(#sailMain)" />
+      <path d="M146 40 L146 154" stroke="rgba(24, 50, 70, 0.16)" stroke-width="2" fill="none" />
+      <path d="M154 40 L154 154" stroke="rgba(24, 50, 70, 0.12)" stroke-width="2" fill="none" />
+      <!-- 船体 -->
+      <path d="M30 164 L232 164 L206 202 Q130 220 56 202 Z" fill="url(#hullGrad)" />
+      <path d="M30 164 L232 164 L228 171 L34 171 Z" fill="#2b5871" opacity="0.85" />
+      <!-- 船灯 + 光晕 -->
+      <circle cx="168" cy="140" r="30" fill="url(#lampGlow)" />
+      <circle cx="168" cy="140" r="4.5" fill="#ffd9a3" />
+    </svg>
+
+    <!-- 前浪压在船身之前：船嵌在浪里，而不是浮在浪上 -->
+    <svg class="waves waves-front" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="wg4" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0d3549" />
+          <stop offset="1" stop-color="#04141f" />
+        </linearGradient>
+      </defs>
+      <path class="w4" fill="url(#wg4)" d="M0,246 C180,196 540,296 720,246 C900,196 1260,296 1440,246 C1620,196 1980,296 2160,246 L2160,320 L0,320 Z" />
+      <path class="foam-4" d="M0,246 C180,196 540,296 720,246 C900,196 1260,296 1440,246 C1620,196 1980,296 2160,246" />
+    </svg>
+
+    <article class="scene-copy">
+      <h1 class="scene-title">船帆</h1>
+      <div class="poem">
+        <span>您把帆递给我们</span>
+        <span>说 别怕大风</span>
+        <span>船就是依风前行的</span>
+        <span class="stanza">海面不会一直平</span>
+        <span>天气不会一直晴</span>
+        <span>可只要帆还立着</span>
+        <span>就总有一个方向</span>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

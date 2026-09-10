@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910h";
+  var DATA_VER = "20260910l";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -57,7 +57,9 @@
     document.documentElement.classList.add("theme-anim");
     var vt = document.startViewTransition(commit);
     vt.ready.then(function () {
-      var x = origin.x, y = origin.y;
+      // 圆形扩散的坐标以【文档原点】为基准（不是视口）：页面滚动过就必须补上 scroll 偏移，
+      // 否则圆心会跑到视口上方，越往下滚偏得越多（表现为"圆圈出现的位置不对"）
+      var x = origin.x + (window.scrollX || 0), y = origin.y + (window.scrollY || 0);
       var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
       document.documentElement.animate(
         {
@@ -662,7 +664,7 @@
     card.addEventListener("pointerleave", onLeave);
   })();
 
-  /* ---------- 1.6 兴趣卡 / 项目卡：轻量鼠标跟随倾斜（±5°） ---------- */
+  /* ---------- 1.6 兴趣卡 / 项目卡 / 恩师卡：轻量鼠标跟随倾斜（±5°） ---------- */
   // 与 1.5 名片卡同思路但更轻：无光斑无缩放，纯 rotateX/rotateY，最大 ±5°。
   // 项目卡是异步渲染、搜索还会重渲染，所以用 document 级事件委托（closest 匹配），
   // 卡片什么时候出现都不用管；同一时刻只有一张卡在跟手，状态共享一份即可。
@@ -680,11 +682,15 @@
     var resetEl = null; // 清理定时器当前归属的卡片（防止误清别的卡的回收）
 
     // hover 过渡白名单：只禁 transform，别把背景/边框/阴影的渐入渐出一起掐掉
-    // （字符串与 .interest-item / .project-card 的 transition 声明保持一致）
+    // （字符串与 .interest-item / .project-card / .teacher-card 的 transition 声明保持一致）
     var keepTransitions = function (el) {
-      return el.classList.contains("interest-item")
-        ? "background-color 0.22s var(--ease-out), border-color 0.22s var(--ease-out)"
-        : "border-color 0.25s, box-shadow 0.25s";
+      if (el.classList.contains("interest-item")) {
+        return "background-color 0.22s var(--ease-out), border-color 0.22s var(--ease-out)";
+      }
+      if (el.classList.contains("teacher-card")) {
+        return "border-color 0.25s var(--ease-out), box-shadow 0.25s";
+      }
+      return "border-color 0.25s, box-shadow 0.25s";
     };
 
     function apply() {
@@ -737,7 +743,7 @@
 
     document.addEventListener("pointermove", function (e) {
       var el = e.target && e.target.closest
-        ? e.target.closest(".interest-item, .project-card")
+        ? e.target.closest(".interest-item, .project-card, .teacher-card")
         : null;
       if (el) enter(el, e);
       else leave();

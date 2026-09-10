@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0c0718" />
+  <title>音乐 | 我的恩师 · 小核桃的个人博客</title>
+  <meta name="description" content="高中英语老师——把陌生的词句，唱成自己的调子。" />
+  <link rel="canonical" href="https://xiaohetaoo.github.io/teacher-senior.html" />
+  <meta property="og:title" content="音乐" />
+  <meta property="og:description" content="把陌生的词句，唱成自己的调子。" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://xiaohetaoo.github.io/teacher-senior.html" />
+  <meta property="og:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
+  <meta property="og:site_name" content="小核桃的个人博客" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="音乐" />
+  <meta name="twitter:description" content="把陌生的词句，唱成自己的调子。" />
+  <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "音乐 · 我的恩师",
+  "description": "献给高中英语老师的一首诗。",
+  "inLanguage": "zh-CN",
+  "url": "https://xiaohetaoo.github.io/teacher-senior.html",
+  "isPartOf": { "@type": "WebSite", "name": "小核桃的个人博客", "url": "https://xiaohetaoo.github.io" }
+}
+  </script>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
+  <link rel="shortcut icon" href="assets/img/favicon.ico" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <!-- 独立主题页（音乐）：自包含（无站点样式/脚本/导航/主题按钮），纯 CSS 氛围。
+       两条弯曲的五线谱缎带（暖褐、线距 11）常驻；彩色音符用 offset-path 沿谱带路径
+       行进（offset-rotate: auto 自动随坡度旋转），因此音符始终"顺着五线谱流动"。
+       停动画（reduced-motion）时音符按各自的 --dist 静态停在谱线上。 -->
+  <style>
+    :root { --ease: cubic-bezier(0.22, 1, 0.36, 1); --ink: #f4ecff; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", "Roboto", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(130% 100% at 50% 118%, #3d1246 0%, #1d1036 42%, #0c0718 100%);
+    }
+    .stage {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    /* 暗角柔光 */
+    .blob { position: absolute; border-radius: 50%; pointer-events: none; }
+    .blob.b1 { left: -8%; top: -12%; width: 46vw; height: 46vw;
+      background: radial-gradient(circle, rgba(224, 102, 255, 0.18), transparent 68%); }
+    .blob.b2 { right: -10%; top: 6%; width: 42vw; height: 42vw;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.16), transparent 68%); }
+    .blob.b3 { left: 22%; bottom: -18%; width: 52vw; height: 52vw;
+      background: radial-gradient(circle, rgba(224, 102, 255, 0.13), transparent 70%); }
+
+    /* 谱带与音符同一张 SVG，保证音符落在线上且不被拉伸 */
+    .staff-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .staff-line {
+      fill: none;
+      stroke: #9a7154;
+      stroke-width: 3.4;
+      stroke-linecap: round;
+      opacity: 0.8;
+    }
+    .staff-line.soft { opacity: 0.5; }
+
+    /* 音符默认不画：浏览器不支持 motion path 时，否则会全叠在原点 */
+    .note-flow { display: none; }
+
+    @supports (offset-path: path("M0 0")) {
+      .note-flow {
+        display: inline;
+        /* 百分比要相对音符自己的盒子算，否则 offset-anchor 会按整个 viewBox 解析 */
+        transform-box: fill-box;
+        offset-rotate: auto;
+        offset-distance: var(--dist, 0%);
+        /* --lift 让音符落在谱带的不同线上（±22 / ±11 / 0） */
+        transform: translateY(var(--lift, 0px));
+        animation: ride var(--dur, 30s) linear var(--delay, 0s) infinite;
+      }
+      /* 关键：锚点定在"音符头"上（n8 在 27%/81%，n16 在首个音符头 17%/83%），
+         否则默认锚点是包围盒中心，音符会整体偏到谱带下方 */
+      .note-flow[href="#n8"] { offset-anchor: 33% 80%; }
+      .note-flow[href="#n16"] { offset-anchor: 21% 82%; }
+      @keyframes ride {
+        0%   { offset-distance: 0%; opacity: 0; }
+        7%   { opacity: var(--o, 0.92); }
+        90%  { opacity: var(--o, 0.92); }
+        100% { offset-distance: 100%; opacity: 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .note-flow { animation: none !important; opacity: var(--o, 0.92); }
+      }
+    }
+
+    .note-flow.r1 { offset-path: path("M-60,380 C120,380 200,180 400,180 C600,180 620,380 780,400 C900,415 980,320 1080,250"); }
+    .note-flow.r2 { offset-path: path("M-100,560 C100,540 220,430 420,430 C620,430 680,540 860,540 C960,540 1040,470 1120,430"); }
+
+    /* 诗：柔和暗底保证对比度 */
+    .scene-copy { position: relative; z-index: 4; width: min(92vw, 560px); }
+    .scene-copy::before {
+      content: "";
+      position: absolute;
+      inset: -30% -20%;
+      z-index: -1;
+      background: radial-gradient(58% 56% at 44% 48%, rgba(12, 7, 24, 0.78), rgba(12, 7, 24, 0.42) 62%, transparent 100%);
+      filter: blur(3px);
+    }
+    .scene-copy > * { animation: rise 0.9s var(--ease) both; }
+    .scene-copy > *:nth-child(1) { animation-delay: 0.14s; }
+    .scene-copy > *:nth-child(2) { animation-delay: 0.3s; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .scene-title {
+      margin-bottom: 16px;
+      font-size: clamp(24px, 3.8vw, 37px);
+      font-weight: 650;
+      line-height: 1.38;
+      letter-spacing: 0.01em;
+      color: #fdf6ea;
+      text-shadow: 0 0 26px rgba(224, 102, 255, 0.3);
+    }
+    .poem {
+      font-size: clamp(15.5px, 1.6vw, 18px);
+      line-height: 2.15;
+      letter-spacing: 0.04em;
+      color: rgba(246, 238, 255, 0.9);
+    }
+    .poem span { display: block; }
+    .poem span + span.stanza { margin-top: 0.9em; }
+
+    /* 左上角：返回上一页（触控目标 ≥44px） */
+    .scene-back {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      left: max(16px, env(safe-area-inset-left));
+      z-index: 6;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 18px 10px 13px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.88);
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      transition: background-color 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+    }
+    .scene-back:hover { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.34); transform: translateY(-1px); }
+    .scene-back:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.75); outline-offset: 3px; }
+    .scene-back svg { width: 15px; height: 15px; }
+
+    @media (max-width: 640px) {
+      .scene-copy::before { inset: -20% -10%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .blob, .scene-copy > * { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="scene-back" href="about.html#teachers">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    返回上一页
+  </a>
+
+  <main class="stage">
+    <div class="blob b1" aria-hidden="true"></div>
+    <div class="blob b2" aria-hidden="true"></div>
+    <div class="blob b3" aria-hidden="true"></div>
+
+    <svg class="staff-art" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <!-- 八分音符 -->
+        <symbol id="n8" viewBox="0 0 48 64">
+          <ellipse cx="13" cy="52" rx="11" ry="7.6" transform="rotate(-24 13 52)" />
+          <rect x="21.5" y="6" width="4.6" height="46" rx="2" />
+          <!-- 符尾与符干重叠 3 个单位：刚好相接时抗锯齿会在接缝留一条发际线，看着像裂开 -->
+          <path d="M23 5 C38 12 43 24 40 38 C36 26 32 18 23 14 Z" />
+        </symbol>
+        <!-- 带符杠的双音符 -->
+        <symbol id="n16" viewBox="0 0 72 64">
+          <ellipse cx="12" cy="53" rx="10.5" ry="7.2" transform="rotate(-24 12 53)" />
+          <ellipse cx="46" cy="48" rx="10.5" ry="7.2" transform="rotate(-24 46 48)" />
+          <rect x="19.5" y="8" width="4.4" height="45" rx="2" />
+          <rect x="53.5" y="3" width="4.4" height="45" rx="2" />
+          <rect x="19.5" y="3" width="38.4" height="8" rx="2" />
+        </symbol>
+      </defs>
+
+      <!-- 五线谱缎带（常驻）：主谱带横贯画面，副谱带从下方穿过中部 -->
+      <g class="staff">
+        <path class="staff-line soft" d="M-60,358 C120,358 200,158 400,158 C600,158 620,358 780,378 C900,393 980,298 1080,228" />
+        <path class="staff-line soft" d="M-60,369 C120,369 200,169 400,169 C600,169 620,369 780,389 C900,404 980,309 1080,239" />
+        <path class="staff-line"      d="M-60,380 C120,380 200,180 400,180 C600,180 620,380 780,400 C900,415 980,320 1080,250" />
+        <path class="staff-line soft" d="M-60,391 C120,391 200,191 400,191 C600,191 620,391 780,411 C900,426 980,331 1080,261" />
+        <path class="staff-line soft" d="M-60,402 C120,402 200,202 400,202 C600,202 620,402 780,422 C900,437 980,342 1080,272" />
+
+        <path class="staff-line soft" d="M-100,538 C100,518 220,408 420,408 C620,408 680,518 860,518 C960,518 1040,448 1120,408" />
+        <path class="staff-line soft" d="M-100,549 C100,529 220,419 420,419 C620,419 680,529 860,529 C960,529 1040,459 1120,419" />
+        <path class="staff-line"      d="M-100,560 C100,540 220,430 420,430 C620,430 680,540 860,540 C960,540 1040,470 1120,430" />
+        <path class="staff-line soft" d="M-100,571 C100,551 220,441 420,441 C620,441 680,551 860,551 C960,551 1040,481 1120,441" />
+        <path class="staff-line soft" d="M-100,582 C100,562 220,452 420,452 C620,452 680,562 860,562 C960,562 1040,492 1120,452" />
+      </g>
+
+      <!-- 彩色音符：沿谱带行进。同一条谱带上的音符用**同一个 --dur**（相对间距恒定，
+           永远不会追尾/撞在一起），--dist 等分铺开，--delay = -dist×dur 让相位与静态位置一致；
+           音高用 --lift（±22/±11/0）交替错开，落在谱带的不同线上。 -->
+      <g class="notes">
+        <use class="note-flow r1" href="#n8"  x="-14.7" y="26.7" width="64" height="85" fill="#2f63ad" style="--dist:4%;  --dur:36s; --delay:-1.4s;  --lift:-22px; --o:0.92;" />
+        <use class="note-flow r1" href="#n16" x="-25.3" y="22.2" width="76" height="68" fill="#35b3a4" style="--dist:12%; --dur:36s; --delay:-4.3s;  --lift:0px;   --o:0.9;" />
+        <use class="note-flow r1" href="#n8"  x="-12.8" y="23.3" width="56" height="75" fill="#76c043" style="--dist:20%; --dur:36s; --delay:-7.2s;  --lift:22px;  --o:0.85;" />
+        <use class="note-flow r1" href="#n16" x="-28"   y="24.5" width="84" height="75" fill="#f0913c" style="--dist:28%; --dur:36s; --delay:-10.1s; --lift:-11px; --o:0.92;" />
+        <use class="note-flow r1" href="#n8"  x="-16.5" y="30"   width="72" height="96" fill="#dd4a3c" style="--dist:36%; --dur:36s; --delay:-13s;   --lift:11px;  --o:0.9;" />
+        <use class="note-flow r1" href="#n16" x="-22.6" y="19.8" width="68" height="60" fill="#2f63ad" style="--dist:44%; --dur:36s; --delay:-15.8s; --lift:-22px; --o:0.88;" />
+        <use class="note-flow r1" href="#n8"  x="-14.7" y="26.7" width="64" height="85" fill="#c6d94a" style="--dist:52%; --dur:36s; --delay:-18.7s; --lift:0px;   --o:0.82;" />
+        <use class="note-flow r1" href="#n16" x="-25.3" y="22.2" width="76" height="68" fill="#f0913c" style="--dist:60%; --dur:36s; --delay:-21.6s; --lift:22px;  --o:0.92;" />
+        <use class="note-flow r1" href="#n8"  x="-12.8" y="23.3" width="56" height="75" fill="#35b3a4" style="--dist:68%; --dur:36s; --delay:-24.5s; --lift:-11px; --o:0.86;" />
+        <use class="note-flow r1" href="#n16" x="-28"   y="24.5" width="84" height="75" fill="#dd4a3c" style="--dist:76%; --dur:36s; --delay:-27.4s; --lift:11px;  --o:0.9;" />
+        <use class="note-flow r1" href="#n8"  x="-16.5" y="30"   width="72" height="96" fill="#2f63ad" style="--dist:84%; --dur:36s; --delay:-30.2s; --lift:-22px; --o:0.9;" />
+        <use class="note-flow r1" href="#n16" x="-22.6" y="19.8" width="68" height="60" fill="#76c043" style="--dist:92%; --dur:36s; --delay:-33.1s; --lift:0px;   --o:0.85;" />
+
+        <use class="note-flow r2" href="#n8"  x="-14.7" y="26.7" width="64" height="85" fill="#f0913c" style="--dist:5%;  --dur:44s; --delay:-2.2s;  --lift:-22px; --o:0.9;" />
+        <use class="note-flow r2" href="#n16" x="-25.3" y="22.2" width="76" height="68" fill="#2f63ad" style="--dist:15%; --dur:44s; --delay:-6.6s;  --lift:0px;   --o:0.88;" />
+        <use class="note-flow r2" href="#n8"  x="-12.8" y="23.3" width="56" height="75" fill="#c6d94a" style="--dist:25%; --dur:44s; --delay:-11s;   --lift:22px;  --o:0.82;" />
+        <use class="note-flow r2" href="#n16" x="-28"   y="24.5" width="84" height="75" fill="#35b3a4" style="--dist:35%; --dur:44s; --delay:-15.4s; --lift:-11px; --o:0.9;" />
+        <use class="note-flow r2" href="#n8"  x="-16.5" y="30"   width="72" height="96" fill="#dd4a3c" style="--dist:45%; --dur:44s; --delay:-19.8s; --lift:11px;  --o:0.9;" />
+        <use class="note-flow r2" href="#n16" x="-22.6" y="19.8" width="68" height="60" fill="#76c043" style="--dist:55%; --dur:44s; --delay:-24.2s; --lift:-22px; --o:0.88;" />
+        <use class="note-flow r2" href="#n8"  x="-14.7" y="26.7" width="64" height="85" fill="#e066ff" style="--dist:65%; --dur:44s; --delay:-28.6s; --lift:0px;   --o:0.72;" />
+        <use class="note-flow r2" href="#n16" x="-25.3" y="22.2" width="76" height="68" fill="#f0913c" style="--dist:75%; --dur:44s; --delay:-33s;   --lift:22px;  --o:0.9;" />
+        <use class="note-flow r2" href="#n8"  x="-12.8" y="23.3" width="56" height="75" fill="#2f63ad" style="--dist:85%; --dur:44s; --delay:-37.4s; --lift:-11px; --o:0.85;" />
+        <use class="note-flow r2" href="#n16" x="-28"   y="24.5" width="84" height="75" fill="#35b3a4" style="--dist:95%; --dur:44s; --delay:-41.8s; --lift:11px;  --o:0.88;" />
+      </g>
+    </svg>
+
+    <article class="scene-copy">
+      <h1 class="scene-title">音乐</h1>
+      <div class="poem">
+        <span>一个单词 一个音符</span>
+        <span>帮我们把陌生的词句</span>
+        <span>唱成自己的调子</span>
+        <span class="stanza">后来我们走了很远</span>
+        <span>在异乡听见熟悉的曲子</span>
+        <span>忽然明白了那首歌</span>
+        <span>是您提前为我们谱好的</span>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
