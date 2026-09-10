@@ -11,3 +11,5 @@ _edge-live-tmp/
 __pycache__/
 .zcode/
 gui-test-screenshots/
+_commitmsg.txt
+_bumpver.js

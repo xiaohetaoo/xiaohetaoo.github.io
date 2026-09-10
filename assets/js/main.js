@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910d";
+  var DATA_VER = "20260910e";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -573,44 +573,84 @@
     }
   }
 
-  /* ---------- 1.5 自我介绍页名片卡：3D 倾斜跟随光标 ---------- */
-  // 只在精确指针（鼠标/触控笔）+ 动效可用时启用；触屏与 reduced/static 环境整段跳过。
+  /* ---------- 1.5 自我介绍页名片卡：3D 倾斜跟随光标 + 点击切换校徽 ---------- */
+  // 图标切换（触屏也可用，不在下面的指针守卫内）：点击卡片在 小核桃标 ↔ 杭电校徽 间
+  // 淡出淡入，选择记 localStorage（aboutCardBadge）；两张图叠在 .about-logo-slot 里，
+  // 纯 opacity/scale 过渡，不打断倾斜跟随。初始状态在脚本求值时就同步（先于首帧绘制，
+  // 恢复的状态不会在进页面时再播一遍过渡）。
+  // 倾斜只在精确指针（鼠标/触控笔）+ 动效可用时启用；触屏与 reduced/static 整段跳过。
   // 跟随用内联 transform 1:1 无过渡（紧贴光标），移开时临时挂 0.55s 弹性曲线回弹
   // （--ease-spring 带过冲，见 1.5 节 CSS），动画播完清掉内联样式——内联 transform
-  // 会压过 .reveal 的进场 transform，不清的话回弹结束后会把入场动画与类规则一起锁死
+  // 会压过 .reveal 的进场 transform，不清的话回弹结束后会把入场动画与类规则一起锁死。
+  // 跟随期间过渡必须写 none 而不是清空：.reveal 自带 0.8s transform 过渡，清空会
+  // 回落到样式表规则，让倾斜拖 0.8s 尾，看起来就是"鼠标有延迟"。
+  // 指针事件只记坐标，改样式放到 rAF 一帧一次，避免高频事件触发多轮布局/重绘。
   (function () {
     var card = document.querySelector(".about-card");
     if (!card) return;
+
+    // ---- 图标切换（点击 / 键盘回车空格） ----
+    var badge = false;
+    try { badge = localStorage.getItem("aboutCardBadge") === "1"; } catch (err) {}
+    var syncBadgeUI = function () {
+      card.classList.toggle("badge-on", badge);
+      card.setAttribute("aria-pressed", badge ? "true" : "false");
+    };
+    syncBadgeUI();
+    var toggleBadge = function () {
+      badge = !badge;
+      try { localStorage.setItem("aboutCardBadge", badge ? "1" : "0"); } catch (err) {}
+      syncBadgeUI();
+    };
+    card.addEventListener("click", function (e) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.defaultPrevented) return;
+      toggleBadge();
+    });
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleBadge(); }
+    });
+
+    // ---- 3D 倾斜跟随光标（精确指针 + 动效可用才启用） ----
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     if (reducedMotion || staticMode) return;
 
-    var MAX = 7; // 最大倾斜角（度），双向各 7°
+    var MAX = 10; // 最大倾斜角（度），双向各 10°
     var resetTimer = null;
+    var raf = null;
     var live = false;
+    var mx = 0, my = 0; // 最近一次指针位置，rAF 里消费
 
-    function onMove(e) {
-      if (!live) {
-        live = true;
-        card.style.transition = ""; // 跟随期间 1:1，不要过渡拖尾
-        clearTimeout(resetTimer);
-      }
+    function apply() {
+      raf = null;
       var r = card.getBoundingClientRect();
-      var px = (e.clientX - r.left) / r.width; // 0..1：光标在卡内的横向位置
-      var py = (e.clientY - r.top) / r.height;
+      var px = (mx - r.left) / r.width; // 0..1：光标在卡内的横向位置
+      var py = (my - r.top) / r.height;
       card.style.setProperty("--rx", (-(py - 0.5) * 2 * MAX).toFixed(2) + "deg");
       card.style.setProperty("--ry", ((px - 0.5) * 2 * MAX).toFixed(2) + "deg");
       card.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
       card.style.setProperty("--my", (py * 100).toFixed(1) + "%");
       card.style.transform =
-        "perspective(900px) rotateX(var(--rx)) rotateY(var(--ry))";
+        "perspective(800px) rotateX(var(--rx)) rotateY(var(--ry)) scale(1.04)";
+    }
+
+    function onMove(e) {
+      if (!live) {
+        live = true;
+        card.style.transition = "none"; // 跟随期间 1:1，盖掉 .reveal 的 0.8s 过渡
+        clearTimeout(resetTimer);
+      }
+      mx = e.clientX;
+      my = e.clientY;
+      if (!raf) raf = requestAnimationFrame(apply);
     }
 
     function onLeave() {
       if (!live) return;
       live = false;
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
       // 回弹：0.55s 弹性曲线，先冲过归位点再落回（比纯 ease-out 更像物理回弹）
       card.style.transition = "transform 0.55s var(--ease-spring)";
-      card.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg)";
+      card.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg)";
       clearTimeout(resetTimer);
       resetTimer = setTimeout(function () {
         card.style.transition = "";
@@ -620,6 +660,89 @@
 
     card.addEventListener("pointermove", onMove, { passive: true });
     card.addEventListener("pointerleave", onLeave);
+  })();
+
+  /* ---------- 1.6 兴趣卡 / 项目卡：轻量鼠标跟随倾斜（±5°） ---------- */
+  // 与 1.5 名片卡同思路但更轻：无光斑无缩放，纯 rotateX/rotateY，最大 ±5°。
+  // 项目卡是异步渲染、搜索还会重渲染，所以用 document 级事件委托（closest 匹配），
+  // 卡片什么时候出现都不用管；同一时刻只有一张卡在跟手，状态共享一份即可。
+  // 跟随期间只掐 transform 的过渡，背景/边框/阴影的悬停渐变照常保留。
+  (function () {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (reducedMotion || staticMode) return;
+
+    var MAX = 5; // 最大倾斜角（度），双向各 5°
+    var PERSPECTIVE = 700; // 景深 px
+    var current = null; // 当前正在跟随的卡片
+    var raf = null;
+    var mx = 0, my = 0;
+    var resetTimer = null;
+    var resetEl = null; // 清理定时器当前归属的卡片（防止误清别的卡的回收）
+
+    // hover 过渡白名单：只禁 transform，别把背景/边框/阴影的渐入渐出一起掐掉
+    // （字符串与 .interest-item / .project-card 的 transition 声明保持一致）
+    var keepTransitions = function (el) {
+      return el.classList.contains("interest-item")
+        ? "background-color 0.22s var(--ease-out), border-color 0.22s var(--ease-out)"
+        : "border-color 0.25s, box-shadow 0.25s";
+    };
+
+    function apply() {
+      raf = null;
+      if (!current) return;
+      var r = current.getBoundingClientRect();
+      var px = (mx - r.left) / r.width; // 0..1：光标在卡内的横向位置
+      var py = (my - r.top) / r.height;
+      current.style.transform =
+        "perspective(" + PERSPECTIVE + "px) rotateX(" +
+        (-(py - 0.5) * 2 * MAX).toFixed(2) + "deg) rotateY(" +
+        ((px - 0.5) * 2 * MAX).toFixed(2) + "deg)";
+    }
+
+    function enter(el, e) {
+      if (current === el) { mx = e.clientX; my = e.clientY; schedule(); return; }
+      leave();
+      current = el;
+      // 只有"自己刚回弹还没清完就又进来"才作废旧清理（跟手途中不能被清掉内联样式）；
+      // 挂着的是上一张卡的清理时必须原样留着，上一张还等着回弹后交还类规则
+      if (resetEl === el) { clearTimeout(resetTimer); resetEl = null; }
+      el.style.transition = keepTransitions(el); // 跟手 1:1，只有非 transform 属性走过渡
+      mx = e.clientX;
+      my = e.clientY;
+      schedule();
+    }
+
+    function schedule() {
+      if (!raf) raf = requestAnimationFrame(apply);
+    }
+
+    function leave() {
+      if (!current) return;
+      var el = current;
+      current = null;
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      // 回弹：0.45s 弹性曲线，先冲过归位点再落回；悬停渐变一起带回去
+      el.style.transition = "transform 0.45s var(--ease-spring), " + keepTransitions(el);
+      el.style.transform =
+        "perspective(" + PERSPECTIVE + "px) rotateX(0deg) rotateY(0deg)";
+      clearTimeout(resetTimer);
+      resetEl = el;
+      resetTimer = setTimeout(function () {
+        if (resetEl !== el) return; // 清理职责已被新的 enter/leave 接管
+        resetEl = null;
+        el.style.transition = "";
+        el.style.transform = ""; // 交还给 .reveal / 类规则
+      }, 520);
+    }
+
+    document.addEventListener("pointermove", function (e) {
+      var el = e.target && e.target.closest
+        ? e.target.closest(".interest-item, .project-card")
+        : null;
+      if (el) enter(el, e);
+      else leave();
+    }, { passive: true });
+    document.addEventListener("pointerleave", leave);
   })();
 
   /* ---------- 6. 星尘粒子层（全站固定背景，鼠标推开 + 滚动微加速） ---------- */

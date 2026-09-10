@@ -1296,6 +1296,45 @@ button {
   --mx: 50%;
   --my: 50%;
   will-change: transform;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 图标淡出淡入：两张图叠在同一槽位（absolute），点卡片切 .badge-on 时 logo 淡出缩小、
+   校徽淡入放大（0.35s），纯 opacity/scale 过渡，不打断倾斜跟随（JS 1.5 节） */
+.about-logo-slot {
+  position: relative;
+  width: 116px;
+  height: 116px;
+}
+
+.about-logo-slot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.35s var(--ease-out), transform 0.35s var(--ease-out);
+}
+
+/* 校徽白底圆片：图标本身多为白底，深色卡上直接摆会露白方块，套白圆片反而干净 */
+.about-badge-img {
+  border-radius: 50%;
+  background: #fff;
+  padding: 6px;
+  box-shadow: 0 0 0 1px rgba(127, 127, 127, 0.3);
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+.about-card.badge-on .about-badge-img {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.about-card.badge-on .about-avatar {
+  opacity: 0;
+  transform: scale(0.92);
 }
 
 /* 跟随光斑：径向高光贴住光标（位置由 JS 写 --mx/--my），悬停时渐显 */
@@ -1307,18 +1346,14 @@ button {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s var(--ease-out);
-  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.10), transparent 65%);
+  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.14), transparent 65%);
 }
 
 .about-card:hover::after {
   opacity: 1;
 }
 
-.about-avatar {
-  width: 116px;
-  height: 116px;
-  object-fit: contain;
-}
+/* 头像/校徽尺寸由 .about-logo-slot 槽位统一决定（两张图 absolute 叠放） */
 
 .about-school {
   display: flex;
@@ -1480,7 +1515,7 @@ button {
 /* 名片卡光斑：暗色的白 10% 在浅底上看不见，两套浅底各换深色低透明度 */
 :root[data-theme="light"] .about-card::after,
 :root[data-theme="cn-red"] .about-card::after {
-  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(16, 24, 40, 0.06), transparent 65%);
+  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(16, 24, 40, 0.08), transparent 65%);
 }
 
 /* ---------- 自我介绍页响应式 ---------- */
@@ -1524,7 +1559,7 @@ button {
     gap: 10px;
   }
 
-  .about-avatar {
+  .about-logo-slot {
     width: 96px;
     height: 96px;
   }
