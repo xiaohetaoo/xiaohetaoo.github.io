@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910l";
+  var DATA_VER = "20260910m";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -49,6 +49,16 @@
       syncTheme();
       document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: next } }));
     };
+    // 圆形扩散的坐标空间是【视口】：::view-transition 在 UA 样式里是 position: fixed; inset: 0，
+    // 所以直接用点击时的 client 坐标，不能叠加 scroll 偏移（叠了圆心会随滚动量下移）。
+    // 键盘激活（Tab + Enter/Space）产生的 click 事件 clientX/clientY 恒为 0,0，
+    // 会让圆圈从左上角冒出来 —— 这种情况回落到主题按钮自身的中心。
+    if (!origin || (!origin.x && !origin.y)) {
+      var btnRect = themeBtn ? themeBtn.getBoundingClientRect() : null;
+      origin = btnRect
+        ? { x: btnRect.left + btnRect.width / 2, y: btnRect.top + btnRect.height / 2 }
+        : { x: window.innerWidth - 24, y: 24 };
+    }
     if (!document.startViewTransition || reducedMotion) {
       commit();
       return;
@@ -57,9 +67,7 @@
     document.documentElement.classList.add("theme-anim");
     var vt = document.startViewTransition(commit);
     vt.ready.then(function () {
-      // 圆形扩散的坐标以【文档原点】为基准（不是视口）：页面滚动过就必须补上 scroll 偏移，
-      // 否则圆心会跑到视口上方，越往下滚偏得越多（表现为"圆圈出现的位置不对"）
-      var x = origin.x + (window.scrollX || 0), y = origin.y + (window.scrollY || 0);
+      var x = origin.x, y = origin.y;
       var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
       document.documentElement.animate(
         {
