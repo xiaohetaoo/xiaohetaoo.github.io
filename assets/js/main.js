@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910r";
+  var DATA_VER = "20260910s";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -346,8 +346,11 @@
     function electronPull(o, x, y, dt) {
       dt = dt || 0;
       var tx = 0, ty = 0;
-      if (heroMouse.active) {
-        var dx = heroMouse.x - x, dy = heroMouse.y - y;
+      // 鼠标记的是视口坐标，传进来的 x/y 是画布局部坐标 —— 必须换算到同一坐标系，
+      // 否则吸引中心整体偏一个"画布在视口里的偏移量"：光标在画布上挪电子几乎不动，
+      // 反而在左边文字栏挪会拽动画布里的电子（立方体偏转那段就是用 heroRect 换算的）
+      if (heroMouse.active && heroRect) {
+        var dx = heroMouse.x - heroRect.left - x, dy = heroMouse.y - heroRect.top - y;
         var d = Math.sqrt(dx * dx + dy * dy);
         var R = 170;
         if (d < R && d > 0.001) {
@@ -700,8 +703,13 @@
     var current = null; // 当前正在跟随的卡片
     var raf = null;
     var mx = 0, my = 0;
-    var resetTimer = null;
-    var resetEl = null; // 清理定时器当前归属的卡片（防止误清别的卡的回收）
+
+    // 回弹回收定时器挂在元素自己身上：同一时刻可能有多张卡在等回弹结束，
+    // 共用一个变量的话，快速划过 A → B 时 B 的 leave() 会把 A 的回收清掉，
+    // A 就永久留着内联 transform/transition（回调里的归属判断救不了被取消的定时器）
+    function clearReset(el) {
+      if (el && el._tiltReset) { clearTimeout(el._tiltReset); el._tiltReset = null; }
+    }
 
     // hover 过渡白名单：只禁 transform，别把背景/边框/阴影的渐入渐出一起掐掉
     // （字符串与 .interest-item / .project-card / .teacher-card 的 transition 声明保持一致）
@@ -729,11 +737,9 @@
 
     function enter(el, e) {
       if (current === el) { mx = e.clientX; my = e.clientY; schedule(); return; }
-      leave();
+      if (current) leave(); // 先让上一张卡回弹（它的回收定时器挂在它自己身上）
+      clearReset(el); // 自己上一轮回弹还没清完就又进来 → 作废自己的回收，接着跟手
       current = el;
-      // 只有"自己刚回弹还没清完就又进来"才作废旧清理（跟手途中不能被清掉内联样式）；
-      // 挂着的是上一张卡的清理时必须原样留着，上一张还等着回弹后交还类规则
-      if (resetEl === el) { clearTimeout(resetTimer); resetEl = null; }
       el.style.transition = keepTransitions(el); // 跟手 1:1，只有非 transform 属性走过渡
       mx = e.clientX;
       my = e.clientY;
@@ -745,19 +751,17 @@
     }
 
     function leave() {
-      if (!current) return;
       var el = current;
+      if (!el) return;
       current = null;
       if (raf) { cancelAnimationFrame(raf); raf = null; }
       // 回弹：0.45s 弹性曲线，先冲过归位点再落回；悬停渐变一起带回去
       el.style.transition = "transform 0.45s var(--ease-spring), " + keepTransitions(el);
       el.style.transform =
         "perspective(" + PERSPECTIVE + "px) rotateX(0deg) rotateY(0deg)";
-      clearTimeout(resetTimer);
-      resetEl = el;
-      resetTimer = setTimeout(function () {
-        if (resetEl !== el) return; // 清理职责已被新的 enter/leave 接管
-        resetEl = null;
+      clearReset(el); // 同一张卡重复回弹时只保留最后一个回收
+      el._tiltReset = setTimeout(function () {
+        el._tiltReset = null;
         el.style.transition = "";
         el.style.transform = ""; // 交还给 .reveal / 类规则
       }, 520);
@@ -933,12 +937,24 @@
 
   /* ---------- 2. 滚动进场 ---------- */
   var revealIo = null;
+  // 进场播完就把 .reveal / .is-visible 摘掉，把这枚元素交还给它自己的规则：
+  // 留着这两个类的话，`.js .reveal` 的 0.8s transform 过渡与 `.is-visible` 的
+  // transform:none（权重 0,3,0）会一直压过 `.post-card:hover` 之类的悬停位移（0,2,0），
+  // 结果是卡片悬停上浮永远不生效（边框/阴影还在，所以不容易察觉）
+  var REVEAL_DONE_MS = 1300; // 0.8s 过渡 + 最长 0.3s 错峰，再留余量
+  function markRevealed(el) {
+    el.classList.add("is-visible");
+    setTimeout(function () {
+      el.classList.remove("reveal");
+      el.classList.remove("is-visible");
+    }, REVEAL_DONE_MS);
+  }
   if ("IntersectionObserver" in window && !reducedMotion) {
     revealIo = new IntersectionObserver(
       function (entries) {
         entries.forEach(function (en) {
           if (en.isIntersecting) {
-            en.target.classList.add("is-visible");
+            markRevealed(en.target);
             revealIo.unobserve(en.target);
           }
         });
@@ -949,7 +965,12 @@
   // 动态插入的元素（文章卡片）也走同一个观察器
   function watchReveal(el) {
     if (revealIo) revealIo.observe(el);
-    else el.classList.add("is-visible");
+    else markRevealed(el);
+  }
+  // 列表重渲染前调用：被 innerHTML 换掉的旧节点不会自动离开观察器
+  function unwatchReveal(root) {
+    if (!revealIo || !root) return;
+    root.querySelectorAll(".reveal").forEach(function (el) { revealIo.unobserve(el); });
   }
   document.querySelectorAll(".reveal").forEach(watchReveal);
 
@@ -1036,10 +1057,11 @@
         html += shown.length
           ? shown.map(function (p, i) { return postCardHtml(p, i, ""); }).join("")
           : '<p class="search-empty">没有找到相关文章，换个关键词试试？</p>';
+        unwatchReveal(container);
         container.innerHTML = html;
         if (q) {
           // 打字过程中的连续重渲染，跳过渐显动画避免闪烁
-          container.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
+          container.querySelectorAll(".reveal").forEach(function (el) { markRevealed(el); });
         } else {
           container.querySelectorAll(".reveal").forEach(watchReveal);
         }
@@ -1186,10 +1208,11 @@
             hint.innerHTML = "";
           }
         }
+        unwatchReveal(container);
         container.innerHTML = shown.map(projectCardHtml).join("");
         if (q) {
           // 打字过程中的连续重渲染，跳过渐显动画避免闪烁
-          container.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
+          container.querySelectorAll(".reveal").forEach(function (el) { markRevealed(el); });
         } else {
           container.querySelectorAll(".reveal").forEach(watchReveal);
           // 带着 #p=<标题> 落地时（全局搜索点项目跳转），定位并高亮对应卡片
@@ -1931,7 +1954,7 @@
             // 桌面端没有 mobile input 副本，直接写 panel 自身
             target.innerHTML = html;
             // 实时重渲染：跳过渐显避免闪烁（与 archive.search 一致）
-            target.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-visible"); });
+            target.querySelectorAll(".reveal").forEach(function (el) { markRevealed(el); });
             setActive(null);
           }
           bindOptions();
@@ -2086,7 +2109,6 @@
     var btn = document.getElementById("key-toggle");
     var modal = document.getElementById("key-modal");
     if (!btn || !modal) return;  // 老页面没有弹窗节点直接退出（安全）
-    var panel = modal.querySelector(".key-modal-panel");
     var input = document.getElementById("key-modal-input");
     var result = document.getElementById("key-modal-result");
     var submit = document.getElementById("key-modal-submit");

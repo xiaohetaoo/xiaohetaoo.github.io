@@ -730,6 +730,7 @@ button {
       "back side"
       "article side"
       "nav side"
+      "related related"
       "comments comments";
     column-gap: 56px;
     align-items: start;
@@ -745,6 +746,12 @@ button {
 
   .post-page .container:has(.post-sidebar) .post-nav {
     grid-area: nav;
+  }
+
+  /* 推荐阅读必须显式占一行：没有 grid-area 的元素会被自动塞进隐式行，
+     结果在宽屏上排到评论区之后（移动端是普通块流，顺序本来就在评论之前） */
+  .post-page .container:has(.post-sidebar) .related {
+    grid-area: related;
   }
 
   .post-page .container:has(.post-sidebar) .comments {
@@ -2649,6 +2656,8 @@ html.theme-anim::view-transition-new(root) {
 .js .related-card.reveal {
   transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out), filter 0.8s var(--ease-out),
               border-color 0.25s, background 0.25s;
+  /* transition 简写会把 delay 重置成 0s，压掉 .js .reveal 的 var(--d) 错峰，这里补回来 */
+  transition-delay: var(--d, 0s);
 }
 .related-card:hover {
   transform: translateY(-2px);
@@ -3297,6 +3306,14 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   /* 渐显动画没被滚动触发（打印不走 IntersectionObserver）时不能让内容消失 */
   .js .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
   h1, h2, h3 { color: var(--text-strong); page-break-after: avoid; }
+  /* 渐变标题靠背景裁切 + 透明填充色实现，而打印默认不输出背景图形 → 会打出空白；
+     这里回退成实色，保证纸上「小核桃」三个字还在 */
+  .hero h1 .grad,
+  .about-profile h1 .grad {
+    background: none;
+    -webkit-text-fill-color: var(--text-strong);
+    color: var(--text-strong);
+  }
   a { color: inherit; }
   /* 外链打印时附上真实地址，纸面上也能"点" */
   .prose a[href^="http"]::after {
