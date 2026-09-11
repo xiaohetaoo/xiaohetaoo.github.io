@@ -269,7 +269,7 @@
 
     /* ---------- 入场：左右两侧喷彩带 ---------- */
     .poppers { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-    .popper { position: absolute; bottom: 30%; width: clamp(104px, 15vw, 224px); --k: 1; }
+    .popper { position: absolute; bottom: 30%; width: clamp(104px, 15vw, 224px); }
     .popper-left { left: clamp(6px, 4vw, 64px); }
     /* 右侧整体镜像，锥口朝向和喷出方向就都跟着反过来了 */
     .popper-right { right: clamp(6px, 4vw, 64px); transform: scaleX(-1); }
@@ -678,8 +678,6 @@
 
           <!-- 蜡烛 + 火苗（画在奶油之上） -->
           <g>
-            <!-- 兜底命中区：手机上一支蜡烛只有 ~21px 宽，点在火苗附近却落在列缝里就会没反应。
-                 这块向两侧各多铺 14 个单位（在三支的精确命中框之下），点到时按 x 就近判定是哪一支。 -->
             <!-- 兜底命中区：手机上一支蜡烛只有 ~20px 宽，点在火苗附近却落在列缝里就会没反应。
                  这块向两侧各多铺 12 个单位（在五支的精确命中框之下），点到时按 x 就近判定是哪一支。 -->
             <rect class="hit-wide" x="83.5" y="2" width="153" height="90" />
@@ -810,18 +808,20 @@
         else if (out === btns.length) { hint.textContent = DONE; hint.classList.add("is-done"); }
         else { hint.textContent = out + " / " + btns.length + " 支蜡烛已吹灭"; hint.classList.remove("is-done"); }
       }
-      function toggle(b) {
+      function toggle(b, n) {
         var out = b.classList.toggle("out");
         b.setAttribute("aria-pressed", out ? "true" : "false");
+        // 吹灭后动作变成「点燃」：无障碍名跟着状态走，否则屏读器一直念「吹灭」
+        b.setAttribute("aria-label", (out ? "点燃" : "吹灭") + "第 " + n + " 支蜡烛");
         sync();
       }
-      btns.forEach(function (b) {
-        b.addEventListener("click", function (e) { e.preventDefault(); toggle(b); });
+      btns.forEach(function (b, i) {
+        b.addEventListener("click", function (e) { e.preventDefault(); toggle(b, i + 1); });
         b.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); toggle(b); }
+          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); toggle(b, i + 1); }
         });
       });
-      // 点在四支之间的缝隙或旁边空白：按横向位置就近选一支，手机上不至于点不中
+      // 点在蜡烛之间的缝隙或旁边空白：按横向位置就近选一支，手机上不至于点不中
       var wide = document.querySelector(".hit-wide");
       var cake = document.querySelector(".cake-wrap svg");
       var CENTERS = [108, 134, 160, 186, 212]; // 与上面五支蜡烛的 cx 一致
@@ -834,7 +834,7 @@
             var d = Math.abs(CENTERS[i] - ux);
             if (d < bd) { bd = d; best = i; }
           });
-          toggle(btns[best]);
+          toggle(btns[best], best + 1);
         });
       }
       sync();
@@ -851,9 +851,11 @@
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; // 交给 CSS：整段不播
 
       var COLORS = ["#e0453f", "#f4c53a", "#3d8fd6", "#46a86a", "#f06aa8", "#ef8b3a", "#8a68d8", "#26b3a8"];
-      var G = 2400;     // 重力加速度（像素尺度）：出手 0.4~0.5s 到顶，随后越落越快
-      var DRAG = 3.2;   // 线性空气阻力 1/s，终端速度 = G/DRAG ≈ 750px/s（纸片该有的量级）
+      var G = 2000;     // 重力加速度（像素尺度）：出手约 0.6~1.4s 到顶，随后越落越快
+      var DRAG = 3.2;   // 线性空气阻力 1/s，终端速度 = G/DRAG = 625px/s（纸片该有的量级）
       var W = window.innerWidth, H = window.innerHeight;
+      // 视口尺寸会变（旋转/缩放窗口）：入场两三秒内跟着更新，回收边界才不会按旧尺寸误判
+      window.addEventListener("resize", function () { W = window.innerWidth; H = window.innerHeight; });
       var PER = W < 700 ? 32 : 58;   // 每侧片数
 
       var ps = [];

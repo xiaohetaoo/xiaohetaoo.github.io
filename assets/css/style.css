@@ -1632,6 +1632,16 @@ button {
   --t-ink: #a534c4;
 }
 
+/* 恩师卡悬停阴影：基础规则用的是暗色主题的黑阴影 rgba(0,0,0,0.42)，
+   落在浅底上过沉（约是项目卡阴影的 3 倍）。与 .project-card:hover 同口径各给一档 */
+:root[data-theme="light"] .teacher-card:hover {
+  box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14);
+}
+
+:root[data-theme="cn-red"] .teacher-card:hover {
+  box-shadow: 0 18px 44px rgba(90, 30, 20, 0.18);
+}
+
 /* ---------- 自我介绍页响应式 ---------- */
 @media (max-width: 900px) {
   /* 名片卡移到名字上方（与首页 hero 画布同规矩），光斑跟着上移 */
@@ -2351,58 +2361,67 @@ html.theme-anim::view-transition-new(root) {
   --btn-on-primary: #ffffff;
 }
 
-:root[data-theme="light"] .nav,
-:root[data-theme="cn-red"] .nav { background: rgba(245, 246, 248, 0.82); }
-:root[data-theme="light"] .nav-links a:hover,
-:root[data-theme="cn-red"] .nav-links a:hover { background: rgba(16, 24, 40, 0.06); }
-:root[data-theme="light"] .nav-links a.nav-cta,
-:root[data-theme="cn-red"] .nav-links a.nav-cta { background: rgba(16, 24, 40, 0.04); }
+/* 浅底两主题的「深色低透明度」覆盖：亮色用冷灰 rgba(16,24,40)、中国红用暖褐 rgba(90,30,20)。
+   中国红是暖米底，冷灰叠上去会发灰（用户 2026-09-10 报过自我介绍页），因此下面每一条都拆成两套——
+   别再把两者并进一个选择器列表里共用一份颜色。
+   暖褐比近黑浅，同比会显轻，故不透明度略提：底色 +0.02、阴影 +0.04、遮罩 +0.03。新增共享规则照此办理 */
+:root[data-theme="light"] .nav { background: rgba(245, 246, 248, 0.82); }
+:root[data-theme="light"] .nav-links a:hover { background: rgba(16, 24, 40, 0.06); }
+:root[data-theme="cn-red"] .nav-links a:hover { background: rgba(90, 30, 20, 0.08); }
+:root[data-theme="light"] .nav-links a.nav-cta { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="cn-red"] .nav-links a.nav-cta { background: rgba(90, 30, 20, 0.06); }
 :root[data-theme="light"] .theme-toggle,
-:root[data-theme="light"] .key-toggle,
+:root[data-theme="light"] .key-toggle { background: rgba(16, 24, 40, 0.04); }
 :root[data-theme="cn-red"] .theme-toggle,
-:root[data-theme="cn-red"] .key-toggle { background: rgba(16, 24, 40, 0.04); }
-:root[data-theme="light"] .nav-search-btn,
-:root[data-theme="cn-red"] .nav-search-btn { background: rgba(16, 24, 40, 0.04); }
-:root[data-theme="light"] .nav-search.open .nav-search-input,
-:root[data-theme="cn-red"] .nav-search.open .nav-search-input { background: rgba(16, 24, 40, 0.05); }
-:root[data-theme="light"] .nav-search.open .nav-search-input:focus,
-:root[data-theme="cn-red"] .nav-search.open .nav-search-input:focus { background: rgba(16, 24, 40, 0.07); }
-:root[data-theme="light"] .nav-search-results,
-:root[data-theme="cn-red"] .nav-search-results { box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14); }
+:root[data-theme="cn-red"] .key-toggle { background: rgba(90, 30, 20, 0.06); }
+:root[data-theme="light"] .nav-search-btn { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="cn-red"] .nav-search-btn { background: rgba(90, 30, 20, 0.06); }
+:root[data-theme="light"] .nav-search.open .nav-search-input { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="cn-red"] .nav-search.open .nav-search-input { background: rgba(90, 30, 20, 0.07); }
+:root[data-theme="light"] .nav-search.open .nav-search-input:focus { background: rgba(16, 24, 40, 0.07); }
+:root[data-theme="cn-red"] .nav-search.open .nav-search-input:focus { background: rgba(90, 30, 20, 0.09); }
+:root[data-theme="light"] .nav-search-results { box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14); }
+:root[data-theme="cn-red"] .nav-search-results { box-shadow: 0 16px 40px rgba(90, 30, 20, 0.18); }
 :root[data-theme="light"] .hero-glow::before {
   background: radial-gradient(circle, rgba(47, 108, 235, 0.10) 0%, rgba(47, 108, 235, 0.04) 40%, transparent 70%);
 }
 :root[data-theme="light"] .hero-glow::after {
   background: radial-gradient(circle, rgba(47, 108, 235, 0.07) 0%, transparent 70%);
 }
-:root[data-theme="light"] .hero-badge,
-:root[data-theme="cn-red"] .hero-badge { background: rgba(16, 24, 40, 0.04); }
-:root[data-theme="light"] .btn-secondary,
-:root[data-theme="cn-red"] .btn-secondary { background: rgba(16, 24, 40, 0.03); }
-:root[data-theme="light"] .side-item:hover,
-:root[data-theme="cn-red"] .side-item:hover { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="light"] .hero-badge { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="cn-red"] .hero-badge { background: rgba(90, 30, 20, 0.06); }
+:root[data-theme="light"] .btn-secondary { background: rgba(16, 24, 40, 0.03); }
+:root[data-theme="cn-red"] .btn-secondary { background: rgba(90, 30, 20, 0.05); }
+:root[data-theme="light"] .side-item:hover { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="cn-red"] .side-item:hover { background: rgba(90, 30, 20, 0.07); }
 :root[data-theme="light"] .post-card,
-:root[data-theme="light"] .project-card,
-:root[data-theme="cn-red"] .post-card,
-:root[data-theme="cn-red"] .project-card {
+:root[data-theme="light"] .project-card {
   background: var(--bg-panel);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
-:root[data-theme="light"] .project-card:hover,
-:root[data-theme="cn-red"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
+:root[data-theme="cn-red"] .post-card,
+:root[data-theme="cn-red"] .project-card {
+  background: var(--bg-panel);
+  box-shadow: 0 1px 2px rgba(90, 30, 20, 0.09);
+}
+:root[data-theme="light"] .project-card:hover { box-shadow: 0 18px 44px rgba(16, 24, 40, 0.14); }
+:root[data-theme="cn-red"] .project-card:hover { box-shadow: 0 18px 44px rgba(90, 30, 20, 0.18); }
 
 /* 搜索落点高亮补强：浅底主题的 --accent-dim 只有 8–10%，只换底色几乎看不出来，
    加实色描边 + 同色外环 + 台面阴影，一眼能定位到卡片。放 hover 覆写之后——
    specificity 与 hover 打平（同为 0,4,0），靠顺序压过 hover 阴影，悬停时环不丢 */
-:root[data-theme="light"] .project-card.highlight,
-:root[data-theme="cn-red"] .project-card.highlight {
+:root[data-theme="light"] .project-card.highlight {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-border), 0 18px 44px rgba(16, 24, 40, 0.14);
 }
+:root[data-theme="cn-red"] .project-card.highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-border), 0 18px 44px rgba(90, 30, 20, 0.18);
+}
 :root[data-theme="light"] .project-card.highlight { background: rgba(47, 108, 235, 0.12); }
 :root[data-theme="cn-red"] .project-card.highlight { background: rgba(222, 41, 16, 0.10); }
-:root[data-theme="light"] .prose code,
-:root[data-theme="cn-red"] .prose code { background: rgba(16, 24, 40, 0.06); }
+:root[data-theme="light"] .prose code { background: rgba(16, 24, 40, 0.06); }
+:root[data-theme="cn-red"] .prose code { background: rgba(90, 30, 20, 0.08); }
 /* pipe-table 偶数行斑马纹：暗色的白 2% 在亮色基底上不可见，各换各的深色低透明度 */
 :root[data-theme="light"] .prose .pipe-table tbody tr:nth-child(even) { background: rgba(16, 24, 40, 0.03); }
 :root[data-theme="cn-red"] .prose .pipe-table tbody tr:nth-child(even) { background: rgba(90, 30, 20, 0.04); }
@@ -2413,15 +2432,34 @@ html.theme-anim::view-transition-new(root) {
 :root[data-theme="light"] .tier-badge.tier-a,
 :root[data-theme="light"] .tier-badge.tier-b,
 :root[data-theme="light"] .tier-badge.tier-c,
-:root[data-theme="light"] .tier-badge.tier-z,
+:root[data-theme="light"] .tier-badge.tier-z { background: rgba(16, 24, 40, 0.04); }
 :root[data-theme="cn-red"] .tier-badge.tier-a,
 :root[data-theme="cn-red"] .tier-badge.tier-b,
 :root[data-theme="cn-red"] .tier-badge.tier-c,
-:root[data-theme="cn-red"] .tier-badge.tier-z { background: rgba(16, 24, 40, 0.04); }
+:root[data-theme="cn-red"] .tier-badge.tier-z { background: rgba(90, 30, 20, 0.06); }
 /* 亮色模式下二维码反相成白底深色码（hue-rotate 保持蓝色系、不破坏可扫描性） */
 :root[data-theme="light"] .contact-card .qr-box img,
 :root[data-theme="cn-red"] .contact-card .qr-box img {
   filter: invert(1) hue-rotate(180deg);
+}
+
+/* 亮色主题补丁：下面几处基础规则把暗色主题的强调蓝 rgba(103,158,254,…) 写死了，
+   中国红主题当初各自加了覆盖，亮色主题一直沿用暗色那档浅蓝（浅底上偏紫偏淡）。
+   这里按亮色 accent #2f6ceb 补齐；只加覆盖，不动暗色/中国红已有取值 */
+:root[data-theme="light"] ::selection {
+  background: rgba(47, 108, 235, 0.30);
+}
+:root[data-theme="light"] .btn-primary:hover {
+  box-shadow: 0 6px 26px rgba(47, 108, 235, 0.30);
+}
+:root[data-theme="light"] .prose a {
+  text-decoration-color: rgba(47, 108, 235, 0.35);
+}
+:root[data-theme="light"] .project-card::before {
+  background: linear-gradient(90deg, transparent, rgba(47, 108, 235, 0.45), transparent);
+}
+:root[data-theme="light"] .tier-badge.tier-s {
+  box-shadow: 0 0 24px rgba(47, 108, 235, 0.18);
 }
 
 /* ---------- 中国红主题（隐藏彩蛋：长按主题按钮 1s 触发） ----------
@@ -3299,14 +3337,18 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   to   { opacity: 1; transform: none; }
 }
 
-/* 浅色主题：遮罩稍浅，阴影更柔和（中国红是亮色基底，同享） */
-:root[data-theme="light"] .key-modal-backdrop,
-:root[data-theme="cn-red"] .key-modal-backdrop {
+/* 浅色主题：遮罩稍浅，阴影更柔和（中国红是暖色基底，遮罩换暖褐，见上方浅底覆盖区说明） */
+:root[data-theme="light"] .key-modal-backdrop {
   background: rgba(16, 24, 40, 0.32);
 }
-:root[data-theme="light"] .key-modal-panel,
-:root[data-theme="cn-red"] .key-modal-panel {
+:root[data-theme="cn-red"] .key-modal-backdrop {
+  background: rgba(90, 30, 20, 0.35);
+}
+:root[data-theme="light"] .key-modal-panel {
   box-shadow: 0 20px 48px rgba(16, 24, 40, 0.20);
+}
+:root[data-theme="cn-red"] .key-modal-panel {
+  box-shadow: 0 20px 48px rgba(90, 30, 20, 0.24);
 }
 
 /* 减弱动效：弹窗直接呈现（换屏动画由 main.js 同样跳过，这里再兜一道） */

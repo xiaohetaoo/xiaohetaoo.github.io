@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260911a";
+  var DATA_VER = "20260911b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -38,6 +38,10 @@
       themeBtn.setAttribute("aria-label", light ? "切换到深色主题" : "切换到亮色主题");
     }
   };
+
+  // 主题过渡代次：快速连点两次时，被跳过的那次过渡的 finished 回调不能把新过渡
+  // 还在用的 theme-anim 类摘掉（摘早了默认交叉淡化会叠到圆形扩散上）
+  var themeVtGen = 0;
 
   // 切换主题；浏览器支持 View Transitions 时从点击位置做圆形扩散动画
   function applyTheme(next, origin) {
@@ -65,7 +69,16 @@
     }
     // 主题动画期间挂作用域标记：圆形扩散用自己那份伪元素规则，和跨页面过渡互不干扰
     document.documentElement.classList.add("theme-anim");
-    var vt = document.startViewTransition(commit);
+    var gen = ++themeVtGen;
+    var vt;
+    try {
+      vt = document.startViewTransition(commit);
+    } catch (e) {
+      // 过渡起不来也不能让主题卡住不生效，更不能留下 theme-anim
+      document.documentElement.classList.remove("theme-anim");
+      commit();
+      return;
+    }
     vt.ready.then(function () {
       var x = origin.x, y = origin.y;
       // 覆盖层的坐标锚定方式随浏览器实现而不同：
@@ -92,8 +105,8 @@
       );
     }).catch(function () {});
     vt.finished.then(
-      function () { document.documentElement.classList.remove("theme-anim"); },
-      function () { document.documentElement.classList.remove("theme-anim"); }
+      function () { if (gen === themeVtGen) document.documentElement.classList.remove("theme-anim"); },
+      function () { if (gen === themeVtGen) document.documentElement.classList.remove("theme-anim"); }
     );
   }
 
@@ -1071,6 +1084,7 @@
         if (allLink) allLink.hidden = q ? true : sorted.length <= limit;
       })
       .catch(function () {
+        unwatchReveal(container);
         container.innerHTML = '<p class="sub">文章列表加载失败，请刷新重试。</p>';
       });
   }
@@ -1224,6 +1238,7 @@
         if (allLink) allLink.hidden = q ? true : projects.length <= limit;
       })
       .catch(function () {
+        unwatchReveal(container);
         container.innerHTML = '<p class="sub">项目列表加载失败，请刷新重试。</p>';
       });
   }
