@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910t";
+  var DATA_VER = "20260911a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -2075,7 +2075,8 @@
 
   /* ---------- 4.5. 口令彩蛋弹窗 ----------
      设计：点击钥匙按钮 → 弹窗打开 → 输入口令 → 命中输出"冒号后"内容；
-     不区分大小写、忽略全部空白（含内部空格）、完全匹配。
+     不区分大小写、忽略全部空白与全部标点符号、完全匹配。
+     个别口令带 a（action）：命中后不显示文案，而走一段多步流程（当前只有生日页入口）。
      数据明文常量（彩蛋属性 > 加密），存放在源码里被人看到也是预期行为。 */
   (function () {
     // 钥匙弹窗主体：所有 DOM 绑定 / 事件 / 渲染逻辑都在 init() 里。
@@ -2083,7 +2084,8 @@
     // 里 key-modal 节点（注入在 </body> 前）还没解析完，getElementById 拿 null。
     // 兜底：如果 main.js 加载时已 DCL，直接跑。
     function init() {
-    // K：口令 → V：命中后显示的内容。匹配时忽略大小写与全部空白。
+    // K：口令 → V：命中后显示的内容；A：命中后触发的特殊动作（渲染分支见 renderResult）。
+    // 匹配时忽略大小写、全部空白与全部标点（「施 瑶涵」「施瑶涵!」「awa~」都能命中）。
     var KEYS = [
       { k: "施瑶涵",         v: "宝贝你好呀awa" },
       { k: "睡一会",         v: "宝贝你好呀awa" },
@@ -2092,19 +2094,23 @@
       { k: "蔡徐坤",         v: "小黑子！" },
       { k: "cxk",            v: "小黑子！" },
       { k: "平阳中学",        v: "凤山之麓，弦溪之东，抗战时期诞生我平中~" },
-      { k: "7436474582453",   v: "生日快乐！" },
+      // 特殊口令：不直接出文案，先问称呼，校验通过就带 ?name= 进生日页
+      { k: "7436474582453",   v: "生日快乐！", a: "birthday" },
       { k: "7755",            v: "生日快乐！" },
       { k: "小核桃",          v: "找我什么事呀awa" },
       { k: "小核桃哦",        v: "哦？找我什么事呀awa" },
       { k: "小核桃哦哦",      v: "哦哦？！你干嘛~~" },
       { k: "牢核",           v: "你该罚！" },
-      { k: "牢核蛋",         v: "你该罚！" },
+      { k: "牢核蛋",          v: "你该罚！" },
       { k: "oldriveregg",    v: "你该罚！" },
       { k: "妈咪",            v: "想妈咪了qwq" },
       { k: "杭州电子科技大学",  v: "笃学力行、守正求新" },
       { k: "杭电",            v: "笃学力行、守正求新" },
       { k: "HUD",             v: "笃学力行、守正求新" },
-      { k: "awa",             v: "awa" }
+      { k: "awa",             v: "awa" },
+      { k: "爱国",            v: "爱国！" },
+      { k: "创新",            v: "创新！" },
+      { k: "和谐",            v: "和谐！" }
     ];
 
     var btn = document.getElementById("key-toggle");
@@ -2115,19 +2121,106 @@
     var submit = document.getElementById("key-modal-submit");
     var lastFocus = null;
 
-    // 查询：忽略输入中的全部空白（含内部空格，如「施 瑶涵」「小 核 桃」也能命中）；
-    // 不区分大小写、完全匹配（awa/AWA 任意大小写都命中同一条）
+    /* ---- 称呼流程（特殊口令 7436474582453 → 生日页）的两态状态机 ----
+       key  ：输口令（初始态）
+       name ：问称呼，输入框换文案，带长度提示；校验一过就直接跳生日页
+       提示行这个额外节点在这里动态建：口令弹窗的静态 HTML 在 22 个页面里各有一份，
+       能用 JS 建的就别去改 22 遍。 */
+    var MODE = "key";
+    var flowGen = 0;   // 换屏代次：关弹窗/复位就 +1，作废还在飞的那次换屏
+    var field = input ? input.closest(".key-modal-field") : null;
+    var labelEl = modal.querySelector(".key-modal-label");
+
+    var hintEl = document.createElement("span");
+    hintEl.className = "key-modal-hint";
+    hintEl.textContent = "不超过 5 个字，字母算半个";
+    hintEl.hidden = true;
+    if (field) field.appendChild(hintEl);
+
+    function setMode(m) {
+      MODE = m;
+      hintEl.hidden = m !== "name";
+      if (labelEl) labelEl.textContent = m === "name" ? "怎么称呼你？" : "输入口令";
+      if (submit) submit.setAttribute("aria-label", m === "name" ? "继续" : "提交口令");
+      input.placeholder = m === "name" ? "输入你的称呼" : "请输入口令";
+      input.maxLength = m === "name" ? 16 : 60;
+    }
+    // 回到初始态并清空：关弹窗、以及打开弹窗时兜底调用
+    function resetFlow() {
+      flowGen++;                       // 作废可能还在飞的换屏动画
+      var body = modal.querySelector(".key-modal-body");
+      if (body) body.classList.remove("is-swapping", "is-entering");
+      input.value = "";
+      setMode("key");
+      renderResult("");
+    }
+    // 真正切到称呼态：换屏动画的中点和「减少动态效果」路径共用这一处
+    function applyName() {
+      input.value = "";
+      result.textContent = "写好之后按回车继续";
+      result.setAttribute("data-state", "empty");
+      setMode("name");
+      try { input.focus({ preventScroll: true }); } catch (e) {}
+    }
+    // 命中特殊口令：抽屉式换屏——旧表单向上滑出（0.22s），切称呼态后从下滑入（0.28s）。
+    // 全程不写「口令正确」，靠「换了一屏」表达推进。系统开了「减少动态效果」就直接切。
+    function startName() {
+      var body = modal.querySelector(".key-modal-body");
+      var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!body || reduced) { applyName(); return; }
+      var gen = ++flowGen;
+      body.classList.add("is-swapping");
+      setTimeout(function () {
+        if (gen !== flowGen) return;   // 这 0.22s 里弹窗被关了/复位了，放弃这次换屏
+        applyName();
+        body.classList.remove("is-swapping");
+        body.classList.add("is-entering");
+        setTimeout(function () {
+          if (gen === flowGen) body.classList.remove("is-entering");
+        }, 300);
+      }, 220);
+    }
+    // 校验通过：带 ?name= 直接跳生日页。相对路径交给 siteRoot（文章页在 /posts/ 下要回上一级）
+    function goBirthday(name) {
+      var base = typeof siteRoot === "function" ? siteRoot(true) : "";
+      window.location.href = base + "birthday.html?name=" + encodeURIComponent(name);
+    }
+
+    // 归一化：忽略大小写、全部空白与全部标点符号。/[\s\p{P}\p{S}]/u 按 Unicode 属性匹配
+    //「空白 + 标点 + 符号」，中英文标点（，。！？～「」《》……）和 + - _ = 之类一并去掉；
+    // 数字/字母属于 \p{N}/\p{L} 不在其中，所以 7436474582453 照常参与比对。
+    function norm(s) {
+      return String(s == null ? "" : s).replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
+    }
+    // 口令侧只在初始化时归一化一次（KEYS_N），之后每次查询只归一化输入、再线性比对。
+    var KEYS_N = KEYS.map(function (e) { return { e: e, n: norm(e.k) }; });
     function lookup(raw) {
-      var q = String(raw || "").replace(/\s+/g, "");
-      if (!q) return null;
-      var ql = q.toLowerCase();
-      for (var i = 0; i < KEYS.length; i++) {
-        if (KEYS[i].k.toLowerCase() === ql) return KEYS[i];
+      var q = norm(raw);
+      if (!q) return null;   // 全是标点/空白等于没输入，不算命中
+      for (var i = 0; i < KEYS_N.length; i++) {
+        if (KEYS_N[i].n === q) return KEYS_N[i].e;
       }
       return null;
     }
 
+    // 「不超过 5 个字，字母算半个」：半角（字母/数字）算 0.5，其余（中文、全角）算 1。
+    // 按码点遍历，emoji 这类代理对不会被算成两个字。
+    function nameWeight(s) {
+      var cs = Array.from(String(s == null ? "" : s));
+      var w = 0;
+      for (var i = 0; i < cs.length; i++) w += cs[i].codePointAt(0) < 0x2e80 ? 0.5 : 1;
+      return w;
+    }
+    // 清理称呼：去掉控制字符，连续空白压成一个空格，首尾去空格（长度是否合规由调用方判断）
+    function cleanName(raw) {
+      return String(raw == null ? "" : raw)
+        .replace(/[\u0000-\u001f\u007f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     function renderResult(raw) {
+      if (MODE !== "key") return;   // 称呼流程中结果区由各步骤自管，别被口令渲染覆盖
       var q = String(raw || "").trim();
       if (!q) {
         result.textContent = "在上方输入口令，回车查看结果";
@@ -2135,13 +2228,17 @@
         return;
       }
       var hit = lookup(raw);
-      if (hit) {
-        result.textContent = hit.v;
-        result.setAttribute("data-state", "hit");
-      } else {
+      if (!hit) {
         result.textContent = "没有匹配的口令";
         result.setAttribute("data-state", "miss");
+        return;
       }
+      if (hit.a === "birthday") {   // 特殊口令：不显示文案，改走「问称呼 → 生日页」
+        startName();
+        return;
+      }
+      result.textContent = hit.v;
+      result.setAttribute("data-state", "hit");
     }
 
     function setOpen(next) {
@@ -2151,6 +2248,7 @@
       var footer = document.querySelector("footer.footer");
       if (willOpen) {
         lastFocus = document.activeElement;
+        if (MODE !== "key") resetFlow();   // 上次可能是称呼流程中被 Esc 关掉的，打开先复位
         modal.hidden = false;
         // 背后的 main / nav / footer 全部锁住，键盘焦点不会逃出弹窗（免费 focus trap）
         if (main) main.setAttribute("inert", "");
@@ -2171,9 +2269,8 @@
         if (nav) nav.removeAttribute("inert");
         if (footer) footer.removeAttribute("inert");
         btn.setAttribute("aria-expanded", "false");
-        // 清空状态，避免下次打开残留旧结果
-        input.value = "";
-        renderResult("");
+        // 清空状态（含称呼流程），避免下次打开残留旧结果
+        resetFlow();
         // 把焦点还给触发按钮（无障碍约定；nav 已解除 inert，可安全聚焦）
         if (lastFocus && typeof lastFocus.focus === "function") {
           try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
@@ -2195,8 +2292,23 @@
     });
     // 不做实时反馈：input 只更新 value，结果只在按 Enter / 点提交按钮后渲染。
     // （设计要求：必须显式确认才显示结果，避免边输入边闪。）
-    // 提交按钮：渲染一次结果
+    // 提交按钮 / 回车都走这里：按当前模式分流（key 渲结果、name 校验称呼、confirm 直接进）
     function submitOnce() {
+      if (MODE === "name") {
+        var nm = cleanName(input.value);
+        if (!nm) {
+          result.textContent = "先写个称呼吧~";
+          result.setAttribute("data-state", "miss");
+        } else if (nameWeight(nm) > 5) {
+          result.textContent = "「" + nm + "」太长了：最多 5 个字，字母算半个";
+          result.setAttribute("data-state", "miss");
+        } else {
+          goBirthday(nm);   // 一过就直接走，不再停一步让你按确认
+          return;
+        }
+        try { input.focus({ preventScroll: true }); } catch (e) {}
+        return;
+      }
       renderResult(input.value);
       input.focus({ preventScroll: true });
     }
@@ -2225,8 +2337,8 @@
         setOpen(false);
       }
     });
-    // 初始占位
-    renderResult("");
+    // 初始占位（并把状态机复位到 key 态）
+    resetFlow();
     }
     // 等 DOMContentLoaded 后 modal 节点才被解析到（main.js script 之前只有 key-toggle，
     // key-modal 是在 </body> 前注入的）。如果已 DCL 则直接跑。

@@ -3255,6 +3255,41 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   font-weight: 500;
 }
 
+/* 称呼流程（特殊口令 → 生日页）：长度提示行。
+   [hidden] 覆写：.key-modal-hint 是 display:block，作者样式会盖过 UA 的
+   [hidden]{display:none}，必须显式补回来，否则 hidden 属性形同虚设。 */
+.key-modal-hint[hidden] { display: none; }
+
+.key-modal-hint {
+  display: block;
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+
+/* 抽屉式换屏（命中特殊口令后）：旧表单上滑滑出，称呼态从下滑入。
+   两个块（.key-modal-field / .key-modal-result）同步走同一组关键帧，
+   视觉上就是整块换了一屏；transform/opacity 不动布局，弹窗高度不跳。
+   时长与 main.js 里的 220/300ms 对齐，改一处要改两处。 */
+@keyframes keySwapOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(-14px); }
+}
+@keyframes keySwapIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+.key-modal-body.is-swapping .key-modal-field,
+.key-modal-body.is-swapping .key-modal-result {
+  animation: keySwapOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+.key-modal-body.is-entering .key-modal-field,
+.key-modal-body.is-entering .key-modal-result {
+  animation: keySwapIn 0.28s var(--ease-out) both;
+}
+
 @keyframes key-modal-fade {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -3274,10 +3309,14 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   box-shadow: 0 20px 48px rgba(16, 24, 40, 0.20);
 }
 
-/* 减弱动效：弹窗直接呈现 */
+/* 减弱动效：弹窗直接呈现（换屏动画由 main.js 同样跳过，这里再兜一道） */
 @media (prefers-reduced-motion: reduce) {
   .key-modal-backdrop,
-  .key-modal-panel {
+  .key-modal-panel,
+  .key-modal-body.is-swapping .key-modal-field,
+  .key-modal-body.is-swapping .key-modal-result,
+  .key-modal-body.is-entering .key-modal-field,
+  .key-modal-body.is-entering .key-modal-result {
     animation: none !important;
   }
 }

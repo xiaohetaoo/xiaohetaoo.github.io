@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fffaf1" />
+  <title>生日快乐</title>
+  <meta name="description" content="生日快乐。" />
+  <!-- 独立祝福页：还没定对外分享方式，先不让搜索引擎收录（也没进 sitemap、没挂任何入口）。
+       将来要公开分享时，把下面这一行删掉即可。 -->
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://xiaohetaoo.github.io/birthday.html" />
+  <meta property="og:title" content="生日快乐" />
+  <meta property="og:description" content="生日快乐。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://xiaohetaoo.github.io/birthday.html" />
+  <meta property="og:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
+  <meta property="og:site_name" content="小核桃的个人博客" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="生日快乐" />
+  <meta name="twitter:description" content="生日快乐。" />
+  <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "生日快乐",
+  "description": "一张生日快乐祝福页。",
+  "inLanguage": "zh-CN",
+  "url": "https://xiaohetaoo.github.io/birthday.html",
+  "isPartOf": { "@type": "WebSite", "name": "小核桃的个人博客", "url": "https://xiaohetaoo.github.io" }
+}
+  </script>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
+  <link rel="shortcut icon" href="assets/img/favicon.ico" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <!-- 独立祝福页：自包含（无站点样式/脚本/导航/主题按钮），纯 HTML + CSS + 内联 SVG 插画。
+       构图参照一张插画风生日图：奶油底 + 四角花草 + 白缎带 + 紫粉渐变标题 + 双层蛋糕。
+       改名字只需动 <h1 class="bday-title"> 里的「某某某」，别处不用碰；
+       从口令弹窗进来时会带 ?name=xxx，由 <h1> 后面那段脚本覆盖（同样只需改「某某某」兜底值）。 -->
+  <style>
+    :root {
+      --cream: #fffaf1;
+      --cream-2: #fdf1da;
+      --cream-3: #fbe7c6;
+      --ink: #7c3f3a;
+      --orange: #f4663a;
+      --orange-2: #f78a52;
+      --teal: #1e5149;
+      --teal-2: #2f6b5f;
+      --berry: #e8524e;
+      --pink: #f6b8b0;
+      --gold: #e3a93c;
+      --blue: #a9cfe0;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--cream);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ---------- 场景：整屏，内容居中 ---------- */
+    .scene {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(18px, 4vw, 40px);
+      isolation: isolate;
+    }
+
+    /* ---------- 背景奶油色块 ---------- */
+    .blob { position: absolute; pointer-events: none; z-index: 0; filter: blur(22px); }
+    .blob-a {
+      width: 70vw; height: 64vw; max-width: 1040px; max-height: 960px;
+      top: -26vw; right: -16vw;
+      background: var(--cream-2);
+      border-radius: 46% 54% 62% 38% / 52% 44% 56% 48%;
+      animation: blobFloat 18s ease-in-out infinite alternate;
+    }
+    .blob-b {
+      width: 52vw; height: 44vw; max-width: 780px; max-height: 660px;
+      bottom: -18vw; left: -14vw;
+      background: var(--cream-3);
+      border-radius: 58% 42% 40% 60% / 48% 58% 42% 52%;
+      animation: blobFloat 22s ease-in-out infinite alternate-reverse;
+    }
+    .blob-c {
+      width: 40vw; height: 34vw; max-width: 600px; max-height: 500px;
+      bottom: -14vw; right: -10vw;
+      background: var(--cream-2);
+      border-radius: 52% 48% 58% 42% / 44% 56% 44% 56%;
+      animation: blobFloat 26s ease-in-out infinite alternate;
+    }
+    @keyframes blobFloat {
+      from { transform: translate3d(0, 0, 0) scale(1); }
+      to   { transform: translate3d(-1.6vw, 1.8vw, 0) scale(1.05); }
+    }
+
+    /* ---------- 白色缎带（横贯上方，标题背后） ---------- */
+    .band {
+      position: absolute; z-index: 1; pointer-events: none;
+      top: 4%; left: -4%; width: 108%; height: 46%;
+    }
+    .band svg { width: 100%; height: 100%; display: block; }
+
+    /* ---------- 四角花草 ---------- */
+    .deco { position: absolute; z-index: 2; pointer-events: none; }
+    .deco svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .deco-tl { top: 0; left: 0;  width: clamp(180px, 30vw, 430px); animation: sway 9s ease-in-out infinite alternate; }
+    .deco-tr { top: 0; right: 0; width: clamp(170px, 28vw, 410px); animation: sway 11s ease-in-out infinite alternate-reverse; }
+    .deco-bl { bottom: 0; left: 0;  width: clamp(180px, 30vw, 440px); animation: sway 12s ease-in-out infinite alternate-reverse; }
+    .deco-br { bottom: 0; right: 0; width: clamp(170px, 28vw, 420px); animation: sway 10s ease-in-out infinite alternate; }
+    .deco-tl svg { transform-origin: 0% 0%; }
+    .deco-tr svg { transform-origin: 100% 0%; }
+    .deco-bl svg { transform-origin: 0% 100%; }
+    .deco-br svg { transform-origin: 100% 100%; }
+    @keyframes sway {
+      from { transform: rotate(-1.1deg); }
+      to   { transform: rotate(1.1deg); }
+    }
+
+    /* ---------- 舞台：标题 + 蛋糕 ---------- */
+    .stage {
+      position: relative; z-index: 3;
+      display: flex; flex-direction: column; align-items: center;
+      gap: clamp(10px, 2.5vh, 30px);
+      text-align: center;
+      padding-bottom: clamp(4px, 2vh, 24px);
+      /* 蛋糕（连它下面的提示）整体下移一点，标题留在原处。
+         走 transform 而不是 margin：不影响布局高度，也不会把整列推上去。 */
+      --drop: clamp(6px, 2vh, 24px);
+    }
+
+    .bday-title {
+      font-weight: 900;
+      /* --t-scale：称呼变长时标题会超宽（标题是 nowrap），脚本按实际宽度等比缩字号，
+         超宽才缩、不超宽保持 1，见 <h1> 后面那段脚本 */
+      font-size: calc(clamp(34px, 8.8vw, 104px) * var(--t-scale, 1));
+      line-height: 1.16;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      color: #b8499a; /* 不支持渐变文字时的兜底色 */
+      background-image: linear-gradient(96deg, #7b74d8 0%, #9a63d4 34%, #c94f9b 62%, #e64b6d 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 0 rgba(124, 63, 58, 0.10));
+      animation: titleIn 0.9s var(--ease) both;
+    }
+    @keyframes titleIn {
+      from { opacity: 0; transform: translateY(16px) scale(0.985); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .cake-wrap {
+      width: clamp(196px, 42vw, 404px);
+      animation: cakeFloat 6.5s ease-in-out infinite alternate;
+    }
+    .cake-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+    @keyframes cakeFloat {
+      from { transform: translateY(calc(var(--drop, 0px) - 5px)); }
+      to   { transform: translateY(calc(var(--drop, 0px) + 6px)); }
+    }
+    .cake-in { animation: cakeIn 1s var(--ease) 0.12s both; }
+    @keyframes cakeIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.94); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* 火苗跳动（各支错峰） */
+    .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flicker 1.5s ease-in-out infinite; }
+    .flame-1 { animation-delay: 0s; }
+    .flame-2 { animation-delay: 0.3s; }
+    .flame-3 { animation-delay: 0.6s; }
+    .flame-4 { animation-delay: 0.9s; }
+    .flame-5 { animation-delay: 1.2s; }
+    @keyframes flicker {
+      0%, 100% { transform: scale(1, 1) rotate(-1.5deg); opacity: 1; }
+      35%      { transform: scale(0.94, 1.1) rotate(1.5deg); opacity: 0.94; }
+      70%      { transform: scale(1.04, 0.94) rotate(-0.5deg); opacity: 1; }
+    }
+    .glow { animation: glowPulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 60%; }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.75; transform: scale(1); }
+      50%      { opacity: 1; transform: scale(1.07); }
+    }
+
+    /* ---------- 互动：点火焰吹灭蜡烛 ----------
+       命中区是「光晕 + 火苗」一整块（光晕 r=26，折到屏上约 65px，够触控），
+       键盘 Enter/空格等效；再点一下重新点着。JS 只增删 .out 一个类。
+       灭火不能用 transition：.flame / .glow 身上挂着无限循环的 flicker/glowPulse，
+       动画在跑的时候会盖掉普通声明，所以整个换成一段一次性的 flameOut/glowOut。 */
+    .flame-btn { cursor: pointer; }
+    /* 只有 .hit 吃点击；火苗/光晕/烟/对焦环都让开，避免它们（尤其是放大后又透明的光晕）
+       互相抢点击、或把点击算到隔壁那支蜡烛头上 */
+    .flame-btn .hit { fill: transparent; pointer-events: all; }
+    /* 铺满整排的兜底命中区：手机上一支只有 ~21px 宽，点在火苗边上容易落进列缝，
+       这块（压在四支的精确命中框之下）负责把"点歪了"的按就近原则算给某一支 */
+    .hit-wide { fill: transparent; pointer-events: all; cursor: pointer; }
+    .flame-btn .ring, .flame-btn .glow, .flame-btn .flame, .flame-btn .smoke { pointer-events: none; }
+    .flame-btn .ring {
+      fill: none; stroke: #e64b6d; stroke-width: 2.4; stroke-dasharray: 5 5; opacity: 0;
+    }
+    /* 关掉浏览器默认的对焦框（点一下也会画出个黑框，很脏），键盘聚焦改用下面这个粉虚线框 */
+    .flame-btn:focus { outline: none; }
+    .flame-btn:focus-visible .ring { opacity: 1; }
+    .flame-btn .smoke { opacity: 0; transform-box: fill-box; transform-origin: 50% 100%; }
+    .flame-btn .smoke path { fill: none; stroke: #b6aca6; stroke-width: 2.6; stroke-linecap: round; }
+    .flame-btn.out .flame { animation: flameOut 0.42s ease-in both; }
+    .flame-btn.out .glow { animation: glowOut 0.42s ease-in both; }
+    .flame-btn.out .smoke { animation: smokeUp 2.8s ease-out 0.1s both; }
+    @keyframes flameOut {
+      0%   { opacity: 1; transform: scale(1, 1) rotate(0deg); }
+      38%  { opacity: 0.92; transform: scale(0.66, 1.38) rotate(5deg); } /* 先被吹歪、拉长 */
+      100% { opacity: 0; transform: scale(0.16, 0.2) rotate(9deg); }
+    }
+    @keyframes glowOut {
+      0%   { opacity: 0.85; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.55); } /* 光晕散掉 */
+    }
+    @keyframes smokeUp {
+      0%   { opacity: 0; transform: translateY(9px) scale(0.5, 0.4); }
+      22%  { opacity: 0.7; }
+      62%  { opacity: 0.4; }
+      100% { opacity: 0; transform: translateY(-15px) translateX(3px) scale(1.3, 1.6); }
+    }
+
+    /* 操作提示：晚一点淡入，不抢主角；四支都吹灭后换成许愿那句 */
+    .bday-hint {
+      margin: 0;
+      font-size: clamp(12px, 2.6vw, 13.5px);
+      letter-spacing: 0.06em;
+      color: #a9806f;
+      animation: hintIn 0.9s var(--ease) 1.6s both;
+    }
+    .bday-hint.is-done { color: #c94f9b; font-weight: 700; }
+    @keyframes hintIn {
+      from { opacity: 0; transform: translateY(calc(var(--drop, 0px) + 8px)); }
+      to   { opacity: 0.88; transform: translateY(var(--drop, 0px)); }
+    }
+
+    /* ---------- 飘落的小花瓣 ---------- */
+    .petals { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .petal {
+      position: absolute; top: -6vh;
+      width: 13px; height: 13px;
+      background: linear-gradient(140deg, var(--fall, var(--pink)), rgba(255, 255, 255, 0.85));
+      border-radius: 78% 12% 78% 12%;
+      opacity: 0.85;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0%   { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+      8%   { opacity: 0.9; }
+      92%  { opacity: 0.75; }
+      100% { transform: translate3d(6vw, 112vh, 0) rotate(420deg); opacity: 0; }
+    }
+
+    /* ---------- 入场：左右两侧喷彩带 ---------- */
+    .poppers { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+    .popper { position: absolute; bottom: 30%; width: clamp(104px, 15vw, 224px); --k: 1; }
+    .popper-left { left: clamp(6px, 4vw, 64px); }
+    /* 右侧整体镜像，锥口朝向和喷出方向就都跟着反过来了 */
+    .popper-right { right: clamp(6px, 4vw, 64px); transform: scaleX(-1); }
+    /* 喷桶：出手时先有一记后坐力，喷完（约 2.6s）自己淡出消失，只剩彩带在飘 */
+    .popper .cone {
+      display: block; width: 100%; height: auto; overflow: visible;
+      transform-origin: 50% 90%;
+      animation: coneOut 2s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+    }
+    @keyframes coneOut {
+      0%   { opacity: 1; transform: scale(1) rotate(0deg); animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
+      5%   { transform: scale(1.06) rotate(-2deg); }  /* 后坐力 */
+      15%  { transform: scale(1) rotate(0deg); }
+      45%  { opacity: 1; }                             /* 约 0.9s 前一直在（彩带 0.5s 内喷完） */
+      70%  { opacity: 0; transform: scale(1.09) rotate(2deg); }
+      100% { opacity: 0; transform: scale(1.12) rotate(2.5deg); }
+    }
+    /* 彩带/纸屑的起点都收在喇叭口那一点，再靠各自的 --dx/--up/--dy/--rot 散开 */
+    .burst { position: absolute; left: 88%; top: 38%; }
+    /* 轨迹由 JS 逐帧解算（重力 + 与速度成正比的空气阻力），CSS 这边只留定位和形状。
+       will-change 只在飞行期间有用：每片出画后会被 display:none，合成层随之释放。 */
+    .burst i {
+      position: absolute; left: 0; top: 0; display: block; opacity: 0;
+      will-change: transform;
+    }
+    .burst .cf { width: var(--w, 14px); height: var(--h, 11px); border-radius: 3px; background: var(--c); }
+    /* 长条彩带：比纸屑长一截，旋转起来才像飘带而不是方块 */
+    .burst .sf { width: var(--w, 30px); height: var(--h, 8px); border-radius: 4px; background: var(--c); }
+    /* 卷曲彩带：圆环只留左上两段描边，就是一个卷 */
+    .burst .rb {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 8px solid var(--c);
+      border-right-color: transparent;
+      border-bottom-color: transparent;
+    }
+
+    /* ---------- 左上角：返回首页（沿用恩师画页 .scene-back 的形状/位置，配色改成浅底可用） ---------- */
+    .scene-back {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      left: max(16px, env(safe-area-inset-left));
+      z-index: 6;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 18px 10px 13px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      letter-spacing: 0.04em;
+      color: #8a5a4e;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(124, 63, 58, 0.18);
+      box-shadow: 0 4px 14px rgba(124, 63, 58, 0.08);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      transition: background-color 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+    }
+    .scene-back:hover { background: rgba(255, 255, 255, 0.94); border-color: rgba(124, 63, 58, 0.34); transform: translateY(-1px); }
+    .scene-back:focus-visible { outline: 2px solid #e64b6d; outline-offset: 3px; }
+    .scene-back svg { width: 15px; height: 15px; }
+
+    /* 桌面窗口不高时（如 1280×720），弧线按比例收一点：行程是固定 px，
+       屏幕矮了同样的高度就顶到框外，收 0.82 后最高点仍留在画面内 */
+    @media (min-width: 641px) and (max-height: 800px) { .popper { --k: 0.82; } }
+
+    /* ---------- 窄屏 ---------- */
+    @media (max-width: 640px) {
+      .band { top: 2%; height: 34%; }
+      .deco-tl, .deco-bl { width: clamp(146px, 46vw, 240px); }
+      .deco-tr, .deco-br { width: clamp(136px, 43vw, 226px); }
+      .bday-title { font-size: calc(clamp(31px, 12vw, 58px) * var(--t-scale, 1)); }
+      .cake-wrap { width: clamp(180px, 64vw, 280px); }
+      /* 窄屏蛋糕占满中间：喇叭放大后仍靠下摆，行程按 0.5 缩（不然小而矮的弧线全堆在蛋糕上），
+         但保留足够上升量，彩带是"掠过"蛋糕而不是堆在上面 */
+      .popper { bottom: 10%; width: clamp(92px, 26vw, 146px); --k: 0.5; }
+      .petal { width: 10px; height: 10px; }
+    }
+
+    /* ---------- 尊重系统「减少动态效果」 ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      .blob, .deco, .cake-wrap, .flame, .glow, .petal, .bday-title, .cake-in,
+      .bday-hint, .popper .cone {
+        animation: none !important;
+      }
+      .petals { display: none; }
+      .burst { display: none; } /* 喷彩带整段停掉（锥体留着当静态装饰） */
+      .bday-title, .cake-in { opacity: 1; transform: none; }
+      .bday-hint { opacity: 0.88; transform: translateY(var(--drop, 0px)); }
+      /* 静态模式吹灭也要真的灭：动画被上面的 !important 关了，改用直接置 0 的透明度 */
+      .flame-btn.out .flame, .flame-btn.out .glow { opacity: 0; animation: none !important; }
+      .flame-btn.out .smoke { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="scene-back" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    返回首页
+  </a>
+
+  <!-- 复用的插画零件（同一文档内 <use> 引用；主色走 currentColor，方便换色） -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+      <g id="flower5">
+        <g fill="currentColor">
+          <ellipse cx="0" cy="-24" rx="17" ry="24" />
+          <ellipse cx="0" cy="-24" rx="17" ry="24" transform="rotate(72)" />
+          <ellipse cx="0" cy="-24" rx="17" ry="24" transform="rotate(144)" />
+          <ellipse cx="0" cy="-24" rx="17" ry="24" transform="rotate(216)" />
+          <ellipse cx="0" cy="-24" rx="17" ry="24" transform="rotate(288)" />
+        </g>
+        <circle r="8" fill="#f7cf5e" />
+        <g fill="#e39a2f">
+          <circle cx="0" cy="-13" r="2.4" /><circle cx="12" cy="-4" r="2.4" />
+          <circle cx="8" cy="11" r="2.4" /><circle cx="-8" cy="11" r="2.4" />
+          <circle cx="-12" cy="-4" r="2.4" />
+        </g>
+      </g>
+
+      <g id="daisy">
+        <g fill="currentColor">
+          <ellipse cx="0" cy="-17" rx="5.4" ry="13" />
+          <ellipse cx="0" cy="-17" rx="5.4" ry="13" transform="rotate(45)" />
+          <ellipse cx="0" cy="-17" rx="5.4" ry="13" transform="rotate(90)" />
+          <ellipse cx="0" cy="-17" rx="5.4" ry="13" transform="rotate(135)" />
+          <ellipse cx="0" cy="-17" rx="5.4" ry="13" transform="rotate(180)" />
+          <ellipse cx="0" cy="-17" rx="5.4" ry="13" transform="rotate(225)" />
+          <ellipse cx="0" cy="-17" rx="5.4" ry="13" transform="rotate(270)" />
+          <ellipse cx="0" cy="-17" rx="5.4" ry="13" transform="rotate(315)" />
+        </g>
+        <circle r="7" fill="#fff8e7" />
+        <circle r="3" fill="#f2b93f" />
+      </g>
+
+      <g id="leaf">
+        <path d="M0 0 C 14 -18 16 -46 0 -72 C -16 -46 -14 -18 0 0 Z" fill="currentColor" />
+        <path d="M0 -8 L0 -64" stroke="rgba(255,255,255,0.30)" stroke-width="2.4" fill="none" stroke-linecap="round" />
+      </g>
+
+      <g id="sprig">
+        <path d="M0 0 C 3 -34 9 -66 15 -98" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" />
+        <g fill="currentColor">
+          <circle cx="3" cy="-16" r="4.6" /><circle cx="8" cy="-44" r="4.6" />
+          <circle cx="13" cy="-72" r="4.6" /><circle cx="16" cy="-96" r="4.2" />
+        </g>
+      </g>
+
+      <g id="berries">
+        <path d="M4 8 C 6 -14 12 -26 24 -36" stroke="#2f6b5f" stroke-width="3.4" fill="none" stroke-linecap="round" />
+        <path d="M24 -36 C 30 -40 38 -40 44 -36 C 38 -30 30 -31 24 -36 Z" fill="#2f6b5f" />
+        <circle cx="7" cy="10" r="13" fill="#e8524e" />
+        <circle cx="32" cy="3" r="13" fill="#e8524e" />
+        <circle cx="19" cy="24" r="12" fill="#ef6b5c" />
+        <circle cx="3" cy="5" r="3.6" fill="#f9a49a" />
+        <circle cx="28" cy="-2" r="3.6" fill="#f9a49a" />
+        <circle cx="15" cy="19" r="3.2" fill="#f9a49a" />
+      </g>
+
+      <g id="petal"><path d="M0 0 C -11 -13 -13 -30 0 -37 C 13 -30 11 -13 0 0 Z" fill="currentColor" /></g>
+
+      <radialGradient id="flameGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffd97a" stop-opacity="0.75" />
+        <stop offset="100%" stop-color="#ffd97a" stop-opacity="0" />
+      </radialGradient>
+      <linearGradient id="bowGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fbd8d0" />
+        <stop offset="100%" stop-color="#f0aca2" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="scene">
+    <span class="blob blob-a"></span>
+    <span class="blob blob-b"></span>
+    <span class="blob blob-c"></span>
+
+    <!-- 白色缎带 -->
+    <div class="band" aria-hidden="true">
+      <svg viewBox="0 0 1440 620" preserveAspectRatio="none">
+        <path d="M-40 150 C 240 40 470 230 720 190 C 980 148 1160 30 1480 96 L 1480 300
+                 C 1160 236 980 356 720 398 C 470 438 240 250 -40 358 Z" fill="#ffffff" opacity="0.92" />
+        <path d="M-40 396 C 250 288 470 470 730 430 C 990 390 1170 268 1480 336 L 1480 372
+                 C 1170 304 990 426 730 466 C 470 506 250 324 -40 432 Z" fill="#fdf3e0" opacity="0.65" />
+      </svg>
+    </div>
+
+    <!-- 左上：粉缎带蝴蝶结 + 大花 + 金枝 -->
+    <div class="deco deco-tl" aria-hidden="true">
+      <svg viewBox="0 0 460 460">
+        <g transform="translate(154,132) rotate(-10) scale(1.15)">
+          <!-- 左环 / 右环：两条外扩的曲线夹出饱满的环形 -->
+          <path d="M0 4 C -44 -56 -112 -50 -104 -2 C -96 42 -38 50 0 4 Z" fill="url(#bowGrad)" />
+          <path d="M0 4 C 44 -56 112 -50 104 -2 C 96 42 38 50 0 4 Z" fill="url(#bowGrad)" />
+          <!-- 环内浅色（缩一号的同形，做出厚度） -->
+          <path d="M-6 3 C -38 -36 -88 -32 -82 -2 C -76 30 -36 34 -6 3 Z" fill="#fbd8d0" opacity="0.6" />
+          <path d="M6 3 C 38 -36 88 -32 82 -2 C 76 30 36 34 6 3 Z" fill="#fbd8d0" opacity="0.6" />
+          <!-- 两条飘带尾（末端剪一个 V 口） -->
+          <path d="M-10 12 C -30 36 -48 60 -68 86 L -28 92 L -40 74 C -26 54 -14 32 -2 18 Z" fill="#f4bdb2" />
+          <path d="M10 14 C 30 38 48 62 68 88 L 28 94 L 40 76 C 26 56 14 34 2 20 Z" fill="#f4bdb2" />
+          <ellipse cx="0" cy="6" rx="16" ry="14" fill="#f8cbc1" stroke="#eeb3a7" stroke-width="2" />
+        </g>
+        <g color="#f4663a" transform="translate(84,96) scale(1.28)"><use href="#flower5" /></g>
+        <g color="#f78a52" transform="translate(176,52) scale(0.82)"><use href="#flower5" /></g>
+        <g color="#1e5149" transform="translate(150,30) rotate(38) scale(1.0)"><use href="#leaf" /></g>
+        <g color="#2f6b5f" transform="translate(36,168) rotate(-48) scale(0.92)"><use href="#leaf" /></g>
+        <g color="#e3a93c" transform="translate(40,196) rotate(-16) scale(1.05)"><use href="#sprig" /></g>
+        <g color="#f2723c" transform="translate(212,74) scale(0.62)"><use href="#daisy" /></g>
+        <circle cx="250" cy="46" r="4.4" fill="#a9cfe0" />
+        <circle cx="272" cy="30" r="3.2" fill="#f4663a" />
+        <circle cx="30" cy="60" r="3.6" fill="#f7cf5e" />
+      </svg>
+    </div>
+
+    <!-- 右上：金花 + 红果 + 粉花瓣 -->
+    <div class="deco deco-tr" aria-hidden="true">
+      <svg viewBox="0 0 460 460">
+        <g color="#e9b34a" transform="translate(370,74) scale(1.24)"><use href="#flower5" /></g>
+        <g transform="translate(300,150) scale(1.12)"><use href="#berries" /></g>
+        <g color="#f6b8b0" transform="translate(238,58) rotate(24) scale(1.0)"><use href="#petal" /></g>
+        <g color="#f6b8b0" transform="translate(286,32) rotate(-30) scale(0.86)"><use href="#petal" /></g>
+        <g color="#f6b8b0" transform="translate(330,20) rotate(12) scale(0.74)"><use href="#petal" /></g>
+        <g color="#a9cfe0" transform="translate(276,104) scale(0.66)"><use href="#daisy" /></g>
+        <g color="#f2723c" transform="translate(214,124) scale(0.52)"><use href="#daisy" /></g>
+        <g color="#2f6b5f" transform="translate(392,140) rotate(122) scale(0.9)"><use href="#leaf" /></g>
+        <circle cx="252" cy="146" r="3.4" fill="#f4663a" />
+      </svg>
+    </div>
+
+    <!-- 左下：橙花丛 + 叶片 + 蓝雏菊 -->
+    <div class="deco deco-bl" aria-hidden="true">
+      <svg viewBox="0 0 460 460">
+        <g color="#2f6b5f" transform="translate(120,300) rotate(-30) scale(1.15)"><use href="#leaf" /></g>
+        <g color="#1e5149" transform="translate(196,320) rotate(16) scale(1.0)"><use href="#leaf" /></g>
+        <g color="#f4663a" transform="translate(112,272) scale(1.34)"><use href="#flower5" /></g>
+        <g color="#f78a52" transform="translate(216,330) scale(1.02)"><use href="#flower5" /></g>
+        <g color="#f4663a" transform="translate(64,368) scale(0.9)"><use href="#flower5" /></g>
+        <g color="#e9b34a" transform="translate(268,286) rotate(28) scale(1.0)"><use href="#sprig" /></g>
+        <g color="#a9cfe0" transform="translate(276,368) scale(0.72)"><use href="#daisy" /></g>
+        <g color="#f2723c" transform="translate(170,392) scale(0.66)"><use href="#daisy" /></g>
+        <circle cx="232" cy="240" r="4.2" fill="#f7cf5e" />
+        <circle cx="34" cy="286" r="3.6" fill="#a9cfe0" />
+      </svg>
+    </div>
+
+    <!-- 右下：橙花 + 金枝 + 蓝雏菊 -->
+    <div class="deco deco-br" aria-hidden="true">
+      <svg viewBox="0 0 460 460">
+        <g color="#2f6b5f" transform="translate(340,300) rotate(24) scale(1.12)"><use href="#leaf" /></g>
+        <g color="#1e5149" transform="translate(262,330) rotate(-14) scale(0.98)"><use href="#leaf" /></g>
+        <g color="#f4663a" transform="translate(348,282) scale(1.3)"><use href="#flower5" /></g>
+        <g color="#f78a52" transform="translate(252,336) scale(1.0)"><use href="#flower5" /></g>
+        <g color="#f4663a" transform="translate(398,372) scale(0.86)"><use href="#flower5" /></g>
+        <g color="#e3a93c" transform="translate(206,286) rotate(-30) scale(0.98)"><use href="#sprig" /></g>
+        <g color="#a9cfe0" transform="translate(196,368) scale(0.7)"><use href="#daisy" /></g>
+        <g color="#f2723c" transform="translate(300,398) scale(0.62)"><use href="#daisy" /></g>
+        <circle cx="240" cy="242" r="4" fill="#f7cf5e" />
+        <circle cx="424" cy="292" r="3.4" fill="#a9cfe0" />
+      </svg>
+    </div>
+
+    <!-- 飘落花瓣 -->
+    <div class="petals" aria-hidden="true">
+      <span class="petal" style="left: 8%;  --fall: #f6b8b0; animation-duration: 15s; animation-delay: -2s;"></span>
+      <span class="petal" style="left: 22%; --fall: #f9c9a8; animation-duration: 19s; animation-delay: -9s;"></span>
+      <span class="petal" style="left: 38%; --fall: #f6b8b0; animation-duration: 17s; animation-delay: -5s;"></span>
+      <span class="petal" style="left: 54%; --fall: #f9d96b; animation-duration: 21s; animation-delay: -13s;"></span>
+      <span class="petal" style="left: 68%; --fall: #f6b8b0; animation-duration: 16s; animation-delay: -7s;"></span>
+      <span class="petal" style="left: 81%; --fall: #f9c9a8; animation-duration: 20s; animation-delay: -15s;"></span>
+      <span class="petal" style="left: 92%; --fall: #f6b8b0; animation-duration: 18s; animation-delay: -4s;"></span>
+    </div>
+
+    <!-- 入场喷彩带：左右各一个喇叭，喷出的彩带/纸屑只播一次，播完自己消失 -->
+    <div class="poppers" aria-hidden="true">
+      <div class="popper popper-left">
+        <svg class="cone" viewBox="0 0 120 130">
+          <defs>
+            <linearGradient id="coneGradL" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#ffd166" /><stop offset="55%" stop-color="#f5a623" /><stop offset="100%" stop-color="#e08410" />
+            </linearGradient>
+            <clipPath id="coneClipL"><path d="M60 118 L34 36 A26 14 0 0 0 86 36 Z" /></clipPath>
+          </defs>
+          <g transform="rotate(34 60 118)">
+            <path d="M60 118 L34 36 A26 14 0 0 0 86 36 Z" fill="url(#coneGradL)" stroke="#a85a1e" stroke-width="2.5" stroke-linejoin="round" />
+            <g clip-path="url(#coneClipL)" stroke="#dd8a1a" stroke-width="7" fill="none" opacity="0.95">
+              <path d="M20 70 L70 30" /><path d="M16 92 L86 42" /><path d="M24 110 L104 58" /><path d="M50 124 L112 80" />
+            </g>
+            <ellipse cx="60" cy="36" rx="26" ry="14" fill="#bb3a2c" stroke="#a85a1e" stroke-width="2.5" />
+            <ellipse cx="60" cy="40" rx="17" ry="8" fill="#8d2a20" />
+          </g>
+        </svg>
+        <span class="burst"></span>
+      </div>
+
+      <div class="popper popper-right">
+        <svg class="cone" viewBox="0 0 120 130">
+          <defs>
+            <linearGradient id="coneGradR" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#ffd166" /><stop offset="55%" stop-color="#f5a623" /><stop offset="100%" stop-color="#e08410" />
+            </linearGradient>
+            <clipPath id="coneClipR"><path d="M60 118 L34 36 A26 14 0 0 0 86 36 Z" /></clipPath>
+          </defs>
+          <g transform="rotate(34 60 118)">
+            <path d="M60 118 L34 36 A26 14 0 0 0 86 36 Z" fill="url(#coneGradR)" stroke="#a85a1e" stroke-width="2.5" stroke-linejoin="round" />
+            <g clip-path="url(#coneClipR)" stroke="#dd8a1a" stroke-width="7" fill="none" opacity="0.95">
+              <path d="M20 70 L70 30" /><path d="M16 92 L86 42" /><path d="M24 110 L104 58" /><path d="M50 124 L112 80" />
+            </g>
+            <ellipse cx="60" cy="36" rx="26" ry="14" fill="#bb3a2c" stroke="#a85a1e" stroke-width="2.5" />
+            <ellipse cx="60" cy="40" rx="17" ry="8" fill="#8d2a20" />
+          </g>
+        </svg>
+        <span class="burst"></span>
+      </div>
+    </div>
+
+    <main class="stage">
+      <!-- ★ 改名字：把下面这三个字换掉即可（兜底值）；从口令弹窗进来时带 ?name= 会覆盖它 -->
+      <h1 class="bday-title">某某某生日快乐</h1>
+      <script>
+        // 口令弹窗确认称呼后跳来时带 ?name=xxx：把称呼填进标题「某某某」的位置。
+        // 放在 <h1> 之后同步执行，避免先闪一下「某某某」再改字；只走 textContent，
+        // 不拼 HTML，称呼里带什么都不会破坏页面。
+        (function () {
+          var h1 = document.querySelector(".bday-title");
+          if (!h1) return;
+          var m = /[?&]name=([^&]*)/.exec(window.location.search);
+          if (!m) return;   // 直接打开本页（无参数）就保留 HTML 里的兜底名字
+          var name;
+          try { name = decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { name = m[1]; }
+          name = String(name).replace(/[\u0000-\u001f\u007f]/g, "").replace(/\s+/g, " ").trim();
+          if (!name) return;
+          // 与口令弹窗同一口径：半角（字母/数字）算 0.5、其余算 1，上限 5；手改 URL 超长就截断
+          function weight(s) {
+            var cs = Array.from(s), w = 0;
+            for (var i = 0; i < cs.length; i++) w += cs[i].codePointAt(0) < 0x2e80 ? 0.5 : 1;
+            return w;
+          }
+          if (weight(name) > 5) {
+            var out = "", acc = 0, cs = Array.from(name);
+            for (var i = 0; i < cs.length; i++) {
+              var step = cs[i].codePointAt(0) < 0x2e80 ? 0.5 : 1;
+              if (acc + step > 5) break;
+              acc += step;
+              out += cs[i];
+            }
+            name = out;
+          }
+          h1.textContent = name + "生日快乐";
+          document.title = name + "生日快乐";
+
+          // 排版：标题 nowrap，称呼长了会顶出屏幕。按「自然宽度 vs 可用宽度」的比值缩字号
+          // （--t-scale，CSS 里乘在 font-size 上）；缩到 0.99 留一点余量，避免贴着边。
+          var scene = h1.closest(".scene") || h1.parentNode;
+          function fit() {
+            h1.style.setProperty("--t-scale", "1");
+            var cs2 = getComputedStyle(scene);
+            var avail = scene.clientWidth - parseFloat(cs2.paddingLeft) - parseFloat(cs2.paddingRight);
+            var need = h1.scrollWidth;
+            if (avail > 0 && need > avail) {
+              h1.style.setProperty("--t-scale", (avail / need * 0.99).toFixed(3));
+            }
+          }
+          fit();
+          window.addEventListener("resize", fit);
+          window.addEventListener("load", fit);
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+        })();
+      </script>
+
+      <div class="cake-wrap">
+        <svg class="cake-in" viewBox="0 0 320 330" role="img" aria-label="点着蜡烛的双层生日蛋糕">
+          <ellipse cx="160" cy="311" rx="126" ry="11" fill="#e9d6b8" opacity="0.55" />
+
+          <!-- 底层：奶油 → 蛋糕体（含黄色锯齿纹） -->
+          <defs>
+            <clipPath id="cBottom"><rect x="24" y="210" width="272" height="95" rx="10" /></clipPath>
+            <clipPath id="cTop"><rect x="80" y="120" width="160" height="95" rx="8" /></clipPath>
+          </defs>
+
+          <!-- 上层蛋糕体 -->
+          <rect x="80" y="120" width="160" height="95" rx="8" fill="#f7a3ad" stroke="#7c3f3a" stroke-width="4" />
+          <g clip-path="url(#cTop)">
+            <path d="M70 142 L102 126 L134 142 L166 126 L198 142 L230 126 L250 137 L250 151 L230 140 L198 156 L166 140 L134 156 L102 140 L70 156 Z" fill="#f9d96b" />
+            <path d="M70 178 L102 162 L134 178 L166 162 L198 178 L230 162 L250 173 L250 187 L230 176 L198 192 L166 176 L134 192 L102 176 L70 192 Z" fill="#f9d96b" />
+          </g>
+
+          <!-- 底层蛋糕体 -->
+          <rect x="24" y="210" width="272" height="95" rx="10" fill="#f7a3ad" stroke="#7c3f3a" stroke-width="4" />
+          <g clip-path="url(#cBottom)">
+            <path d="M10 234 L56 210 L102 234 L148 210 L194 234 L240 210 L286 234 L310 220 L310 240 L286 254 L240 230 L194 254 L148 230 L102 254 L56 230 L10 254 Z" fill="#f9d96b" />
+            <path d="M10 282 L56 258 L102 282 L148 258 L194 282 L240 258 L286 282 L310 268 L310 288 L286 302 L240 278 L194 302 L148 278 L102 302 L56 278 L10 302 Z" fill="#f9d96b" />
+          </g>
+
+          <!-- 上层奶油（波浪垂边） -->
+          <path d="M72 154 V124 q 0 -12 12 -12 h 152 q 12 0 12 12 v 30
+                   q -17.6 30 -35.2 0 q -17.6 30 -35.2 0 q -17.6 30 -35.2 0 q -17.6 30 -35.2 0 q -17.6 30 -35.2 0 z"
+                fill="#fffdf8" stroke="#7c3f3a" stroke-width="4" stroke-linejoin="round" />
+          <g fill="#f2b93f"><circle cx="94" cy="126" r="3.2" /><circle cx="160" cy="144" r="3.2" /><circle cx="228" cy="126" r="3.2" /></g>
+          <g>
+            <rect x="118" y="128" width="9" height="4" rx="2" fill="#f4663a" transform="rotate(24 118 128)" />
+            <rect x="182" y="130" width="9" height="4" rx="2" fill="#7b74d8" transform="rotate(-18 182 130)" />
+            <rect x="146" y="138" width="9" height="4" rx="2" fill="#4fa89b" transform="rotate(14 146 138)" />
+            <rect x="206" y="140" width="9" height="4" rx="2" fill="#e8524e" transform="rotate(30 206 140)" />
+          </g>
+
+          <!-- 蜡烛 + 火苗（画在奶油之上） -->
+          <g>
+            <!-- 兜底命中区：手机上一支蜡烛只有 ~21px 宽，点在火苗附近却落在列缝里就会没反应。
+                 这块向两侧各多铺 14 个单位（在三支的精确命中框之下），点到时按 x 就近判定是哪一支。 -->
+            <!-- 兜底命中区：手机上一支蜡烛只有 ~20px 宽，点在火苗附近却落在列缝里就会没反应。
+                 这块向两侧各多铺 12 个单位（在五支的精确命中框之下），点到时按 x 就近判定是哪一支。 -->
+            <rect class="hit-wide" x="83.5" y="2" width="153" height="90" />
+            <line x1="108" y1="60" x2="108" y2="52" stroke="#7c3f3a" stroke-width="2.4" stroke-linecap="round" />
+            <rect x="102.5" y="60" width="11" height="64" rx="5" fill="#f6a9b0" stroke="#7c3f3a" stroke-width="3.2" />
+            <rect x="105" y="72" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="105" y="90" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="105" y="108" width="5.5" height="8" rx="2.5" fill="#fffdf8" />
+            <g class="flame-btn" role="button" tabindex="0" aria-label="吹灭第 1 支蜡烛" aria-pressed="false">
+              <rect class="hit" x="95.5" y="6" width="25" height="78" />
+              <rect class="ring" x="95" y="5" width="26" height="80" rx="11" />
+              <circle class="glow" cx="108" cy="44" r="26" fill="url(#flameGlow)" />
+              <g class="flame flame-1">
+                <path d="M108 18 C 97.5 33 98 52 108 52 C 118 52 118.5 33 108 18 Z" fill="#ffb43c" />
+                <path d="M108 32 C 103.4 40 103.4 52 108 52 C 112.6 52 112.6 40 108 32 Z" fill="#ffe9a8" />
+              </g>
+              <g class="smoke" aria-hidden="true">
+                <path d="M 108 49 C 101 41 115 35 108 26 C 102 18 112 14 109 6" />
+              </g>
+            </g>
+
+            <line x1="134" y1="60" x2="134" y2="52" stroke="#7c3f3a" stroke-width="2.4" stroke-linecap="round" />
+            <rect x="128.5" y="60" width="11" height="64" rx="5" fill="#f6a9b0" stroke="#7c3f3a" stroke-width="3.2" />
+            <rect x="131" y="72" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="131" y="90" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="131" y="108" width="5.5" height="8" rx="2.5" fill="#fffdf8" />
+            <g class="flame-btn" role="button" tabindex="0" aria-label="吹灭第 2 支蜡烛" aria-pressed="false">
+              <rect class="hit" x="121.5" y="6" width="25" height="78" />
+              <rect class="ring" x="121" y="5" width="26" height="80" rx="11" />
+              <circle class="glow" cx="134" cy="44" r="26" fill="url(#flameGlow)" />
+              <g class="flame flame-2">
+                <path d="M134 18 C 123.5 33 124 52 134 52 C 144 52 144.5 33 134 18 Z" fill="#ffb43c" />
+                <path d="M134 32 C 129.4 40 129.4 52 134 52 C 138.6 52 138.6 40 134 32 Z" fill="#ffe9a8" />
+              </g>
+              <g class="smoke" aria-hidden="true">
+                <path d="M 134 49 C 127 41 141 35 134 26 C 128 18 138 14 135 6" />
+              </g>
+            </g>
+
+            <line x1="160" y1="60" x2="160" y2="52" stroke="#7c3f3a" stroke-width="2.4" stroke-linecap="round" />
+            <rect x="154.5" y="60" width="11" height="64" rx="5" fill="#f6a9b0" stroke="#7c3f3a" stroke-width="3.2" />
+            <rect x="157" y="72" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="157" y="90" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="157" y="108" width="5.5" height="8" rx="2.5" fill="#fffdf8" />
+            <g class="flame-btn" role="button" tabindex="0" aria-label="吹灭第 3 支蜡烛" aria-pressed="false">
+              <rect class="hit" x="147.5" y="6" width="25" height="78" />
+              <rect class="ring" x="147" y="5" width="26" height="80" rx="11" />
+              <circle class="glow" cx="160" cy="44" r="26" fill="url(#flameGlow)" />
+              <g class="flame flame-3">
+                <path d="M160 18 C 149.5 33 150 52 160 52 C 170 52 170.5 33 160 18 Z" fill="#ffb43c" />
+                <path d="M160 32 C 155.4 40 155.4 52 160 52 C 164.6 52 164.6 40 160 32 Z" fill="#ffe9a8" />
+              </g>
+              <g class="smoke" aria-hidden="true">
+                <path d="M 160 49 C 153 41 167 35 160 26 C 154 18 164 14 161 6" />
+              </g>
+            </g>
+
+            <line x1="186" y1="60" x2="186" y2="52" stroke="#7c3f3a" stroke-width="2.4" stroke-linecap="round" />
+            <rect x="180.5" y="60" width="11" height="64" rx="5" fill="#f6a9b0" stroke="#7c3f3a" stroke-width="3.2" />
+            <rect x="183" y="72" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="183" y="90" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="183" y="108" width="5.5" height="8" rx="2.5" fill="#fffdf8" />
+            <g class="flame-btn" role="button" tabindex="0" aria-label="吹灭第 4 支蜡烛" aria-pressed="false">
+              <rect class="hit" x="173.5" y="6" width="25" height="78" />
+              <rect class="ring" x="173" y="5" width="26" height="80" rx="11" />
+              <circle class="glow" cx="186" cy="44" r="26" fill="url(#flameGlow)" />
+              <g class="flame flame-4">
+                <path d="M186 18 C 175.5 33 176 52 186 52 C 196 52 196.5 33 186 18 Z" fill="#ffb43c" />
+                <path d="M186 32 C 181.4 40 181.4 52 186 52 C 190.6 52 190.6 40 186 32 Z" fill="#ffe9a8" />
+              </g>
+              <g class="smoke" aria-hidden="true">
+                <path d="M 186 49 C 179 41 193 35 186 26 C 180 18 190 14 187 6" />
+              </g>
+            </g>
+
+            <line x1="212" y1="60" x2="212" y2="52" stroke="#7c3f3a" stroke-width="2.4" stroke-linecap="round" />
+            <rect x="206.5" y="60" width="11" height="64" rx="5" fill="#f6a9b0" stroke="#7c3f3a" stroke-width="3.2" />
+            <rect x="209" y="72" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="209" y="90" width="5.5" height="9" rx="2.5" fill="#fffdf8" />
+            <rect x="209" y="108" width="5.5" height="8" rx="2.5" fill="#fffdf8" />
+            <g class="flame-btn" role="button" tabindex="0" aria-label="吹灭第 5 支蜡烛" aria-pressed="false">
+              <rect class="hit" x="199.5" y="6" width="25" height="78" />
+              <rect class="ring" x="199" y="5" width="26" height="80" rx="11" />
+              <circle class="glow" cx="212" cy="44" r="26" fill="url(#flameGlow)" />
+              <g class="flame flame-5">
+                <path d="M212 18 C 201.5 33 202 52 212 52 C 222 52 222.5 33 212 18 Z" fill="#ffb43c" />
+                <path d="M212 32 C 207.4 40 207.4 52 212 52 C 216.6 52 216.6 40 212 32 Z" fill="#ffe9a8" />
+              </g>
+              <g class="smoke" aria-hidden="true">
+                <path d="M 212 49 C 205 41 219 35 212 26 C 206 18 216 14 213 6" />
+              </g>
+            </g>
+          </g>
+
+          <!-- 底层奶油：最后画，压住上层蛋糕体的下沿 -->
+          <path d="M16 214 V196 q 0 -12 12 -12 h 264 q 12 0 12 12 v 18
+                   q -18 30 -36 0 q -18 30 -36 0 q -18 30 -36 0 q -18 30 -36 0
+                   q -18 30 -36 0 q -18 30 -36 0 q -18 30 -36 0 q -18 30 -36 0 z"
+                fill="#fffdf8" stroke="#7c3f3a" stroke-width="4" stroke-linejoin="round" />
+          <g fill="#f2b93f"><circle cx="60" cy="198" r="3.4" /><circle cx="150" cy="194" r="3.4" /><circle cx="240" cy="198" r="3.4" /></g>
+          <g>
+            <rect x="86" y="200" width="9" height="4" rx="2" fill="#7b74d8" transform="rotate(20 86 200)" />
+            <rect x="126" y="206" width="9" height="4" rx="2" fill="#4fa89b" transform="rotate(-24 126 206)" />
+            <rect x="204" y="204" width="9" height="4" rx="2" fill="#e8524e" transform="rotate(18 204 204)" />
+            <rect x="246" y="198" width="9" height="4" rx="2" fill="#f4663a" transform="rotate(-28 246 198)" />
+          </g>
+        </svg>
+      </div>
+
+      <p class="bday-hint" id="bdayHint">点一下蜡烛的火焰，可以把它吹灭</p>
+    </main>
+  </div>
+
+  <script>
+    // 页面唯一一段 JS：点火焰吹灭蜡烛、再点重新点着，键盘 Enter/空格等效。
+    // 只增删 .out 一个类，火苗/光晕/青烟/提示文案的表现全在 CSS 里；
+    // 脚本没跑（禁用 JS）时页面依然完整，只是蜡烛灭不了。
+    (function () {
+      var btns = [].slice.call(document.querySelectorAll(".flame-btn"));
+      if (!btns.length) return;
+      var hint = document.getElementById("bdayHint");
+      var TEXT = "点一下蜡烛的火焰，可以把它吹灭";
+      var DONE = "蜡烛都吹灭了，许个愿吧";
+      function sync() {
+        if (!hint) return;
+        var out = btns.filter(function (b) { return b.classList.contains("out"); }).length;
+        if (out === 0) { hint.textContent = TEXT; hint.classList.remove("is-done"); }
+        else if (out === btns.length) { hint.textContent = DONE; hint.classList.add("is-done"); }
+        else { hint.textContent = out + " / " + btns.length + " 支蜡烛已吹灭"; hint.classList.remove("is-done"); }
+      }
+      function toggle(b) {
+        var out = b.classList.toggle("out");
+        b.setAttribute("aria-pressed", out ? "true" : "false");
+        sync();
+      }
+      btns.forEach(function (b) {
+        b.addEventListener("click", function (e) { e.preventDefault(); toggle(b); });
+        b.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); toggle(b); }
+        });
+      });
+      // 点在四支之间的缝隙或旁边空白：按横向位置就近选一支，手机上不至于点不中
+      var wide = document.querySelector(".hit-wide");
+      var cake = document.querySelector(".cake-wrap svg");
+      var CENTERS = [108, 134, 160, 186, 212]; // 与上面五支蜡烛的 cx 一致
+      if (wide && cake) {
+        wide.addEventListener("click", function (e) {
+          var r = cake.getBoundingClientRect();
+          var ux = (e.clientX - r.left) / r.width * 320; // viewBox 宽 320，元素比例一致，线性换算即可
+          var best = 0, bd = Infinity;
+          btns.forEach(function (b, i) {
+            var d = Math.abs(CENTERS[i] - ux);
+            if (d < bd) { bd = d; best = i; }
+          });
+          toggle(btns[best]);
+        });
+      }
+      sync();
+    })();
+  </script>
+
+  <script>
+    // 入场喷彩带：按真实抛体运动逐帧解算——重力恒定向下、空气阻力与速度成正比。
+    // 不用 CSS 关键帧：关键帧是分段插值，采样不够就一顿一顿，而且做不出
+    // "出手极快 → 上升逐渐减速 → 到顶 → 下坠越落越快 → 接近终端速度" 的连续变化。
+    (function () {
+      var hosts = [].slice.call(document.querySelectorAll(".burst"));
+      if (!hosts.length) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; // 交给 CSS：整段不播
+
+      var COLORS = ["#e0453f", "#f4c53a", "#3d8fd6", "#46a86a", "#f06aa8", "#ef8b3a", "#8a68d8", "#26b3a8"];
+      var G = 2400;     // 重力加速度（像素尺度）：出手 0.4~0.5s 到顶，随后越落越快
+      var DRAG = 3.2;   // 线性空气阻力 1/s，终端速度 = G/DRAG ≈ 750px/s（纸片该有的量级）
+      var W = window.innerWidth, H = window.innerHeight;
+      var PER = W < 700 ? 32 : 58;   // 每侧片数
+
+      var ps = [];
+      hosts.forEach(function (host) {
+        var hr = host.getBoundingClientRect();               // 出膛点（.burst 是个零尺寸点）
+        var dir = hr.left < W / 2 ? 1 : -1;                  // 右桶整体 scaleX(-1)，横向要反号
+        var popper = host.parentNode.getBoundingClientRect();
+        var k = Math.min(1.15, Math.max(0.42, popper.width / 224)); // 桶小行程同比收，免得手机上一飞出屏
+        for (var i = 0; i < PER; i++) {
+          var kind = i % 3 === 0 ? "rb" : (i % 3 === 1 ? "sf" : "cf");
+          var el = document.createElement("i");
+          el.className = kind;
+          el.style.setProperty("--c", COLORS[i % COLORS.length]);
+          if (kind === "cf") {
+            el.style.setProperty("--w", Math.round(16 + Math.random() * 6) + "px");
+            el.style.setProperty("--h", Math.round(11 + Math.random() * 4) + "px");
+          } else if (kind === "sf") {
+            el.style.setProperty("--w", Math.round(34 + Math.random() * 14) + "px");
+            el.style.setProperty("--h", Math.round(9 + Math.random() * 2) + "px");
+          }
+          host.appendChild(el);
+          // 出手速度 2000~2900px/s、仰角 34°~78°：陡的冲天、平的横飞，自然散成一把扇子
+          var ang = (34 + Math.random() * 44) * Math.PI / 180;
+          var v = (2000 + Math.random() * 900) * k;
+          ps.push({
+            el: el, dir: dir, mx: hr.left, my: hr.top,
+            x: hr.left, y: hr.top,
+            vx: dir * Math.cos(ang) * v, vy: -Math.sin(ang) * v,
+            rev: (2 + Math.random() * 5) * (Math.random() < 0.5 ? -1 : 1), // 每秒自转圈数
+            ph: Math.random() * 6.283,
+            wob: 3 + Math.random() * 9,                                  // 飘落时的左右摆幅
+            at: 0.02 + Math.random() * 0.5                               // 起飞时刻：0.5s 内陆续喷出
+          });
+        }
+      });
+
+      var t0 = performance.now();
+      var alive = ps.length;
+      function frame(now) {
+        var t = (now - t0) / 1000;
+        for (var i = 0; i < ps.length; i++) {
+          var p = ps[i];
+          if (p.dead) continue;
+          var s2 = t - p.at;
+          if (s2 <= 0) continue;
+          if (!p.on) { p.on = true; p.el.style.opacity = "1"; }
+          // 线性阻力下的解析解：E = ∫e^(-cτ)dτ = (1-e^(-cs))/c
+          var E = (1 - Math.exp(-DRAG * s2)) / DRAG;
+          // 横向：速度按 e^(-ct) 衰减，越飞越慢、最终停在 vx/c 处（空气阻力）
+          p.x = p.mx + p.vx * E + p.wob * Math.sin(2.2 * s2 + p.ph) * (1 - Math.exp(-3 * s2));
+          // 纵向：-vy 的上升先被重力吃掉，越过最高点后加速下坠，逼近终端速度 G/DRAG
+          p.y = p.my + p.vy * E + (G / DRAG) * (s2 - E);
+          var lx = p.dir === 1 ? p.x - p.mx : p.mx - p.x;   // 右桶是镜像容器，局部横向要再翻一次
+          p.el.style.transform = "translate3d(" + lx.toFixed(1) + "px," + (p.y - p.my).toFixed(1) +
+            "px,0) rotate(" + (p.rev * 360 * s2).toFixed(0) + "deg) scaleX(" +
+            (0.55 + 0.45 * Math.abs(Math.cos(6.283 * p.rev * s2 + p.ph))).toFixed(2) + ")";
+          if (p.y > H + 90 || p.x < -110 || p.x > W + 110) {   // 出画即回收
+            p.dead = true;
+            alive--;
+            p.el.style.display = "none";
+          }
+        }
+        if (alive > 0) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
