@@ -2934,6 +2934,22 @@ html.theme-anim::view-transition-new(root) {
   #key-modal-input { font-size: 16px; }  /* 防 iOS focus zoom */
 }
 
+/* ---------- 窄屏（≤510）：CTA 换行时让主按钮独占一行 ----------
+   四个按钮自然宽度合计 474px（含 3 个 13px 间距），容器宽 = 视口 − 36px，
+   故视口 ≤509px 起开始换行：原来是「自我介绍 + 阅读文章 + 看看项目」一行、
+   「联系我」被挤到第二行独占（414 屏实测），更窄（<413）还会塌成 2+2。
+   这里改成「自我介绍」占满第一行、三个次级按钮平分第二行；
+   并把左右内边距 22→12px，保证三个次级按钮在 320 屏也排得进一行
+   （12px 时三者最小宽度 237.5 + 26 间距 = 263.5px < 320 屏的容器 286px）。 */
+@media (max-width: 510px) {
+  .hero-cta .btn {
+    padding: 0 12px;
+  }
+  .hero-cta .btn-primary {
+    flex: 1 1 100%;
+  }
+}
+
 /* ---------- 超窄屏（<360）：再收一档，保证「文章」不压 logo、不被裁出屏 ---------- */
 @media (max-width: 359px) {
   .container { padding: 0 12px; }

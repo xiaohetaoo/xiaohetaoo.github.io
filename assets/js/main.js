@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260910s";
+  var DATA_VER = "20260910t";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -602,9 +602,9 @@
 
   /* ---------- 1.5 自我介绍页名片卡：3D 倾斜跟随光标 + 点击切换校徽 ---------- */
   // 图标切换（触屏也可用，不在下面的指针守卫内）：点击卡片在 小核桃标 ↔ 杭电校徽 间
-  // 淡出淡入，选择记 localStorage（aboutCardBadge）；两张图叠在 .about-logo-slot 里，
-  // 纯 opacity/scale 过渡，不打断倾斜跟随。初始状态在脚本求值时就同步（先于首帧绘制，
-  // 恢复的状态不会在进页面时再播一遍过渡）。
+  // 淡出淡入；两张图叠在 .about-logo-slot 里，纯 opacity/scale 过渡，不打断倾斜跟随。
+  // 切换只是"当前页看一眼"的临时状态，**不跨页面保存**（用户 2026-09-10 定）：
+  // 每次进页面都从 小核桃标 起步，切到杭电后回首页再进来不会记得。
   // 倾斜只在精确指针（鼠标/触控笔）+ 动效可用时启用；触屏与 reduced/static 整段跳过。
   // 跟随用内联 transform 1:1 无过渡（紧贴光标），移开时临时挂 0.55s 弹性曲线回弹
   // （--ease-spring 带过冲，见 1.5 节 CSS），动画播完清掉内联样式——内联 transform
@@ -616,9 +616,11 @@
     var card = document.querySelector(".about-card");
     if (!card) return;
 
-    // ---- 图标切换（点击 / 键盘回车空格） ----
-    var badge = false;
-    try { badge = localStorage.getItem("aboutCardBadge") === "1"; } catch (err) {}
+    // ---- 图标切换（点击 / 键盘回车空格）：仅当前页面有效，不写任何存储 ----
+    var badge = false; // 每次加载都从小核桃标起步
+    // 旧版把选择存进 localStorage.aboutCardBadge，现改为不记忆；顺手清掉遗留键，
+    // 免得旧访客存储里一直躺着一个再也不会被读取的值
+    try { localStorage.removeItem("aboutCardBadge"); } catch (err) {}
     var syncBadgeUI = function () {
       card.classList.toggle("badge-on", badge);
       card.setAttribute("aria-pressed", badge ? "true" : "false");
@@ -626,7 +628,6 @@
     syncBadgeUI();
     var toggleBadge = function () {
       badge = !badge;
-      try { localStorage.setItem("aboutCardBadge", badge ? "1" : "0"); } catch (err) {}
       syncBadgeUI();
     };
     card.addEventListener("click", function (e) {
