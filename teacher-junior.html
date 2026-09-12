@@ -157,10 +157,10 @@
       0%, 100% { transform: translateX(-50%) translateY(0) rotate(-1.6deg); }
       50%      { transform: translateX(-50%) translateY(-12px) rotate(1.6deg); }
     }
-    /* 船灯在水面的倒影 */
+    /* 船灯在水面的倒影：灯挂在船体右侧约 65% 处，倒影跟着挪到灯位（原来居中，像船底一团光） */
     .glint {
       position: absolute;
-      left: 50%;
+      left: calc(50% + min(7vw, 48px));
       bottom: 4%;
       width: min(16vw, 120px);
       height: 15%;

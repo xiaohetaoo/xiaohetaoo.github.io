@@ -239,9 +239,9 @@
     /* 操作提示：晚一点淡入，不抢主角；四支都吹灭后换成许愿那句 */
     .bday-hint {
       margin: 0;
-      font-size: clamp(12px, 2.6vw, 13.5px);
+      font-size: clamp(13px, 2.9vw, 15px);
       letter-spacing: 0.06em;
-      color: #a9806f;
+      color: #8a5f4e; /* 加深一档：原来 #a9806f 对奶油底只有 ~3.3:1，小字读不清 */
       animation: hintIn 0.9s var(--ease) 1.6s both;
     }
     .bday-hint.is-done { color: #c94f9b; font-weight: 700; }
@@ -267,8 +267,10 @@
       100% { transform: translate3d(6vw, 112vh, 0) rotate(420deg); opacity: 0; }
     }
 
-    /* ---------- 入场：左右两侧喷彩带 ---------- */
-    .poppers { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+    /* ---------- 入场：左右两侧喷彩带 ----------
+       z=2：彩带从标题和蛋糕「后面」飞过（stage 是 3），爆发瞬间不会糊在字上，
+       下落时也不会盖住蛋糕和提示行；锥体在两侧、与蛋糕无重叠，不受影响。 */
+    .poppers { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
     .popper { position: absolute; bottom: 30%; width: clamp(104px, 15vw, 224px); }
     .popper-left { left: clamp(6px, 4vw, 64px); }
     /* 右侧整体镜像，锥口朝向和喷出方向就都跟着反过来了 */
@@ -856,14 +858,14 @@
       var W = window.innerWidth, H = window.innerHeight;
       // 视口尺寸会变（旋转/缩放窗口）：入场两三秒内跟着更新，回收边界才不会按旧尺寸误判
       window.addEventListener("resize", function () { W = window.innerWidth; H = window.innerHeight; });
-      var PER = W < 700 ? 32 : 58;   // 每侧片数
+      var PER = W < 700 ? 28 : 46;   // 每侧片数：够热闹又不至于糊成一片
 
       var ps = [];
       hosts.forEach(function (host) {
         var hr = host.getBoundingClientRect();               // 出膛点（.burst 是个零尺寸点）
         var dir = hr.left < W / 2 ? 1 : -1;                  // 右桶整体 scaleX(-1)，横向要反号
         var popper = host.parentNode.getBoundingClientRect();
-        var k = Math.min(1.15, Math.max(0.42, popper.width / 224)); // 桶小行程同比收，免得手机上一飞出屏
+        var k = Math.min(1.15, Math.max(0.6, popper.width / 224)); // 桶小行程同比收；下限 0.6，手机上的弧线才能越过蛋糕下缘，不在底部堆成一摊
         for (var i = 0; i < PER; i++) {
           var kind = i % 3 === 0 ? "rb" : (i % 3 === 1 ? "sf" : "cf");
           var el = document.createElement("i");
@@ -877,9 +879,10 @@
             el.style.setProperty("--h", Math.round(9 + Math.random() * 2) + "px");
           }
           host.appendChild(el);
-          // 出手速度 2000~2900px/s、仰角 34°~78°：陡的冲天、平的横飞，自然散成一把扇子
-          var ang = (34 + Math.random() * 44) * Math.PI / 180;
-          var v = (2000 + Math.random() * 900) * k;
+          // 出手速度 1250~2000px/s、仰角 32°~64°：弧线顶点落在标题与蛋糕之间的空带，
+          // 扇形从两侧向中间展开；原来 2000~2900 + 78° 仰角会整片冲过标题，糊成一团
+          var ang = (32 + Math.random() * 32) * Math.PI / 180;
+          var v = (1250 + Math.random() * 750) * k;
           ps.push({
             el: el, dir: dir, mx: hr.left, my: hr.top,
             x: hr.left, y: hr.top,

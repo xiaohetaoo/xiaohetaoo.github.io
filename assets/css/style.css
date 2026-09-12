@@ -51,6 +51,7 @@
   --z-base: 0;         /* 基础层（默认） */
   --z-raised: 1;       /* 抬起的小元素（card / button / nav-search-input） */
   --z-progress: 99;    /* 阅读进度条（紧贴 nav 下方、不挡玻璃） */
+  --z-click-fx: 98;    /* 点击星尘迸发（贴在内容之上、进度条之下） */
   --z-nav: 100;        /* 固定导航栏 */
   --z-search: 101;     /* 搜索下拉浮层（.nav-search-results） */
   --z-overlay: 200;    /* 覆盖层（skip-link 聚焦时浮于 nav 之上） */
@@ -1462,6 +1463,8 @@ button {
 }
 
 .interest-item {
+  position: relative;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -1477,6 +1480,11 @@ button {
   background: var(--accent-dim);
   border-color: var(--accent-border);
   transform: translateY(-2px);
+}
+
+.interest-item:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 2px;
 }
 
 .interest-item .no {
@@ -1496,6 +1504,32 @@ button {
   font-size: 10.5px;
   letter-spacing: 0.14em;
   color: var(--text-3);
+}
+
+/* 兴趣卡小图标：点卡片在右侧空白处弹出/收起（开关在 main.js 1.7，.on 显示） */
+.interest-ico {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  margin-top: -17px;
+  color: var(--accent-bright);
+  opacity: 0;
+  transform: scale(0.4) rotate(-14deg);
+  transition: opacity 0.28s var(--ease-out), transform 0.5s var(--ease-spring);
+  pointer-events: none;
+}
+.interest-ico svg { width: 100%; height: 100%; display: block; }
+.interest-item.on .interest-ico {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+@media (max-width: 640px) {
+  .interest-ico { width: 26px; height: 26px; right: 10px; margin-top: -13px; }
+}
+@media print {
+  .interest-ico { display: none; }
 }
 
 /* ---------- 我的恩师（三张主题卡 → 三幅独立画页） ---------- */
@@ -3364,6 +3398,40 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 }
 
 /* ≤640：弹窗贴边但不顶满 —— 已合并到「响应式」≤640 主媒体查询末尾的 .key-modal 规则 */
+
+/* ---------- 点击星尘迸发（main.js 6.5）----------
+   每次点击在光标处迸出 6~8 颗小星尘：向外散开、微坠、0.6~0.8s 淡尽。
+   容器全屏 fixed、pointer-events:none 不挡任何交互；粒子只动 transform/opacity，
+   播完由 animationend 自删。颜色走 currentColor（JS 只设坐标与落点，主题色免维护）。 */
+#click-dust {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-click-fx);
+}
+#click-dust i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px; /* 自身中心对准点击点 */
+  border-radius: 50%;
+  background: radial-gradient(closest-side, currentColor 0%, transparent 72%);
+  color: var(--accent-bright);
+  opacity: 0;
+  animation: click-dust var(--t, 0.68s) ease-out forwards;
+  will-change: transform, opacity;
+}
+#click-dust i.big { width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; }
+@keyframes click-dust {
+  0%   { opacity: 0.95; transform: translate3d(0, 0, 0) scale(1); }
+  60%  { opacity: 0.5; }
+  100% { opacity: 0; transform: translate3d(var(--dx, 0px), var(--dy, 20px), 0) scale(0.3); }
+}
+@media print {
+  #click-dust { display: none; }
+}
 
 /* ---------- 打印样式：正文优先，去装饰去交互 ----------
    颜色直接覆写变量（暗色是 :root 默认），装饰层/导航/评论整体隐藏 */

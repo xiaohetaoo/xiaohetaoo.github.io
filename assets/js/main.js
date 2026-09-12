@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260911b";
+  var DATA_VER = "20260912b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -791,6 +791,33 @@
     document.addEventListener("pointerleave", leave);
   })();
 
+  /* ---------- 1.7 兴趣卡小图标：点卡片在右侧空白处弹出/收起 ---------- */
+  // 兴趣卡是静态 HTML（about.html），图标 <span class="interest-ico"> 直接写在卡片里，
+  // 这里只负责开关 .on 类；显示/隐藏的动画全在 CSS（弹出用 --ease-spring）。
+  // 键盘 Enter/空格等效（卡片有 role=button + aria-pressed，状态随开关同步）。
+  // reduced-motion / staticMode 不用守卫：transition 被 CSS 层降级，图标照样出现。
+  (function () {
+    var grid = document.querySelector(".interest-grid");
+    if (!grid) return;
+
+    function toggle(card) {
+      var on = card.classList.toggle("on");
+      card.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    grid.addEventListener("click", function (e) {
+      var card = e.target.closest ? e.target.closest(".interest-item") : null;
+      if (card) toggle(card);
+    });
+    grid.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+      var card = e.target.closest ? e.target.closest(".interest-item") : null;
+      if (!card) return;
+      e.preventDefault();
+      toggle(card);
+    });
+  })();
+
   /* ---------- 6. 星尘粒子层（全站固定背景，鼠标推开 + 滚动微加速） ---------- */
   if (!reducedMotion) {
     var dustCanvas = document.createElement("canvas");
@@ -948,6 +975,38 @@
       scheduleDust();
     }
   }
+
+  /* ---------- 6.5 点击星尘迸发（方案 B） ----------
+     每次点击在光标处迸出 6~8 颗小星尘：向外散开、微坠、0.6~0.8s 淡尽，
+     视觉与背景星尘层同源（柔光圆点）。容器 fixed + pointer-events:none 不挡交互，
+     粒子只动 transform/opacity，animationend 自删，快速连点也不会堆积。
+     键盘激活（Tab+Enter）产生的 click 恒为 0,0 且 detail=0 —— 与主题圆心同一坑，忽略。 */
+  (function () {
+    if (reducedMotion || staticMode) return;
+    var host = document.createElement("div");
+    host.id = "click-dust";
+    host.setAttribute("aria-hidden", "true");
+    document.body.appendChild(host);
+
+    document.addEventListener("click", function (e) {
+      if (!e.clientX && !e.clientY) return;
+      var n = 6 + (Math.random() * 3 | 0); // 6~8 颗
+      for (var i = 0; i < n; i++) {
+        var p = document.createElement("i");
+        var ang = Math.random() * Math.PI * 2;
+        var r = 22 + Math.random() * 34;
+        if (Math.random() < 0.3) p.className = "big";
+        p.style.left = e.clientX + "px";
+        p.style.top = e.clientY + "px";
+        // 椭圆散开（纵向压扁）+ 向下的重力偏置，落点才有"尘归地面"的感觉
+        p.style.setProperty("--dx", (Math.cos(ang) * r).toFixed(1) + "px");
+        p.style.setProperty("--dy", (Math.sin(ang) * r * 0.72 + 12 + Math.random() * 12).toFixed(1) + "px");
+        p.style.setProperty("--t", (0.58 + Math.random() * 0.24).toFixed(2) + "s");
+        p.addEventListener("animationend", function () { this.remove(); });
+        host.appendChild(p);
+      }
+    }, { passive: true });
+  })();
 
   /* ---------- 2. 滚动进场 ---------- */
   var revealIo = null;

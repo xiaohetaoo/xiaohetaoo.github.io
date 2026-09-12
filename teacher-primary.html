@@ -59,7 +59,9 @@
       isolation: isolate;
     }
 
-    /* 月：挂在峰顶右上方，给山脊提供一侧光源 */
+    /* 月：挂在峰顶右上方，给山脊提供一侧光源。
+       中间调原来是 #dfe4ef/#b9c2d4，渲染出来是哑光灰盘不像光源——
+       提亮加暖（高光近白、只在与天空交界处压灰），光晕同步加强。 */
     .moon {
       position: absolute;
       left: 66%;
@@ -67,13 +69,13 @@
       width: min(10vw, 82px);
       aspect-ratio: 1;
       border-radius: 50%;
-      background: radial-gradient(circle at 38% 34%, #fdfbf4 0%, #dfe4ef 62%, #b9c2d4 100%);
-      box-shadow: 0 0 66px 16px rgba(214, 226, 255, 0.16);
+      background: radial-gradient(circle at 38% 34%, #fffef9 0%, #f3f0e2 58%, #c3cddd 100%);
+      box-shadow: 0 0 90px 26px rgba(222, 234, 255, 0.3);
       animation: moon-breathe 13s ease-in-out infinite;
     }
     @keyframes moon-breathe {
-      0%, 100% { box-shadow: 0 0 66px 16px rgba(214, 226, 255, 0.14); }
-      50%      { box-shadow: 0 0 86px 22px rgba(214, 226, 255, 0.24); }
+      0%, 100% { box-shadow: 0 0 90px 26px rgba(222, 234, 255, 0.26); }
+      50%      { box-shadow: 0 0 110px 32px rgba(222, 234, 255, 0.38); }
     }
 
     .star {
@@ -160,7 +162,10 @@
       animation: ridge-drift 74s ease-in-out infinite alternate;
     }
     /* 主峰：xMidYMax meet —— 等比缩放、完整显示、底部对齐。
-       用 slice 会在超宽屏把峰顶裁掉（这就是"山顶不见了"的原因）。 */
+       用 slice 会在超宽屏把峰顶裁掉（这就是"山顶不见了"的原因）。
+       overflow:visible：峰顶光晕的圆（cy176 r330）上缘伸到 viewBox 之外，
+       默认会被 SVG 视口在盒子顶边裁成一条直线（用户看到的"天空分界线"），
+       放开裁切让光晕完整发散。 */
     .peak {
       position: absolute;
       left: 0;
@@ -169,6 +174,7 @@
       width: 100%;
       height: 78%;
       display: block;
+      overflow: visible;
     }
     @keyframes ridge-drift {
       from { transform: translateX(-0.9%); }
@@ -279,6 +285,12 @@
       .scene-copy { margin-top: 12vh; }
       .scene-copy::before { inset: -20% -10%; }
       .peak { height: 68%; }
+      /* 手机端：290~520px 的模糊云团会糊满半屏、把月亮埋进灰雾——整体压淡收小，只留一层薄薄的气氛 */
+      .cloud { opacity: calc(var(--o, 0.72) * 0.45); filter: blur(6px); }
+      .cloud-veil { opacity: 0.22; width: 240px; height: 84px; }
+      /* 主峰改近景：meet 等比下手机端山只有 ~200px 高、画面中段全空；
+         以底边中心为原点放大（vector 渲染无损，线条粗细仍正常），山顶占据画面下半 */
+      .peak { transform: scale(2.1); transform-origin: 50% 100%; }
     }
     @media (max-height: 620px) {
       .scene-copy { margin-top: 9vh; }
@@ -363,10 +375,10 @@
       <!-- 月光照亮的左坡：让山有厚度 -->
       <path fill="url(#mFace)"
         d="M556,178 L520,214 L460,300 L360,392 L250,510 L150,470 L-40,620 L360,620 Z" />
-      <!-- 雪：盖住整个峰顶，锯齿雪线；裁在山体轮廓里 -->
+      <!-- 雪：盖住整个峰顶；雪线宽窄深浅错落（原来是等宽等高的周期锯齿，看着像纸花边） -->
       <g clip-path="url(#peakClip)">
         <path fill="url(#snow)"
-          d="M400,30 L800,30 L800,206 L762,252 L730,214 L698,256 L664,216 L630,258 L598,216 L566,254 L534,214 L502,248 Z" />
+          d="M400,30 L800,30 L800,168 L764,224 L736,200 L708,248 L678,216 L650,256 L622,218 L597,247 L572,210 L546,243 L520,214 L496,250 L472,222 L449,243 L426,205 L400,170 Z" />
       </g>
       <!-- 山脊亮边：只在月光侧留一条很淡的边（原来太亮太硬，像一道割痕） -->
       <path fill="none" stroke="rgba(200, 222, 255, 0.18)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
