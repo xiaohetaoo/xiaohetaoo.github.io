@@ -2298,11 +2298,11 @@ html.theme-anim::view-transition-new(root) {
    必须真正让出布局宽度：transform: scaleX(0) 只改绘制、不释放占位，600px 输入框会把
    导航挤爆（641–1063px 视口下输入框被裁、GitHub 入口出屏，20260909b 修）。
    display: none 直接移出 flex 流，宽度归零，同时移出 Tab 序列与无障碍树。
-   代价是链接瞬时消失（不再有缩放淡出），但搜索框展开的几何完全不变、无跳变：
-   链接让出的宽度恰好等于搜索框左移的距离。 */
-.nav-links > a:not(.nav-cta) {
-  transition: opacity 0.2s var(--ease-out);
-}
+   代价是链接瞬时消失，但搜索框展开的几何完全不变、无跳变：链接让出的宽度
+   恰好等于搜索框左移的距离。（这里曾给链接挂 opacity 过渡——display 切换
+   根本不触发 transition，声明无效却以更高权重盖掉了基础规则的 hover
+   color/background 渐变，20260913b 删。）
+*/
 .nav-links.nav-search-open > a:not(.nav-cta) {
   display: none;
 }
@@ -3328,17 +3328,28 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 }
 
 /* 称呼流程（特殊口令 → 生日页）：长度提示行。
-   [hidden] 覆写：.key-modal-hint 是 display:block，作者样式会盖过 UA 的
-   [hidden]{display:none}，必须显式补回来，否则 hidden 属性形同虚设。 */
-.key-modal-hint[hidden] { display: none; }
-
+   不用 [hidden] 硬切 display——换屏动画（keySwapIn 0.28s）进行中提示行突然占位
+   会把面板高度一帧撑高 ~25px，弹窗边框在中途"咯噔"跳一下。改为 max-height +
+   opacity + margin 平滑展开，时长与 keySwapIn 同参（0.28s），面板高度跟着渐变；
+   .on 由 main.js 的 setMode 控制（JS 侧也相应不再用 hidden 属性）。 */
 .key-modal-hint {
   display: block;
-  margin-top: 7px;
+  overflow: hidden;
+  max-height: 0;
+  margin-top: 0;
+  opacity: 0;
   font-size: 12px;
   line-height: 1.5;
   color: var(--text-3);
   letter-spacing: 0.02em;
+  transition: max-height 0.28s var(--ease-out), opacity 0.28s var(--ease-out),
+    margin-top 0.28s var(--ease-out);
+}
+
+.key-modal-hint.on {
+  max-height: 3em;   /* 单行 18px，3em 留足窄屏意外换行的余量 */
+  margin-top: 7px;
+  opacity: 1;
 }
 
 /* 抽屉式换屏（命中特殊口令后）：旧表单上滑滑出，称呼态从下滑入。

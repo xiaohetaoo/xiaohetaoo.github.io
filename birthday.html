@@ -335,10 +335,6 @@
     .scene-back:focus-visible { outline: 2px solid #e64b6d; outline-offset: 3px; }
     .scene-back svg { width: 15px; height: 15px; }
 
-    /* 桌面窗口不高时（如 1280×720），弧线按比例收一点：行程是固定 px，
-       屏幕矮了同样的高度就顶到框外，收 0.82 后最高点仍留在画面内 */
-    @media (min-width: 641px) and (max-height: 800px) { .popper { --k: 0.82; } }
-
     /* ---------- 窄屏 ---------- */
     @media (max-width: 640px) {
       .band { top: 2%; height: 34%; }
@@ -346,9 +342,9 @@
       .deco-tr, .deco-br { width: clamp(136px, 43vw, 226px); }
       .bday-title { font-size: calc(clamp(31px, 12vw, 58px) * var(--t-scale, 1)); }
       .cake-wrap { width: clamp(180px, 64vw, 280px); }
-      /* 窄屏蛋糕占满中间：喇叭放大后仍靠下摆，行程按 0.5 缩（不然小而矮的弧线全堆在蛋糕上），
-         但保留足够上升量，彩带是"掠过"蛋糕而不是堆在上面 */
-      .popper { bottom: 10%; width: clamp(92px, 26vw, 146px); --k: 0.5; }
+      /* 窄屏蛋糕占满中间：喇叭放大后仍靠下摆，彩带是"掠过"蛋糕而不是堆在上面
+         （行程下限在 JS 侧的 k 公式里兜住，这里不再传 --k） */
+      .popper { bottom: 10%; width: clamp(92px, 26vw, 146px); }
       .petal { width: 10px; height: 10px; }
     }
 
@@ -865,7 +861,11 @@
         var hr = host.getBoundingClientRect();               // 出膛点（.burst 是个零尺寸点）
         var dir = hr.left < W / 2 ? 1 : -1;                  // 右桶整体 scaleX(-1)，横向要反号
         var popper = host.parentNode.getBoundingClientRect();
-        var k = Math.min(1.15, Math.max(0.6, popper.width / 224)); // 桶小行程同比收；下限 0.6，手机上的弧线才能越过蛋糕下缘，不在底部堆成一摊
+        // 桶小行程同比收，但下限 0.85：手机断点把桶压到 92~146px，按宽度算只有 0.41~0.65，
+        // 出手速度被拖到 750~1200px/s，在 G=2000/DRAG=3.2 下最高只能升 ~60px（中位），
+        // 而锥口离蛋糕下缘就有 ~105px——彩带全挤在屏幕底部、约 1s 就坠出视野（0.6 下限的教训）。
+        // 桌面桶宽 192px → 0.857，本来就在下限之上，不受影响。
+        var k = Math.min(1.15, Math.max(0.85, popper.width / 224));
         for (var i = 0; i < PER; i++) {
           var kind = i % 3 === 0 ? "rb" : (i % 3 === 1 ? "sf" : "cf");
           var el = document.createElement("i");
