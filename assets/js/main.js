@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260913c";
+  var DATA_VER = "20260913d";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -294,9 +294,9 @@
 
     // 三条椭圆轨道（角度、半径、转速各不相同），中心一个缓慢旋转的立方体线框
     var orbits = [
-      { rx: 0.47, ry: 0.155, rot: -Math.PI / 7,   speed: 0.42, phase: 0.4,  color: "#679efe", _ox: 0, _oy: 0 },
-      { rx: 0.47, ry: 0.155, rot:  Math.PI / 7,   speed: 0.30, phase: 2.6,  color: "#4a8ac4", _ox: 0, _oy: 0 },
-      { rx: 0.16, ry: 0.455, rot:  0.06,          speed: 0.22, phase: 4.6,  color: "#8ab4ff", _ox: 0, _oy: 0 }
+      { rx: 0.47, ry: 0.155, rot: -Math.PI / 7, speed: 0.42, phase: 0.4, color: "#679efe" },
+      { rx: 0.47, ry: 0.155, rot:  Math.PI / 7, speed: 0.30, phase: 2.6, color: "#4a8ac4" },
+      { rx: 0.16, ry: 0.455, rot:  0.06,        speed: 0.22, phase: 4.6, color: "#8ab4ff" }
     ];
 
     // 深浅主题各自的画布配色（轨道 / 电子 / 立方体），切换主题后下一帧自动生效
@@ -341,7 +341,8 @@
       }
     }
 
-    // 鼠标互动：电子被轻轻吸引，立方体微微偏转（克制档：作用半径 170px、最大偏移 16px）
+    // 鼠标互动：只有立方体朝光标方向微微偏转；电子一律沿轨道匀速行进、不受鼠标影响
+    //（原 electronPull 吸引已按用户要求整个移除，20260913d）
     var heroMouse = { x: 0, y: 0, active: false };
     var cubeLean = { x: 0, y: 0 };
 
@@ -356,28 +357,6 @@
       document.addEventListener("mouseleave", function () { heroMouse.active = false; });
     }
 
-    function electronPull(o, x, y, dt) {
-      dt = dt || 0;
-      var tx = 0, ty = 0;
-      // 鼠标记的是视口坐标，传进来的 x/y 是画布局部坐标 —— 必须换算到同一坐标系，
-      // 否则吸引中心整体偏一个"画布在视口里的偏移量"：光标在画布上挪电子几乎不动，
-      // 反而在左边文字栏挪会拽动画布里的电子（立方体偏转那段就是用 heroRect 换算的）
-      if (heroMouse.active && heroRect) {
-        var dx = heroMouse.x - heroRect.left - x, dy = heroMouse.y - heroRect.top - y;
-        var d = Math.sqrt(dx * dx + dy * dy);
-        var R = 170;
-        if (d < R && d > 0.001) {
-          var f = (1 - d / R) * 16;
-          tx = (dx / d) * f;
-          ty = (dy / d) * f;
-        }
-      }
-      var k = Math.min(1, dt * 6);
-      o._ox += (tx - o._ox) * k;
-      o._oy += (ty - o._oy) * k;
-      return [x + o._ox, y + o._oy];
-    }
-
     function drawOrbit(o) {
       ctx.save();
       ctx.translate(W / 2, H / 2);
@@ -390,14 +369,13 @@
       ctx.restore();
     }
 
-    function drawElectron(o, t, dt) {
+    function drawElectron(o, t) {
       var a = o.phase + t * o.speed;
       var ex = Math.cos(a) * o.rx * W * 0.92;
       var ey = Math.sin(a) * o.ry * W * 0.92;
       var cos = Math.cos(o.rot), sin = Math.sin(o.rot);
-      var pos = electronPull(o, W / 2 + ex * cos - ey * sin, H / 2 + ex * sin + ey * cos, dt);
-      var x = pos[0];
-      var y = pos[1];
+      var x = W / 2 + ex * cos - ey * sin;
+      var y = H / 2 + ex * sin + ey * cos;
 
       var r = 5.5;
       var g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
@@ -512,7 +490,7 @@
       ctx.clearRect(0, 0, W, H);
       orbits.forEach(function (o) { drawOrbit(o); });
       drawCube(dt);
-      orbits.forEach(function (o) { drawElectron(o, t, dt); });
+      orbits.forEach(function (o) { drawElectron(o, t); });
     }
 
     // 滚出首屏就停帧，回到视口再继续（首页往下阅读时动画不必空转）。
