@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260913b";
+  var DATA_VER = "20260913c";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -2239,7 +2239,14 @@
     }
     // 命中特殊口令：抽屉式换屏——旧表单向上滑出（0.22s），切称呼态后从下滑入（0.28s）。
     // 全程不写「口令正确」，靠「换了一屏」表达推进。系统开了「减少动态效果」就直接切。
+    // 命中特殊口令即预热生日页 HTML：用户输称呼的几秒里把文档拉进 HTTP 缓存，
+    // 跳转基本零等待。传参走 hash（goBirthday）所以请求 URL 不带 query——
+    // 这里的预热响应才能被随后的导航命中（HTTP 缓存按完整 URL 键控）。
+    function preloadBirthday() {
+      try { fetch(siteRoot(false) + "/birthday.html", { cache: "default" }).catch(function () {}); } catch (e) {}
+    }
     function startName() {
+      preloadBirthday();
       var body = modal.querySelector(".key-modal-body");
       var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (!body || reduced) { applyName(); return; }
@@ -2255,10 +2262,12 @@
         }, 300);
       }, 220);
     }
-    // 校验通过：带 ?name= 直接跳生日页。相对路径交给 siteRoot（文章页在 /posts/ 下要回上一级）
+    // 校验通过：直接跳生日页。称呼放在 hash 里传（#name=）——fragment 不参与 HTTP
+    // 请求，startName 里预热的 birthday.html 缓存才能被这次导航命中；?name= 仍被
+    // 生日页兼容读取（老链接 / 手改 URL 直达）。相对路径交给 siteRoot（文章页在 /posts/ 下要回上一级）
     function goBirthday(name) {
       var base = typeof siteRoot === "function" ? siteRoot(true) : "";
-      window.location.href = base + "birthday.html?name=" + encodeURIComponent(name);
+      window.location.href = base + "birthday.html#name=" + encodeURIComponent(name);
     }
 
     // 归一化：忽略大小写、全部空白与全部标点符号。/[\s\p{P}\p{S}]/u 按 Unicode 属性匹配

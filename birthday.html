@@ -64,6 +64,13 @@
       color: var(--ink);
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      /* 整页统一淡入：手机上文档流式渲染，标题/蛋糕/装饰会逐块"闪现"，
+         一层 0.4s 的页级淡入把它们的变化都盖进渐显里 */
+      animation: bdayPageIn 0.4s ease-out both;
+    }
+    @keyframes bdayPageIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     /* ---------- 场景：整屏，内容居中 ---------- */
@@ -270,7 +277,7 @@
     /* ---------- 入场：左右两侧喷彩带 ----------
        z=2：彩带从标题和蛋糕「后面」飞过（stage 是 3），爆发瞬间不会糊在字上，
        下落时也不会盖住蛋糕和提示行；锥体在两侧、与蛋糕无重叠，不受影响。 */
-    .poppers { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+    .poppers { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
     .popper { position: absolute; bottom: 30%; width: clamp(104px, 15vw, 224px); }
     .popper-left { left: clamp(6px, 4vw, 64px); }
     /* 右侧整体镜像，锥口朝向和喷出方向就都跟着反过来了 */
@@ -289,19 +296,22 @@
       70%  { opacity: 0; transform: scale(1.09) rotate(2deg); }
       100% { opacity: 0; transform: scale(1.12) rotate(2.5deg); }
     }
-    /* 彩带/纸屑的起点都收在喇叭口那一点，再靠各自的 --dx/--up/--dy/--rot 散开 */
+    /* 彩带/纸屑的发射点收在喇叭口那一点（.burst 是锥口标记，JS 读它的 rect 出膛）。
+       粒子本身挂在 .poppers（fixed 无变换覆盖层）用【视口坐标】直接渲染——
+       手机端锥体容器会整体翻转朝下，粒子不挂进翻转容器就不会被搅乱坐标系，
+       也不再需要镜像修正（原八·29 workaround 随之删除）。 */
     .burst { position: absolute; left: 88%; top: 38%; }
     /* 轨迹由 JS 逐帧解算（重力 + 与速度成正比的空气阻力），CSS 这边只留定位和形状。
        will-change 只在飞行期间有用：每片出画后会被 display:none，合成层随之释放。 */
-    .burst i {
+    .poppers > i {
       position: absolute; left: 0; top: 0; display: block; opacity: 0;
       will-change: transform;
     }
-    .burst .cf { width: var(--w, 14px); height: var(--h, 11px); border-radius: 3px; background: var(--c); }
+    .poppers > .cf { width: var(--w, 14px); height: var(--h, 11px); border-radius: 3px; background: var(--c); }
     /* 长条彩带：比纸屑长一截，旋转起来才像飘带而不是方块 */
-    .burst .sf { width: var(--w, 30px); height: var(--h, 8px); border-radius: 4px; background: var(--c); }
+    .poppers > .sf { width: var(--w, 30px); height: var(--h, 8px); border-radius: 4px; background: var(--c); }
     /* 卷曲彩带：圆环只留左上两段描边，就是一个卷 */
-    .burst .rb {
+    .poppers > .rb {
       width: 36px; height: 36px; border-radius: 50%;
       border: 8px solid var(--c);
       border-right-color: transparent;
@@ -342,15 +352,18 @@
       .deco-tr, .deco-br { width: clamp(136px, 43vw, 226px); }
       .bday-title { font-size: calc(clamp(31px, 12vw, 58px) * var(--t-scale, 1)); }
       .cake-wrap { width: clamp(180px, 64vw, 280px); }
-      /* 窄屏蛋糕占满中间：喇叭放大后仍靠下摆，彩带是"掠过"蛋糕而不是堆在上面
-         （行程下限在 JS 侧的 k 公式里兜住，这里不再传 --k） */
-      .popper { bottom: 10%; width: clamp(92px, 26vw, 146px); }
+      /* 窄屏：锥体放到蛋糕蜡烛的两侧、和桌面一样向上抛（bottom 10% 那版太靠下，
+         整团彩带都压在蛋糕下方）。top 跟着场景居中走：蛋糕顶 ≈ 50% 视口高 - 96px，
+         锥口（容器 38% 高）对齐蜡烛中部 → top = 蛋糕顶 + 20px = calc(50% - 76px)。
+         锥体下半截探进蛋糕后方（stage z=3 在 poppers z=2 之上），像斜插在蛋糕后。
+         粒子挂 .poppers 用视口坐标渲染；行程下限在 JS 侧 k 公式里兜住 */
+      .popper { top: calc(50% - 76px); bottom: auto; width: clamp(92px, 26vw, 146px); }
       .petal { width: 10px; height: 10px; }
     }
 
     /* ---------- 尊重系统「减少动态效果」 ---------- */
     @media (prefers-reduced-motion: reduce) {
-      .blob, .deco, .cake-wrap, .flame, .glow, .petal, .bday-title, .cake-in,
+      body, .blob, .deco, .cake-wrap, .flame, .glow, .petal, .bday-title, .cake-in,
       .bday-hint, .popper .cone {
         animation: none !important;
       }
@@ -594,7 +607,10 @@
         (function () {
           var h1 = document.querySelector(".bday-title");
           if (!h1) return;
-          var m = /[?&]name=([^&]*)/.exec(window.location.search);
+          // 口令流程跳转带 #name=（hash 不参与 HTTP 请求，弹窗侧预热的缓存才能被导航命中）；
+          // ?name= 继续兼容（老链接 / 手改 URL 直达）
+          var m = /[?&]name=([^&]*)/.exec(window.location.search)
+               || /[#&]name=([^&]*)/.exec(window.location.hash);
           if (!m) return;   // 直接打开本页（无参数）就保留 HTML 里的兜底名字
           var name;
           try { name = decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { name = m[1]; }
@@ -857,14 +873,15 @@
       var PER = W < 700 ? 28 : 46;   // 每侧片数：够热闹又不至于糊成一片
 
       var ps = [];
+      // 粒子挂在 .poppers（fixed 无变换覆盖层）用视口坐标直接渲染——
+      // 手机端锥体容器会整体翻转朝下，粒子不挂进翻转容器就不会被搅乱坐标系
+      var layer = document.querySelector(".poppers") || document.body;
       hosts.forEach(function (host) {
-        var hr = host.getBoundingClientRect();               // 出膛点（.burst 是个零尺寸点）
-        var dir = hr.left < W / 2 ? 1 : -1;                  // 右桶整体 scaleX(-1)，横向要反号
+        var hr = host.getBoundingClientRect();               // 出膛点（.burst 是锥口标记，随容器翻转与锥口保持重合）
+        var dir = hr.left < W / 2 ? 1 : -1;                  // 左桶向右喷、右桶向左喷：都朝屏幕中间
         var popper = host.parentNode.getBoundingClientRect();
-        // 桶小行程同比收，但下限 0.85：手机断点把桶压到 92~146px，按宽度算只有 0.41~0.65，
-        // 出手速度被拖到 750~1200px/s，在 G=2000/DRAG=3.2 下最高只能升 ~60px（中位），
-        // 而锥口离蛋糕下缘就有 ~105px——彩带全挤在屏幕底部、约 1s 就坠出视野（0.6 下限的教训）。
-        // 桌面桶宽 192px → 0.857，本来就在下限之上，不受影响。
+        // 桶小行程同比收，但下限 0.85：桌面桶宽 192px → 0.857 贴着下限，手机窄桶直接取下限。
+        // 这是弧线能越过蛋糕上缘、散进「标题与蛋糕之间的空带」的下限（0.6 的教训）
         var k = Math.min(1.15, Math.max(0.85, popper.width / 224));
         for (var i = 0; i < PER; i++) {
           var kind = i % 3 === 0 ? "rb" : (i % 3 === 1 ? "sf" : "cf");
@@ -878,9 +895,9 @@
             el.style.setProperty("--w", Math.round(34 + Math.random() * 14) + "px");
             el.style.setProperty("--h", Math.round(9 + Math.random() * 2) + "px");
           }
-          host.appendChild(el);
+          layer.appendChild(el);
           // 出手速度 1250~2000px/s、仰角 32°~64°：弧线顶点落在标题与蛋糕之间的空带，
-          // 扇形从两侧向中间展开；原来 2000~2900 + 78° 仰角会整片冲过标题，糊成一团
+          // 扇形从两侧向中间展开；原来 2000~2900 + 78° 仰角会整片糊成一团
           var ang = (32 + Math.random() * 32) * Math.PI / 180;
           var v = (1250 + Math.random() * 750) * k;
           ps.push({
@@ -909,10 +926,9 @@
           var E = (1 - Math.exp(-DRAG * s2)) / DRAG;
           // 横向：速度按 e^(-ct) 衰减，越飞越慢、最终停在 vx/c 处（空气阻力）
           p.x = p.mx + p.vx * E + p.wob * Math.sin(2.2 * s2 + p.ph) * (1 - Math.exp(-3 * s2));
-          // 纵向：-vy 的上升先被重力吃掉，越过最高点后加速下坠，逼近终端速度 G/DRAG
+          // 纵向：重力先吃掉初速（向上喷时越过最高点、向下撒时直接加速），逼近终端速度 G/DRAG
           p.y = p.my + p.vy * E + (G / DRAG) * (s2 - E);
-          var lx = p.dir === 1 ? p.x - p.mx : p.mx - p.x;   // 右桶是镜像容器，局部横向要再翻一次
-          p.el.style.transform = "translate3d(" + lx.toFixed(1) + "px," + (p.y - p.my).toFixed(1) +
+          p.el.style.transform = "translate3d(" + p.x.toFixed(1) + "px," + p.y.toFixed(1) +
             "px,0) rotate(" + (p.rev * 360 * s2).toFixed(0) + "deg) scaleX(" +
             (0.55 + 0.45 * Math.abs(Math.cos(6.283 * p.rev * s2 + p.ph))).toFixed(2) + ")";
           if (p.y > H + 90 || p.x < -110 || p.x > W + 110) {   // 出画即回收
