@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260913d";
+  var DATA_VER = "20260920a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -984,6 +984,214 @@
         host.appendChild(p);
       }
     }, { passive: true });
+  })();
+
+  /* ---------- 6.7 首页入场：星尘汇聚拼成「自我介绍」按钮（每会话一次，全程 ~2.4s） ----------
+     index.html head 的内联门在首帧前挂好 intro-pending（按钮隐藏 + 整页压暗 + 冻结 reveal
+     进场；body.inert 由这里挂），本节是动画本体，三段：① 0~1.2s 粒子从四面八方飞向按钮，
+     轮廓先落位、内部后填（「不断组成」的过程感）；② 1.2~1.72s **填实**：一道光从左往右把
+     按钮扫成实色（前缘亮光 + 内部星点闪，颜色 = 按钮的 --accent，扫完即按钮的"替身"）；
+     ③ 1.72s 挂 intro-reveal —— 真按钮在同一位置发光脉冲亮起（替身同形同色，衔接无缝）、
+     替身与暗纱同帧淡出，~2.4s 清场（摘类/删画布/解锁/写 sessionStorage 标记）。
+     防卡：起点/目标点/时序在第一个 rAF 前同步预算好（此后零布局回读预热），画布一次
+     成型，逐帧只画 canvas（无 DOM 粒子、无样式写入），辉光用离屏精灵 drawImage；
+     动画期间发生滚动/回流也没关系，每帧回读一次按钮位置做整体偏移跟随，落点不偏。 */
+  (function () {
+    var root = document.documentElement;
+    if (!root.classList.contains("intro-pending")) return;
+    var finish = function () {
+      root.classList.remove("intro-pending");
+      root.classList.remove("intro-reveal");
+      var c = document.getElementById("intro-canvas");
+      if (c && c.parentNode) c.parentNode.removeChild(c);
+      try { document.body.inert = false; } catch (e) {}
+      // 播完才写标记：中途刷新会重播一次，但保证「看过完整动画」才不再播
+      try { sessionStorage.setItem("xht-intro-played", "1"); } catch (e) {}
+    };
+    var btn = document.querySelector(".hero-cta .btn-primary");
+    if (reducedMotion || staticMode || !btn) { finish(); return; }
+    var rect = btn.getBoundingClientRect();
+    // 进场时不在页首（刷新恢复了滚动位置等）：不值得播，直接还原终态
+    if ((window.scrollY || window.pageYOffset || 0) > 40 ||
+        rect.width < 8 || rect.top > window.innerHeight || rect.bottom < 0) {
+      finish();
+      return;
+    }
+    try { document.body.inert = true; } catch (e) {}
+
+    var W = window.innerWidth, H = window.innerHeight;
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var cv = document.createElement("canvas");
+    cv.id = "intro-canvas";
+    cv.setAttribute("aria-hidden", "true");
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    document.body.appendChild(cv);
+    var ctx = cv.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    // 主题色（style.css :root tokens，三主题各一套；读不到按暗色兜底）
+    var DOT = (getComputedStyle(root).getPropertyValue("--intro-dot") || "").trim() || "#8ab4ff";
+    var ACCENT = (getComputedStyle(root).getPropertyValue("--accent") || "").trim() || "#679efe"; // 填实用（= 按钮底色，替身→真按钮同色无缝）
+
+    // 辉光精灵：离屏一次画好（先铺色、再用 destination-in 做透明羽化，任意颜色格式都稳）
+    var SPR = 48;
+    var sprite = document.createElement("canvas");
+    sprite.width = sprite.height = SPR;
+    var sctx = sprite.getContext("2d");
+    sctx.fillStyle = DOT;
+    sctx.fillRect(0, 0, SPR, SPR);
+    sctx.globalCompositeOperation = "destination-in";
+    var ag = sctx.createRadialGradient(SPR / 2, SPR / 2, 0, SPR / 2, SPR / 2, SPR / 2);
+    ag.addColorStop(0, "rgba(255,255,255,1)");
+    ag.addColorStop(0.35, "rgba(255,255,255,0.5)");
+    ag.addColorStop(1, "rgba(255,255,255,0)");
+    sctx.fillStyle = ag;
+    sctx.fillRect(0, 0, SPR, SPR);
+
+    // 目标点 = 按钮的圆角矩形轮廓 + 内部网格（轮廓采样步长 6px，四角 4 点小圆弧近似）
+    var bx = rect.left, by = rect.top, bw = rect.width, bh = rect.height;
+    var R = 10, per = [];
+    function pushLine(x1, y1, x2, y2) {
+      var n = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1) / 6));
+      for (var i = 0; i < n; i++) {
+        var t = i / n;
+        per.push([x1 + (x2 - x1) * t, y1 + (y2 - y1) * t]);
+      }
+    }
+    function pushArc(cx, cy, a0, a1) {
+      for (var i = 0; i < 4; i++) {
+        var a = a0 + (a1 - a0) * (i / 4);
+        per.push([cx + Math.cos(a) * R, cy + Math.sin(a) * R]);
+      }
+    }
+    pushLine(bx + R, by, bx + bw - R, by);
+    pushArc(bx + bw - R, by + R, -Math.PI / 2, 0);
+    pushLine(bx + bw, by + R, bx + bw, by + bh - R);
+    pushArc(bx + bw - R, by + bh - R, 0, Math.PI / 2);
+    pushLine(bx + bw - R, by + bh, bx + R, by + bh);
+    pushArc(bx + R, by + bh - R, Math.PI / 2, Math.PI);
+    pushLine(bx, by + bh - R, bx, by + R);
+    pushArc(bx + R, by + R, Math.PI, Math.PI * 1.5);
+
+    // 内部网格（抖动；步长按按钮尺寸自适应，总量封顶保证低端机也满帧）
+    var inner = [];
+    var gx = Math.max(9, Math.round(bw / 15)), gy = Math.max(9, Math.round(bh / 4));
+    for (var ix = bx + gx * 0.6; ix < bx + bw - 3; ix += gx) {
+      for (var iy = by + gy * 0.6; iy < by + bh - 3; iy += gy) {
+        if (inner.length > 100) break;
+        inner.push([ix + (Math.random() - 0.5) * 3, iy + (Math.random() - 0.5) * 3]);
+      }
+    }
+
+    // 每颗粒子：起点在视口四面八方（7 成视口外、3 成视口内远处），目标点记成
+    // 「相对按钮左上角的偏移」—— 滚动/回流时按钮实位置变了，粒子跟着平移不落空
+    var parts = [];
+    var cxm = bx + bw / 2, cym = by + bh / 2;
+    var maxEdge = Math.hypot(Math.max(cxm, W - cxm), Math.max(cym, H - cym));
+    function makePart(tx, ty, delayBase) {
+      var ang = Math.random() * Math.PI * 2;
+      var dist = maxEdge + 40 + Math.random() * 160;
+      if (Math.random() < 0.3) dist *= 0.4;
+      var big = Math.random() < 0.18;
+      parts.push({
+        sx: cxm + Math.cos(ang) * dist,
+        sy: cym + Math.sin(ang) * dist,
+        ox: tx - bx, oy: ty - by,
+        delay: delayBase + Math.random() * 220,
+        dur: 700 + Math.random() * 160,
+        size: (big ? 2.4 : 1.3) + Math.random() * 1.3,
+        big: big,
+        tw: Math.random() * Math.PI * 2
+      });
+    }
+    for (var i = 0; i < per.length; i++) makePart(per[i][0], per[i][1], 0);
+    for (i = 0; i < inner.length; i++) makePart(inner[i][0], inner[i][1], 180);
+
+    // 填实阶段的内部星点（随机散布在按钮内，随填充出现、微微闪烁 —— 星尘"凝成实体"的质感）
+    var sparks = [];
+    for (i = 0; i < 26; i++) {
+      sparks.push({
+        x: 0.06 + Math.random() * 0.88,
+        y: 0.18 + Math.random() * 0.64,
+        s: 1.5 + Math.random() * 1.8,
+        ph: Math.random() * Math.PI * 2
+      });
+    }
+
+    var FILL_AT = 1200;   // 汇聚完成 → 填实开始：一道光把按钮扫成实色（替身）
+    var REVEAL_AT = 1720; // 填实完成 → 真按钮脉冲亮起 + 暗纱褪去 + 替身淡出
+    var FADE_AT = 1720;   // 画布整体开始淡出（替身 → 真按钮同形同色，衔接无缝）
+    var END_AT = 2400;    // 脉冲（0.6s）播完 → 摘类清场
+    var t0 = -1, revealed = false;
+    function frame(now) {
+      if (t0 < 0) t0 = now;
+      var t = now - t0;
+      ctx.clearRect(0, 0, W, H);
+      // 按钮实位置跟随（动画期间滚动/回流，粒子整体平移，落点不偏）
+      var r2 = btn.getBoundingClientRect();
+      var ox = r2.left - bx, oy = r2.top - by;
+      var fade = t <= FADE_AT ? 1 : Math.max(0, 1 - (t - FADE_AT) / 300);
+      var boost = revealed ? 1.3 : 1; // 揭幕瞬间星尘集体提亮一下，跟脉冲呼应
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        var k = (t - p.delay) / p.dur;
+        if (k <= 0 || fade <= 0) continue;
+        var e = k >= 1 ? 1 : 1 - Math.pow(1 - k, 3); // easeOutCubic：冲到位再缓缓锁进
+        var x = p.sx + (bx + p.ox + ox - p.sx) * e;
+        var y = p.sy + (by + p.oy + oy - p.sy) * e;
+        var a = k < 1 ? Math.min(1, 0.25 + k * 2.2) : 0.55 + 0.45 * Math.sin(t * 0.02 + p.tw);
+        var al = Math.min(1, a * boost) * fade;
+        if (al <= 0.01) continue;
+        var gr = p.size * (p.big ? 3.4 : 2.5);
+        ctx.globalAlpha = al * 0.85;
+        ctx.drawImage(sprite, x - gr, y - gr, gr * 2, gr * 2);
+        ctx.globalAlpha = al;
+        ctx.fillStyle = DOT;
+        ctx.beginPath();
+        ctx.arc(x, y, p.big ? 1.5 : 0.9, 0, 6.2832);
+        ctx.fill();
+      }
+      // 填实：一道光从左往右把按钮扫成实色（clip 圆角矩形，前缘亮光 + 内部星点闪）
+      if (t >= FILL_AT && fade > 0) {
+        var fk = Math.min(1, (t - FILL_AT) / 520);
+        var fe = 1 - Math.pow(1 - fk, 2); // easeOutQuad 扫掠
+        var fa = Math.min(1, fk * 4) * fade; // 快速升到近实色
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(bx + ox + 10, by + oy);
+        ctx.arcTo(bx + ox + bw, by + oy, bx + ox + bw, by + oy + bh, 10);
+        ctx.arcTo(bx + ox + bw, by + oy + bh, bx + ox, by + oy + bh, 10);
+        ctx.arcTo(bx + ox, by + oy + bh, bx + ox, by + oy, 10);
+        ctx.arcTo(bx + ox, by + oy, bx + ox + bw, by + oy, 10);
+        ctx.closePath();
+        ctx.clip();
+        ctx.globalAlpha = fa * 0.95;
+        ctx.fillStyle = ACCENT;
+        ctx.fillRect(bx + ox, by + oy, bw * fe + 2, bh);
+        if (fe < 1) { // 扫掠前缘的一道亮光
+          ctx.globalAlpha = 0.6 * fade;
+          ctx.fillStyle = "#eaf2ff";
+          ctx.fillRect(bx + ox + bw * fe - 2, by + oy, 4, bh);
+        }
+        for (var s = 0; s < sparks.length; s++) {
+          var sp = sparks[s];
+          var tw = 0.35 + 0.4 * (0.5 + 0.5 * Math.sin(t * 0.006 + sp.ph));
+          ctx.globalAlpha = fa * tw;
+          ctx.fillStyle = "#dceaff";
+          ctx.fillRect(bx + ox + sp.x * bw, by + oy + sp.y * bh, sp.s, sp.s);
+        }
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      if (!revealed && t >= REVEAL_AT) {
+        revealed = true;
+        root.classList.add("intro-reveal");
+      }
+      if (t < END_AT) requestAnimationFrame(frame);
+      else finish();
+    }
+    requestAnimationFrame(frame);
   })();
 
   /* ---------- 2. 滚动进场 ---------- */

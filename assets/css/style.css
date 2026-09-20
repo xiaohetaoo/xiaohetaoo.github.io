@@ -54,8 +54,16 @@
   --z-click-fx: 98;    /* 点击星尘迸发（贴在内容之上、进度条之下） */
   --z-nav: 100;        /* 固定导航栏 */
   --z-search: 101;     /* 搜索下拉浮层（.nav-search-results） */
+  --z-intro: 150;      /* 首页入场动画（暗纱 + 星尘画布；盖过 nav/search，低于 skip-link 聚焦层） */
   --z-overlay: 200;    /* 覆盖层（skip-link 聚焦时浮于 nav 之上） */
   --z-modal: 220;      /* 口令彩蛋弹窗（最高层） */
+
+  /* 首页入场动画配色（三主题各一套，见「首页入场」块）：
+     暗纱 = 整页压暗的幕布色；dot = 星尘粒子色；glow = 按钮点亮时的脉冲辉光 */
+  --intro-veil: rgba(1, 4, 12, 0.62);
+  --intro-dot: #8ab4ff;
+  --intro-glow: rgba(103, 158, 254, 0.55);
+  --intro-glow-soft: rgba(103, 158, 254, 0.26);
 }
 
 /* ---------- Reset ---------- */
@@ -3442,6 +3450,98 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 }
 @media print {
   #click-dust { display: none; }
+}
+
+/* ---------- 首页入场：星尘拼合「自我介绍」按钮（main.js 6.7，每会话一次） ----------
+   intro-pending 由 index.html head 的内联门在首帧前同步挂上：按钮隐藏 + 整页压暗 + 锁交互。
+   暗纱用 html::after 伪元素 —— 不必等 JS 建 DOM、首帧就在，且命中测试落在 <html> 上、
+   点不到底下任何控件（配合 main.js 挂的 body.inert，鼠标和键盘都进不来）。
+   滚动不锁：html 的 overflow 锁会挤掉滚动条造成布局抖动、把按钮位置带偏、粒子落点跟着偏；
+   粒子在 rAF 里按帧跟随按钮实位置，滚就滚。intro-reveal 由动画驱动在拼合完成时挂上：
+   按钮一个发光脉冲亮起（呼吸灯式，带一次过冲），暗纱同帧褪去；~1.3s 后驱动摘类清场。 */
+html.intro-pending::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-intro);
+  background: var(--intro-veil);
+  opacity: 1;
+  transition: opacity 0.34s ease-out;
+}
+html.intro-pending.intro-reveal::after { opacity: 0; }
+
+html.intro-pending .hero-cta .btn-primary {
+  opacity: 0;
+  visibility: hidden;
+}
+/* 填实完成后真按钮出现：脉冲（0.6s，与 main.js END_AT=2400 对齐） */
+html.intro-pending.intro-reveal .hero-cta .btn-primary {
+  visibility: visible;
+  animation: intro-btn-in 0.6s var(--ease-out) both;
+}
+
+/* 动画期间冻结全部 reveal 进场：反正被暗纱盖住看不见；更重要的是按钮位置在首帧
+   就是终态 —— 不冻结的话 hero-cta 的 translateY(22px) 进场会让按钮在粒子汇聚
+   过程中上移 22px，脉冲落在旧位置上（用户报「动画位置不对」的根因） */
+html.intro-pending .reveal {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+@keyframes intro-btn-in {
+  0%   { opacity: 0; transform: scale(0.9);  box-shadow: 0 0 0 var(--intro-glow-soft); }
+  40%  { opacity: 1; transform: scale(1.05); box-shadow: 0 0 30px var(--intro-glow); }
+  68%  { opacity: 1; transform: scale(0.99); box-shadow: 0 0 12px var(--intro-glow-soft); }
+  100% { opacity: 1; transform: scale(1);    box-shadow: 0 0 22px var(--intro-glow-soft); }
+}
+
+/* 星尘画布（main.js 建在 body 末尾）：暗纱之上、全视口、不挡交互（挡交互是暗纱的事）。
+   width/height:100% 不可省：canvas 是替换元素，只写 inset:0 时它会按内在尺寸
+   （= 视口 × dpr 设备像素）显示，dpr=2 的机器上整幅画会被放大 2 倍并向右下偏移
+   （用户实机报「汇聚位置不对」的根因；与站内 #dust-canvas 同款写法） */
+#intro-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: calc(var(--z-intro) + 1);
+  pointer-events: none;
+}
+
+/* 三主题各一套（浅底两主题的「深色低透明度」不共用 —— 暗纱按底色给冷灰/暖褐） */
+:root[data-theme="light"] {
+  --intro-veil: rgba(16, 24, 40, 0.40);
+  --intro-dot: #2f6ceb;
+  --intro-glow: rgba(47, 108, 235, 0.50);
+  --intro-glow-soft: rgba(47, 108, 235, 0.24);
+}
+:root[data-theme="cn-red"] {
+  --intro-veil: rgba(50, 16, 10, 0.44);
+  --intro-dot: #de2910;
+  --intro-glow: rgba(222, 41, 16, 0.50);
+  --intro-glow-soft: rgba(222, 41, 16, 0.24);
+}
+
+/* 减弱动效：head 内联门本就跳过（不挂 intro-pending），这里再兜一道底 */
+@media (prefers-reduced-motion: reduce) {
+  html.intro-pending::after { display: none; }
+  html.intro-pending .hero-cta .btn-primary {
+    opacity: 1;
+    visibility: visible;
+    animation: none;
+  }
+}
+
+@media print {
+  html.intro-pending::after,
+  #intro-canvas { display: none !important; }
+  html.intro-pending .hero-cta .btn-primary {
+    opacity: 1 !important;
+    visibility: visible !important;
+    animation: none !important;
+  }
 }
 
 /* ---------- 打印样式：正文优先，去装饰去交互 ----------

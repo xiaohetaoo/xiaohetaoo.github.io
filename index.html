@@ -13,6 +13,27 @@
       document.documentElement.classList.add(_d==="deep"?"nav-deep":_d==="side"?"nav-side":"nav-back");}
     else if(/\/(?:teacher-[a-z]+|birthday)\.html(?:[?#]|$)/.test(document.referrer||"")){
       document.documentElement.classList.add("nav-back");}}catch(e){}</script>
+  <script>/* 首页入场动画（每会话一次，main.js 6.7）：在首次渲染前同步挂 intro-pending ——
+     「自我介绍」按钮隐藏 + 整页压暗 + 锁交互。不放行的情况（本会话播过 / 减动效 /
+     ?static=1 / 带 #hash 落点）什么都不挂，页面照常渲染。
+     看门狗：万一 main.js 的动画驱动没跑起来（脚本出错/被拦截），4s 后兜底解锁并写标记，
+     保证按钮绝不会永远消失、交互绝不会永久锁死。 */
+  try{
+    var _ip=null;try{_ip=sessionStorage.getItem("xht-intro-played")}catch(e){}
+    var _irm=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var _ist=/[?&]static(?:=1)?(?=&|$)/.test(window.location.search);
+    if(!_ip&&!_irm&&!_ist&&!window.location.hash){
+      document.documentElement.classList.add("intro-pending");
+      setTimeout(function(){
+        var _h=document.documentElement;
+        if(_h.classList.contains("intro-pending")||_h.classList.contains("intro-reveal")){
+          _h.classList.remove("intro-pending");_h.classList.remove("intro-reveal");
+          try{document.body.inert=false}catch(e){}
+          try{sessionStorage.setItem("xht-intro-played","1")}catch(e){}
+        }
+      },4000);
+    }
+  }catch(e){try{document.documentElement.classList.remove("intro-pending")}catch(_e){}}</script>
   <noscript><style>[data-loading]{display:none}</style></noscript>
   <title>小核桃的个人博客 — 一切皆记录</title>
   <link rel="canonical" href="https://xiaohetaoo.github.io/" />
@@ -71,7 +92,7 @@
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20260913d" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260920a" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -351,7 +372,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20260913d"></script>
+  <script src="assets/js/main.js?v=20260920a"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
