@@ -90,7 +90,7 @@
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20260923a" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260923b" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -165,6 +165,15 @@ var _hmt = _hmt || [];
 
         <div class="prose">
           <p>这是一份持续更新的名单：中文名在前、英文名在后，按 S、A、B、C、Z 五档整理，S/A/B 档内再按<strong>精通 → 熟练 → 玩过 → 了解</strong>分组。数字是我自己的标记，比如 <code>1&amp;2</code> 表示这个系列的 1、2 代都玩过，<code>{N}</code> 表示玩过多部续作。</p>
+
+          <!-- 页内搜索（main.js 5.5 节驱动）：输入即列候选，点候选/回车跳到对应条目并高亮 -->
+          <div class="game-search" id="game-search">
+            <div class="post-search">
+              <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="game-search-input" type="search" aria-label="搜索游戏名" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="game-search-results" aria-autocomplete="list" />
+            </div>
+            <div class="game-search-results" id="game-search-results" role="listbox" aria-label="游戏搜索结果" hidden></div>
+          </div>
 
           <div class="tier-head">
             <span class="tier-badge tier-s">S</span>
@@ -462,7 +471,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20260923a"></script>
+  <script src="../assets/js/main.js?v=20260923b"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

@@ -50,6 +50,7 @@
   --z-dust: -1;        /* 星尘粒子层（main 之后、负数层） */
   --z-base: 0;         /* 基础层（默认） */
   --z-raised: 1;       /* 抬起的小元素（card / button / nav-search-input） */
+  --z-sticky: 60;      /* 文章页吸附的页内搜索（盖住正文，低于点击迸发/进度条/nav） */
   --z-progress: 99;    /* 阅读进度条（紧贴 nav 下方、不挡玻璃） */
   --z-click-fx: 98;    /* 点击星尘迸发（贴在内容之上、进度条之下） */
   --z-nav: 100;        /* 固定导航栏 */
@@ -1976,6 +1977,133 @@ button {
   font-size: 12.5px;
   color: var(--text-3);
   letter-spacing: 0.01em;
+}
+
+/* ---------- 游戏名单页内搜索（posts/games-i-played.html，main.js 5.5） ----------
+   输入框复用 .post-search（与首页/归档/项目页同款），面板与候选行自成一套：绝对定位挂在
+   输入框正下方、超长自己滚，配色/圆角/阴影/出场动画与 nav 搜索浮层同族。
+   整块 sticky：往下读时吸附在 nav 下方，读到 .prose 末尾（包含块用完）自然跟走。 */
+.game-search {
+  position: sticky;
+  /* nav 64px + 进度条 2px，再留 14px 透气；玻璃底上边再上探 10px，仍与进度条隔开 */
+  top: 80px;
+  z-index: var(--z-sticky);
+  margin: 4px 0 30px;
+}
+
+.game-search .post-search { margin-bottom: 0; }
+
+/* 吸附态的玻璃底：::before 绝对定位铺开，不进排版 → 加/摘类都不产生位移。
+   配方同 .nav（暗色 rgba(0,0,0,.72) + blur14，亮色/中国红各一套），
+   所以吸附时输入框浮在「一条 nav 味的玻璃带」上，而不是压着正文文字。 */
+.game-search::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: -1; /* 在本块 stacking context 内压到输入框之下、正文之上 */
+}
+
+.game-search.is-stuck::before { opacity: 1; }
+
+.game-search-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+  padding: 12px;
+  z-index: var(--z-search);
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  animation: nav-search-pop 0.18s var(--ease-out) both; /* 与 nav 搜索浮层共用 keyframes */
+}
+
+.game-search-results::-webkit-scrollbar { width: 5px; }
+.game-search-results::-webkit-scrollbar-track { background: transparent; }
+.game-search-results::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+.game-search-results .search-hint { margin-bottom: 8px; }
+
+.game-hit {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.16s var(--ease-out);
+}
+
+.game-hit:hover,
+.game-hit[aria-selected="true"] { background: var(--accent-dim); }
+
+.game-hit .gh-zh { color: var(--text-1); font-size: 14.5px; font-weight: 500; white-space: nowrap; }
+/* 英文名可长（如 Metro 2033 / Last Light / Exodus）：占满中间、超出省略，不挤掉右侧档位 */
+.game-hit .gh-en {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.game-hit .gh-meta {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+/* 跳转落点：背景 + 外环闪 3 下（box-shadow 外扩不占位，不会推挤排版） */
+.game-list > li.game-flash,
+.prose .prof-label.game-flash,
+.prose .tier-head.game-flash {
+  border-radius: 6px;
+  animation: game-flash 0.72s var(--ease-out) 3;
+}
+
+@keyframes game-flash {
+  0%, 100% { background-color: transparent; box-shadow: 0 0 0 0 var(--accent-dim); }
+  50%      { background-color: var(--accent-dim); box-shadow: 0 0 0 6px var(--accent-dim); }
+}
+
+/* 面板阴影按主题换色（暗色纯黑 / 亮色冷灰 / 中国红暖褐，同 nav 搜索浮层，见八·31） */
+:root[data-theme="light"] .game-search-results { box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14); }
+:root[data-theme="cn-red"] .game-search-results { box-shadow: 0 16px 40px rgba(90, 30, 20, 0.18); }
+
+/* 吸附态玻璃底同 .nav 的亮色两套（暗色即上面 .game-search::before 的默认值） */
+:root[data-theme="light"] .game-search::before { background: rgba(245, 246, 248, 0.82); }
+:root[data-theme="cn-red"] .game-search::before { background: rgba(250, 244, 240, 0.82); }
+
+@media (prefers-reduced-motion: reduce) {
+  .game-search-results { animation: none; }
+  /* 玻璃底直接就位，不做淡入淡出 */
+  .game-search::before { transition: none; }
+  /* 停动画但保留高亮：落点仍然看得见（类由 JS 2.6s 后摘掉） */
+  .game-list > li.game-flash,
+  .prose .prof-label.game-flash,
+  .prose .tier-head.game-flash { animation: none; background-color: var(--accent-dim); }
+}
+
+@media print {
+  .game-search { display: none !important; }
 }
 
 /* 长篇小说页：署名 / 目录 / 词条 / 文字表格 */

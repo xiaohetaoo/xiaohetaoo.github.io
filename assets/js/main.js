@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260923a";
+  var DATA_VER = "20260923b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1387,6 +1387,176 @@
   }
 
   rerenderLists();
+
+  /* ---------- 5.5 游戏名单页内搜索（仅 posts/games-i-played.html，页内专属小搜索框）
+     输入即列候选（中文名 / 英文名 / 档位·熟练度分组），点候选或回车跳到对应条目并高亮
+     闪烁，地址写 #g=<名字>（可分享：别人打开同一链接直接定位并高亮）。索引只在初始化
+     时扫一遍 DOM（各档位标题 + 熟练度分组标签 + 全部条目），之后纯字符串比较；候选上限
+     12 条、面板自己滚。匹配走 norm()（小写 + 去空白/标点/符号），所以「黑神话悟空」
+     「call of duty」「s档」「精通」都能命中。 ---------- */
+  (function () {
+    var wrap = document.getElementById("game-search");
+    if (!wrap) return;
+    var input = document.getElementById("game-search-input");
+    var panel = document.getElementById("game-search-results");
+    var prose = wrap.closest(".prose");
+    if (!input || !panel || !prose) return;
+    var MAX = 12;
+    var items = [], tier = "";
+
+    // 按文档顺序扫一遍：档位标题 → 熟练度分组标签 → 条目（三个选择器逗号并列，
+    // querySelectorAll 保证返回文档顺序，所以下面顺手记下的 tier 一定对得上）
+    prose.querySelectorAll(".tier-head, .prof-label, ul.game-list > li").forEach(function (el) {
+      if (el.classList.contains("tier-head")) {
+        var h2 = el.querySelector("h2");
+        tier = h2 ? h2.textContent.trim() : "";
+        items.push({ el: el, zh: tier, en: "", meta: "档位", group: true });
+      } else if (el.classList.contains("prof-label")) {
+        items.push({ el: el, zh: el.textContent.trim(), en: "", meta: tier, group: true });
+      } else {
+        var zh = el.querySelector(".zh"), en = el.querySelector(".en");
+        items.push({ el: el, zh: zh ? zh.textContent.trim() : "", en: en ? en.textContent.trim() : "", meta: tier });
+      }
+    });
+    if (!items.length) return;
+
+    function norm(s) { return (s || "").toLowerCase().replace(/[\s\p{P}\p{S}]/gu, ""); }
+    function metaShort(it) { return it.group && it.meta === "档位" ? "档位" : String(it.meta || "").split("·")[0].trim(); }
+    function match(q) {
+      var nq = norm(q), out = [];
+      if (!nq) return out;
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (norm(it.zh).indexOf(nq) >= 0 || (it.en && norm(it.en).indexOf(nq) >= 0)) out.push(it);
+      }
+      return out;
+    }
+
+    var shown = [], active = -1, flashTimer = null, inputTimer = null;
+
+    function close() {
+      panel.hidden = true;
+      panel.innerHTML = "";
+      shown = []; active = -1;
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+    }
+    function render(q) {
+      var t = String(q || "").trim();
+      if (!t) { close(); return; }
+      var all = match(t);
+      if (!all.length) {
+        panel.innerHTML = '<p class="search-empty">没找到这款游戏，换个关键词试试？<br>中文名、英文名、档位（如「精通」「S 档」）都行。</p>';
+        panel.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+        shown = []; active = -1;
+        return;
+      }
+      // 提示里的条数用全量匹配数、展示才截断到 MAX —— 直接拿截断后的长度会谎报（20260909b 的教训）
+      var html = '<p class="search-hint" role="presentation">找到 <b>' + all.length + "</b> 条与「" + esc(t) + "」相关</p>";
+      html += all.slice(0, MAX).map(function (it, i) {
+        return '<div class="game-hit" role="option" id="game-search-opt-' + i + '" aria-selected="false" data-i="' + i + '">' +
+          '<span class="gh-zh">' + esc(it.zh) + "</span>" +
+          (it.en ? '<span class="gh-en">' + esc(it.en) + "</span>" : "") +
+          '<span class="gh-meta">' + esc(metaShort(it)) + "</span></div>";
+      }).join("");
+      panel.innerHTML = html;
+      panel.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+      shown = all.slice(0, MAX);
+      active = -1;
+    }
+    function setActive(i) {
+      var rows = panel.querySelectorAll(".game-hit");
+      if (!rows.length) return;
+      if (i < 0) i = 0;
+      if (i > rows.length - 1) i = rows.length - 1;
+      active = i;
+      for (var k = 0; k < rows.length; k++) rows[k].setAttribute("aria-selected", k === i ? "true" : "false");
+      input.setAttribute("aria-activedescendant", rows[i].id);
+      if (rows[i].scrollIntoView) rows[i].scrollIntoView({ block: "nearest" });
+    }
+    function flash(el) {
+      el.classList.remove("game-flash");
+      void el.offsetWidth; // 重排一次让动画能重播（只在用户跳转时走一次，不在逐帧路径上）
+      el.classList.add("game-flash");
+      if (flashTimer) clearTimeout(flashTimer);
+      flashTimer = setTimeout(function () { el.classList.remove("game-flash"); }, 2600);
+    }
+    function go(it, instant) {
+      close();
+      it.el.scrollIntoView({ behavior: (reducedMotion || staticMode || instant) ? "auto" : "smooth", block: "center" });
+      flash(it.el);
+      try { window.history.replaceState(null, "", "#g=" + encodeURIComponent(it.zh)); } catch (e) {}
+      // 触屏：跳完收键盘（否则软键盘盖住落点）；桌面保留焦点，键盘用户还能接着搜
+      try { if (!window.matchMedia("(hover: hover)").matches) input.blur(); } catch (e) {}
+    }
+    // #g=<名字> 回访：把链接贴给别人也能直接落到同一条（名字精确匹配，取第一条）
+    function fromHash(instant) {
+      var raw = window.location.hash || "";
+      if (raw.indexOf("#g=") !== 0) return;
+      var name;
+      try { name = decodeURIComponent(raw.slice(3)); } catch (e) { name = raw.slice(3); }
+      var nq = norm(name), hit = null;
+      if (!nq) return;
+      for (var i = 0; i < items.length; i++) { if (norm(items[i].zh) === nq) { hit = items[i]; break; } }
+      if (hit) go(hit, instant);
+    }
+
+    input.addEventListener("input", function () {
+      clearTimeout(inputTimer);
+      inputTimer = setTimeout(function () { render(input.value); }, 110);
+    });
+    input.addEventListener("focus", function () { if (input.value.trim()) render(input.value); });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (panel.hidden) render(input.value); else setActive(active + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActive(active - 1);
+      } else if (e.key === "Enter") {
+        var it = shown[active >= 0 ? active : 0];
+        if (it) { e.preventDefault(); go(it); }
+      } else if (e.key === "Escape") {
+        close();
+      }
+    });
+    // 候选行 mousedown 吃掉默认行为：否则输入框 blur 会抢在 click 之前把面板关掉
+    panel.addEventListener("mousedown", function (e) { if (e.target.closest(".game-hit")) e.preventDefault(); });
+    panel.addEventListener("click", function (e) {
+      var row = e.target.closest(".game-hit");
+      if (!row) return;
+      var it = shown[+row.getAttribute("data-i")];
+      if (it) go(it);
+    });
+    document.addEventListener("click", function (e) { if (!wrap.contains(e.target)) close(); });
+    window.addEventListener("hashchange", function () { fromHash(false); });
+
+    // 吸附态标记：把「已经贴在 nav 下方」翻译成 .is-stuck（玻璃底淡入）。
+    // 判据用几何、不用 IntersectionObserver——sticky 的 top 是 CSS 里的已知常量（开场读一次
+    // 算数），rect.top 贴住它就是吸附中；读到 .prose 末尾、包含块用完被顶走时 rect.bottom
+    // 会掉到线下方，于是自动摘掉。
+    var stickyTop = parseFloat(getComputedStyle(wrap).top) || 0;
+    var stuck = false, stuckTicking = false;
+    function updateStuck() {
+      stuckTicking = false;
+      var r = wrap.getBoundingClientRect();
+      var on = r.top <= stickyTop + 0.5 && r.bottom > stickyTop + 0.5;
+      if (on === stuck) return;
+      stuck = on;
+      wrap.classList.toggle("is-stuck", on);
+    }
+    function onScrollStuck() {
+      if (stuckTicking) return;
+      stuckTicking = true;
+      requestAnimationFrame(updateStuck);
+    }
+    window.addEventListener("scroll", onScrollStuck, { passive: true });
+    window.addEventListener("resize", onScrollStuck, { passive: true });
+    // 等一帧再按 hash 落点：字体/侧栏/目录落定后量位置才准
+    requestAnimationFrame(function () { fromHash(true); updateStuck(); });
+  })();
 
   /* ---------- 8. 项目列表（projects.json 驱动）
          #project-list     首页，只显示前 6 个
