@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260920a";
+  var DATA_VER = "20260923a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -995,13 +995,18 @@
      替身与暗纱同帧淡出，~2.4s 清场（摘类/删画布/解锁/写 sessionStorage 标记）。
      防卡：起点/目标点/时序在第一个 rAF 前同步预算好（此后零布局回读预热），画布一次
      成型，逐帧只画 canvas（无 DOM 粒子、无样式写入），辉光用离屏精灵 drawImage；
-     动画期间发生滚动/回流也没关系，每帧回读一次按钮位置做整体偏移跟随，落点不偏。 */
+     动画期间发生滚动/回流也没关系，每帧回读一次按钮位置做整体偏移跟随，落点不偏。
+     手机端：hero 比首屏高，CTA 落在折叠线以下（375×700 实测按钮 top≈761），
+     开播前先把按钮瞬时滚进视野（暗纱已盖住整页，跳变藏在纱下），否则星尘朝屏幕外
+     汇聚、填实与脉冲全发生在屏幕外，用户只看到星光往屏幕下方流走 = 动画等于没播。 */
   (function () {
     var root = document.documentElement;
     if (!root.classList.contains("intro-pending")) return;
+    var onResize = null;
     var finish = function () {
       root.classList.remove("intro-pending");
       root.classList.remove("intro-reveal");
+      if (onResize) window.removeEventListener("resize", onResize);
       var c = document.getElementById("intro-canvas");
       if (c && c.parentNode) c.parentNode.removeChild(c);
       try { document.body.inert = false; } catch (e) {}
@@ -1013,9 +1018,20 @@
     var rect = btn.getBoundingClientRect();
     // 进场时不在页首（刷新恢复了滚动位置等）：不值得播，直接还原终态
     if ((window.scrollY || window.pageYOffset || 0) > 40 ||
-        rect.width < 8 || rect.top > window.innerHeight || rect.bottom < 0) {
+        rect.width < 8 || rect.bottom < 0) {
       finish();
       return;
+    }
+    // 手机端首屏装不下 CTA（按钮落在折叠线以下）：暗纱此刻已盖住整页、交互已锁，
+    // 先把按钮滚进视野再播。必须瞬时滚（临时压掉 html 的 scroll-behavior: smooth）：
+    // 几何要在第一帧前定死，平滑滚动会让按钮在整个汇聚期里持续漂移。底沿留 32px 呼吸位。
+    var need = rect.bottom + 32 - window.innerHeight;
+    if (need > 0) {
+      var sb = root.style.scrollBehavior;
+      root.style.scrollBehavior = "auto";
+      window.scrollTo(0, Math.round((window.scrollY || window.pageYOffset || 0) + need));
+      root.style.scrollBehavior = sb;
+      rect = btn.getBoundingClientRect();
     }
     try { document.body.inert = true; } catch (e) {}
 
@@ -1029,6 +1045,16 @@
     document.body.appendChild(cv);
     var ctx = cv.getContext("2d");
     ctx.scale(dpr, dpr);
+    // 手机端滚动会收合地址栏 → innerHeight 变大：画布 CSS 盒跟着视口长、位图不跟，
+    // 整幅星尘被纵向拉伸、落点偏移。视口一变就重建位图（W/H 一起跟）。
+    onResize = function () {
+      W = window.innerWidth; H = window.innerHeight;
+      cv.width = Math.round(W * dpr);
+      cv.height = Math.round(H * dpr);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    };
+    window.addEventListener("resize", onResize);
 
     // 主题色（style.css :root tokens，三主题各一套；读不到按暗色兜底）
     var DOT = (getComputedStyle(root).getPropertyValue("--intro-dot") || "").trim() || "#8ab4ff";
