@@ -2092,6 +2092,13 @@ button {
 :root[data-theme="light"] .game-search::before { background: rgba(245, 246, 248, 0.82); }
 :root[data-theme="cn-red"] .game-search::before { background: rgba(250, 244, 240, 0.82); }
 
+/* 窄屏下 placeholder 缩一档：文案「输入名字搜索游戏（支持中英双语）」在 mono 字体下
+   16 个字 × 16px = 256px 宽，实测 375 屏余量 23px、360 屏 8px、320 屏反而超出 20px 被裁。
+   只缩 ::placeholder、不动 input 的 16px（那是防 iOS focus 自动缩放的红线）。 */
+@media (max-width: 400px) {
+  .game-search .post-search input::placeholder { font-size: 14px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .game-search-results { animation: none; }
   /* 玻璃底直接就位，不做淡入淡出 */
