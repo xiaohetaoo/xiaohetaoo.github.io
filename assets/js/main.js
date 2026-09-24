@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260923c";
+  var DATA_VER = "20260924a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1726,8 +1726,54 @@
   if (giscusBox) {
     var commentsSection = giscusBox.closest(".comments, .section");
     if (GISCUS.categoryId) {
-      // 滚到评论区附近才注入脚本，首屏少一个第三方请求
+      /* 加速三件套（20260924a，用户报障「留言板加载太慢」）：
+         ① 提前建连：main.js 一跑到就把三个外部域的 DNS/TCP/TLS 做掉。giscus.app 必须带
+            crossorigin —— client.js 是以 crossOrigin=anonymous 加载的，握手参数不一致
+            等于白连一次。
+         ② 触发提前 + eager：原来「距评论区 1200px 才注入」且 iframe 是 lazy（脚本虽早，
+            真正去取 widget 仍要等滚到附近）；现在 3000px 就注入，并改 data-loading=eager，
+            把整条链（widget 文档 → Next 分包 → discussions API → 头像）挪到用户还在读正文时。
+         ③ 骨架 + 兜底：加载期间显示骨架条，12s 等不到 widget 报高、或收到 giscus 的 error
+            消息，就给「重试 / 去 GitHub 讨论区」的出口，不再是一片空白（这才是用户看到
+            「留言板好像失效了」的真身）。 */
+      var preconnect = function (href, cors) {
+        var l = document.createElement("link");
+        l.rel = "preconnect";
+        l.href = href;
+        if (cors) l.crossOrigin = "anonymous";
+        document.head.appendChild(l);
+      };
+      preconnect("https://giscus.app", true);
+      preconnect("https://avatars.githubusercontent.com", false);
+      preconnect("https://github.githubassets.com", false);
+
+      var giscusReady = false, giscusTimer = null, giscusInjected = false;
+      var dropSkeleton = function () {
+        var el = giscusBox.querySelector(".giscus-skeleton");
+        if (el) el.remove();
+      };
+      var showFallback = function (msg) {
+        if (giscusReady || giscusBox.querySelector(".giscus-fallback")) return;
+        clearTimeout(giscusTimer);
+        dropSkeleton(); // 兜底文案已经把话说清了，骨架条留着只会显得自相矛盾
+        giscusBox.insertAdjacentHTML("afterbegin",
+          '<div class="giscus-fallback"><p>' + esc(msg) + "</p>" +
+          '<p class="giscus-fallback-acts"><button type="button" class="giscus-retry">重试</button>' +
+          '<a href="https://github.com/xiaohetaoo/xiaohetaoo.github.io/discussions" target="_blank" rel="noreferrer noopener">去 GitHub 讨论区留言</a></p></div>');
+        giscusBox.querySelector(".giscus-retry").addEventListener("click", function () {
+          giscusBox.innerHTML = ""; // 连旧 iframe 一起清掉再重注入
+          giscusInjected = false;
+          giscusReady = false;
+          injectGiscus();
+        });
+      };
       var injectGiscus = function () {
+        if (giscusInjected) return;
+        giscusInjected = true;
+        if (!giscusBox.querySelector(".giscus-skeleton")) {
+          giscusBox.insertAdjacentHTML("afterbegin",
+            '<div class="giscus-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>');
+        }
         var giscusScript = document.createElement("script");
         giscusScript.src = "https://giscus.app/client.js";
         giscusScript.setAttribute("data-repo", GISCUS.repo);
@@ -1744,18 +1790,35 @@
         var themeCur = document.documentElement.getAttribute("data-theme");
         giscusScript.setAttribute("data-theme", themeCur === "light" || themeCur === "cn-red" ? "light" : "dark");
         giscusScript.setAttribute("data-lang", "zh-CN");
-        giscusScript.setAttribute("data-loading", "lazy");
+        // eager（默认值）：配合上面的 3000px 提前触发，让 widget 在用户读到评论区之前就取回来
+        giscusScript.setAttribute("data-loading", "eager");
         giscusScript.crossOrigin = "anonymous";
         giscusScript.async = true;
         giscusBox.appendChild(giscusScript);
+        clearTimeout(giscusTimer);
+        giscusTimer = setTimeout(function () {
+          showFallback("评论区还在加载，多半是网络访问 giscus.app / GitHub 太慢。");
+        }, 12000);
       };
+      // widget 渲染完会 postMessage 报高度（giscus 客户端就是这么定 iframe 高的）→ 视为就绪；
+      // 收到 error 消息则立刻给兜底（配置类问题会走这条）
+      window.addEventListener("message", function (e) {
+        if (e.origin !== "https://giscus.app" || !e.data || !e.data.giscus) return;
+        if (e.data.giscus.error) {
+          showFallback("评论区加载失败：" + e.data.giscus.error);
+          return;
+        }
+        giscusReady = true;
+        clearTimeout(giscusTimer);
+        dropSkeleton();
+      });
       if ("IntersectionObserver" in window) {
         var giscusIo = new IntersectionObserver(function (entries) {
           if (entries[0].isIntersecting) {
             giscusIo.disconnect();
             injectGiscus();
           }
-        }, { rootMargin: "1200px 0px" });
+        }, { rootMargin: "3000px 0px" });
         giscusIo.observe(giscusBox);
       } else {
         injectGiscus();
@@ -1772,6 +1835,95 @@
       commentsSection.hidden = true;
     }
   }
+
+  /* ---------- 10. 智能预取（把「点开下一页」的下载挪到还在读当前页的时候）
+     三档触发，都不打断当前页：
+     ① 空闲预热：首屏稳定后，在 requestIdleCallback 里按「最可能点的下一跳」逐个预热
+        （文章页 = 推荐阅读 → 上/下篇；首页/归档 = 文章卡；侧栏兜底），一次一个、最多 4 个
+     ② 意图预热：鼠标在站内链接上停 120ms、或触屏按下（pointerdown）就立刻预热目标页
+     ③ 守卫：省流量（saveData）/ 2g·slow-2g / ?static=1 / 非 http(s) 一律不做；
+        同页锚点、外链、带 ?q= 的搜索页跳过；同一 URL 只预热一次
+     用 <link rel="prefetch"> 而不是 fetch：浏览器按最低优先级排队，不抢当前页带宽，
+     失败静默，也不占内存（fetch 会把响应留在内存里直到用完）。
+     注：GitHub Pages 对所有文件是 max-age=600 + ETag，所以预取的收益窗口是 10 分钟
+     （期内点开 = 零请求，之后 = 一次 304 往返）。 ---------- */
+  (function () {
+    if (staticMode) return;
+    if (location.protocol !== "http:" && location.protocol !== "https:") return;
+    var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (conn) {
+      if (conn.saveData) return; // 用户开了省流量模式：一个字节都别预取
+      var et = conn.effectiveType;
+      if (et === "slow-2g" || et === "2g") return;
+    }
+
+    var seen = Object.create(null);
+    var idleLeft = 4;
+    var warm = function (href, fromIntent) {
+      if (!href || (!fromIntent && idleLeft <= 0)) return false;
+      var u;
+      try { u = new URL(href, location.href); } catch (e) { return false; }
+      if (u.origin !== location.origin) return false;
+      if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+      if (u.pathname === location.pathname) return false; // 当前页（含纯锚点）
+      if (u.search.indexOf("q=") !== -1) return false;    // 搜索结果页不值得预热
+      if (seen[u.href]) return false;
+      seen[u.href] = 1;
+      if (!fromIntent) idleLeft--;
+      var l = document.createElement("link");
+      l.rel = "prefetch";
+      l.href = u.href;
+      document.head.appendChild(l);
+      return true;
+    };
+
+    // ① 空闲预热：按优先级分组，一次空闲只取一个（对当前页最礼貌）
+    var WARM_SEL = [".related-card[href]", ".post-nav a[href]:not(.ghost)", ".post-card[href]", ".side-item[href]"];
+    var idleTries = 0;
+    var idleWarm = function () {
+      if (idleLeft <= 0) return;
+      for (var i = 0; i < WARM_SEL.length; i++) {
+        var links = document.querySelectorAll(WARM_SEL[i]);
+        for (var j = 0; j < links.length; j++) {
+          if (warm(links[j].getAttribute("href"))) {
+            requestIdle(idleWarm);
+            return;
+          }
+        }
+      }
+      // 列表是 fetch(posts.json) 渲染出来的：这一轮还没卡片就再等一轮（最多 4 轮）
+      if (++idleTries < 4) setTimeout(function () { requestIdle(idleWarm); }, 800);
+    };
+    var requestIdle = function (fn) {
+      if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 2500 });
+      else setTimeout(fn, 900);
+    };
+    // 别等 window.load：giscus 的 iframe 现在是 eager 的，load 会被第三方资源拖后很多秒
+    // 甚至不触发（实测 9s 都没等到），挂在它上面等于永不预热。DOMContentLoaded 足够，
+    // 列表晚渲染的情况由上面的重试兜住。
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function () { requestIdle(idleWarm); });
+    } else {
+      requestIdle(idleWarm);
+    }
+
+    // ② 意图预热：悬停 120ms / 触屏按下
+    var hoverTimer = null, hovered = null;
+    if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      document.addEventListener("pointerover", function (e) {
+        var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+        if (a === hovered) return;
+        hovered = a;
+        clearTimeout(hoverTimer);
+        if (!a) return;
+        hoverTimer = setTimeout(function () { warm(a.href, true); }, 120);
+      }, { passive: true });
+    }
+    document.addEventListener("pointerdown", function (e) {
+      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+      if (a) warm(a.href, true);
+    }, { passive: true });
+  })();
 
   /* ---------- 8.5 阅读进度条（仅文章页） ---------- */
   // 顶部 2px 蓝线，rAF 节流 + scaleX 走合成层；只挂文章页——archive/projects 的
