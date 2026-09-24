@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260924a";
+  var DATA_VER = "20260924b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -930,9 +930,16 @@
       if (!document.hidden && !staticMode) scheduleDust();
     }
 
+    // 30fps 重绘（20260924b）：星尘是缓慢漂移，30 帧/秒肉眼看不出差别，但这是一层全视口
+    // 画布——软件栅格（浏览器没吃到硬件加速）下它每帧要 9ms，砍半就是直接还回 4~5ms 预算
+    // （见手册八·49）。跳过的帧不推进 dLast，dt 会累加到下一次真正重绘，运动速度与 60fps 时一致。
+    var DUST_INTERVAL = 1000 / 30;
     function dustFrame(ts) {
-      if (dLast === null) dLast = ts;
-      var dt = Math.min(0.05, (ts - dLast) / 1000);
+      if (dLast !== null && ts - dLast < DUST_INTERVAL - 1) {
+        scheduleDust();
+        return;
+      }
+      var dt = dLast === null ? 0 : Math.min(0.05, (ts - dLast) / 1000);
       dLast = ts;
       dustDraw(ts / 1000, dt);
     }
@@ -1812,16 +1819,24 @@
         clearTimeout(giscusTimer);
         dropSkeleton();
       });
-      if ("IntersectionObserver" in window) {
-        var giscusIo = new IntersectionObserver(function (entries) {
-          if (entries[0].isIntersecting) {
-            giscusIo.disconnect();
-            injectGiscus();
-          }
-        }, { rootMargin: "3000px 0px" });
-        giscusIo.observe(giscusBox);
+      // 预渲染副本里先不注入：还没被点开就去取 4 个外部域的资源，白花流量（10 节会预渲染本页）
+      var armGiscus = function () {
+        if ("IntersectionObserver" in window) {
+          var giscusIo = new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting) {
+              giscusIo.disconnect();
+              injectGiscus();
+            }
+          }, { rootMargin: "3000px 0px" });
+          giscusIo.observe(giscusBox);
+        } else {
+          injectGiscus();
+        }
+      };
+      if (document.prerendering) {
+        document.addEventListener("prerenderingchange", armGiscus, { once: true });
       } else {
-        injectGiscus();
+        armGiscus();
       }
       // 评论区跟随站内深浅主题切换（监听主题事件，动画路径下也能拿到切换后的值）
       document.addEventListener("themechange", function (ev) {
@@ -1837,12 +1852,17 @@
   }
 
   /* ---------- 10. 智能预取（把「点开下一页」的下载挪到还在读当前页的时候）
-     三档触发，都不打断当前页：
+     四档触发，都不打断当前页：
      ① 空闲预热：首屏稳定后，在 requestIdleCallback 里按「最可能点的下一跳」逐个预热
-        （文章页 = 推荐阅读 → 上/下篇；首页/归档 = 文章卡；侧栏兜底），一次一个、最多 4 个
+        （文章页 = 推荐阅读 → 上/下篇；首页/归档 = 文章卡；侧栏 / hero CTA / 导航兜底），
+        一次一个，上限 idleLeft（快网 8、慢网 2）
      ② 意图预热：鼠标在站内链接上停 120ms、或触屏按下（pointerdown）就立刻预热目标页
-     ③ 守卫：省流量（saveData）/ 2g·slow-2g / ?static=1 / 非 http(s) 一律不做；
-        同页锚点、外链、带 ?q= 的搜索页跳过；同一 URL 只预热一次
+     ③ 滚动停止 1.2s 后再补一轮——用户停手的那一刻正是「马上要点」的时刻
+     ④ 投机规则（Chromium 121+）：悬停即 prerender、按下即 prefetch，交给浏览器自己管。
+        预渲染会真跑目标页的 JS，点开时是「已经在跑」而不是「刚开始加载」，是最彻底的一档
+     守卫：省流量（saveData）/ 2g·slow-2g / ?static=1 / 非 http(s) 一律不做；3g 或
+     downlink ≤ 1.5Mbps 算慢网——只预取不预渲染、空闲上限收到 2；同页锚点、外链、
+     带 ?q= 的搜索页跳过；同一文档（忽略 #锚点）只预热一次。
      用 <link rel="prefetch"> 而不是 fetch：浏览器按最低优先级排队，不抢当前页带宽，
      失败静默，也不占内存（fetch 会把响应留在内存里直到用完）。
      注：GitHub Pages 对所有文件是 max-age=600 + ETag，所以预取的收益窗口是 10 分钟
@@ -1856,20 +1876,29 @@
       var et = conn.effectiveType;
       if (et === "slow-2g" || et === "2g") return;
     }
-
+    // 慢网只留「意图驱动」的那部分：3g 下空闲预取收窄到 3、滚动不再补，但**不砍预渲染**——
+    // 悬停/按下是明确的点击意图，那点流量本来就要花。只看 effectiveType，不看 downlink
+    // （浏览器在没测出真实网速前会报默认值，实测无头 Chromium 就报 3g / 1.35Mbps / 700ms，
+    // 按 downlink 判会把「其实不慢」的连接一起降级）。saveData 与 2g·slow-2g 仍是硬守卫。
+    var slowNet = !!conn && conn.effectiveType === "3g";
+    var idleLeft = slowNet ? 3 : 8;   // ① 空闲预热
+    var scrollLeft = slowNet ? 0 : 2; // ③ 滚动停止后额外补的（用户停手 = 强意图信号）
     var seen = Object.create(null);
-    var idleLeft = 4;
-    var warm = function (href, fromIntent) {
-      if (!href || (!fromIntent && idleLeft <= 0)) return false;
+    var warm = function (href, kind) { // kind: "idle" | "scroll" | "intent"
+      if (!href) return false;
+      if (kind === "idle" && idleLeft <= 0) return false;
+      if (kind === "scroll" && scrollLeft <= 0) return false;
       var u;
       try { u = new URL(href, location.href); } catch (e) { return false; }
       if (u.origin !== location.origin) return false;
       if (u.protocol !== "http:" && u.protocol !== "https:") return false;
       if (u.pathname === location.pathname) return false; // 当前页（含纯锚点）
       if (u.search.indexOf("q=") !== -1) return false;    // 搜索结果页不值得预热
+      u.hash = "";                                        // 同一文档的不同锚点只预热一次
       if (seen[u.href]) return false;
       seen[u.href] = 1;
-      if (!fromIntent) idleLeft--;
+      if (kind === "idle") idleLeft--;
+      else if (kind === "scroll") scrollLeft--;
       var l = document.createElement("link");
       l.rel = "prefetch";
       l.href = u.href;
@@ -1877,52 +1906,101 @@
       return true;
     };
 
-    // ① 空闲预热：按优先级分组，一次空闲只取一个（对当前页最礼貌）
-    var WARM_SEL = [".related-card[href]", ".post-nav a[href]:not(.ghost)", ".post-card[href]", ".side-item[href]"];
-    var idleTries = 0;
-    var idleWarm = function () {
-      if (idleLeft <= 0) return;
+    // 按优先级分组扫一遍，一次只取一个（对当前页最礼貌）
+    var WARM_SEL = [
+      ".related-card[href]", ".post-nav a[href]:not(.ghost)", ".post-card[href]",
+      ".side-item[href]", ".hero-cta a[href]", ".nav-links a[href]", ".footer a[href]"
+    ];
+    var warmPass = function (kind) {
       for (var i = 0; i < WARM_SEL.length; i++) {
         var links = document.querySelectorAll(WARM_SEL[i]);
         for (var j = 0; j < links.length; j++) {
-          if (warm(links[j].getAttribute("href"))) {
-            requestIdle(idleWarm);
-            return;
-          }
+          if (warm(links[j].getAttribute("href"), kind)) return true;
         }
       }
-      // 列表是 fetch(posts.json) 渲染出来的：这一轮还没卡片就再等一轮（最多 4 轮）
-      if (++idleTries < 4) setTimeout(function () { requestIdle(idleWarm); }, 800);
+      return false;
     };
     var requestIdle = function (fn) {
       if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 2500 });
       else setTimeout(fn, 900);
     };
-    // 别等 window.load：giscus 的 iframe 现在是 eager 的，load 会被第三方资源拖后很多秒
-    // 甚至不触发（实测 9s 都没等到），挂在它上面等于永不预热。DOMContentLoaded 足够，
-    // 列表晚渲染的情况由上面的重试兜住。
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", function () { requestIdle(idleWarm); });
-    } else {
-      requestIdle(idleWarm);
-    }
+    var idleTries = 0;
+    var idleWarm = function () {
+      if (idleLeft <= 0) return;
+      if (warmPass("idle")) { requestIdle(idleWarm); return; }
+      // 列表是 fetch(posts.json) 渲染出来的：这一轮还没卡片就再等一轮（最多 4 轮）
+      if (++idleTries < 4) setTimeout(function () { requestIdle(idleWarm); }, 800);
+    };
+    var scrollWarm = function () {
+      if (scrollLeft <= 0) return;
+      if (warmPass("scroll")) requestIdle(scrollWarm);
+    };
 
-    // ② 意图预热：悬停 120ms / 触屏按下
-    var hoverTimer = null, hovered = null;
-    if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-      document.addEventListener("pointerover", function (e) {
-        var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
-        if (a === hovered) return;
-        hovered = a;
-        clearTimeout(hoverTimer);
-        if (!a) return;
-        hoverTimer = setTimeout(function () { warm(a.href, true); }, 120);
+    // ④ 投机规则：把「悬停预渲染 / 按下预取」交给浏览器（比逐个挂 <link> 更彻底）。
+    //    预渲染会真跑目标页的 JS，所以目标页自己必须认 document.prerendering（见 9 节）。
+    //    返回是否成功插入——支持时就不必再挂 ② 的手工悬停预取，免得和 prerender 抢同一页。
+    var addSpeculation = function () {
+      if (!window.HTMLScriptElement || !HTMLScriptElement.supports ||
+          !HTMLScriptElement.supports("speculationrules")) return false;
+      if (window.XHT_AT_404) return false; // 404 页服务在任意深度，路径模式会失真
+      var rules = {
+        prefetch: [{ source: "document", where: { href_matches: "/*" }, eagerness: "conservative" }],
+        // 预渲染照给（慢网也一样）：悬停/按下是明确的点击意图，这一页本来就要加载
+        prerender: [{ source: "document", where: { href_matches: "/*" }, eagerness: "moderate" }]
+      };
+      var s = document.createElement("script");
+      s.type = "speculationrules";
+      s.textContent = JSON.stringify(rules);
+      document.head.appendChild(s);
+      return true;
+    };
+
+    var start = function () {
+      // 别等 window.load：giscus 的 iframe 是 eager 的，load 会被第三方资源拖后很多秒
+      // 甚至不触发（实测 9s 都没等到），挂在它上面等于永不预热。DOMContentLoaded 足够，
+      // 列表晚渲染的情况由上面的重试兜住。
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", function () { requestIdle(idleWarm); });
+      } else {
+        requestIdle(idleWarm);
+      }
+
+      // ② 意图预热：悬停 120ms / 触屏按下（只在浏览器不支持投机规则时挂——支持的话
+      //    ④ 已经用「悬停即预渲染」覆盖了同一批链接，两条腿一起跑只会互相抢带宽）
+      if (!addSpeculation()) {
+        var hoverTimer = null, hovered = null;
+        if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          document.addEventListener("pointerover", function (e) {
+            var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+            if (a === hovered) return;
+            hovered = a;
+            clearTimeout(hoverTimer);
+            if (!a) return;
+            hoverTimer = setTimeout(function () { warm(a.href, "intent"); }, 120);
+          }, { passive: true });
+        }
+        document.addEventListener("pointerdown", function (e) {
+          var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+          if (a) warm(a.href, "intent");
+        }, { passive: true });
+      }
+
+      // ③ 滚动停止后再补一轮（滚动中不预取，免得跟当前页的绘制抢带宽）
+      var scrollTimer = null;
+      window.addEventListener("scroll", function () {
+        if (scrollLeft <= 0) return;
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(scrollWarm, 1200);
       }, { passive: true });
+    };
+
+    // 被预渲染的副本里先别动手：预取与第三方请求都可能在「没被点开」时白花流量，
+    // 真的被点开（prerenderingchange）再照常跑一遍
+    if (document.prerendering) {
+      document.addEventListener("prerenderingchange", start, { once: true });
+    } else {
+      start();
     }
-    document.addEventListener("pointerdown", function (e) {
-      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
-      if (a) warm(a.href, true);
-    }, { passive: true });
   })();
 
   /* ---------- 8.5 阅读进度条（仅文章页） ---------- */
