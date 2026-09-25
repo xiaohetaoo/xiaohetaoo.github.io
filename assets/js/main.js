@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260924b";
+  var DATA_VER = "20260925a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -2422,9 +2422,13 @@
       // 1) ARIA 状态
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       input.setAttribute("aria-expanded", open ? "true" : "false");
-      // 2) 主内容 inert 锁（免费 focus trap）
+      // 2) 主内容 inert 锁（免费 focus trap）。关闭时若口令弹窗或节日弹窗还开着，main 的
+      //    inert 归它们管（它们的焦点锁也压着 main），不能顺手一起摘——「开着搜索点钥匙
+      //    按钮」会让这次点击走外部点击路径把搜索关掉，摘了 inert 弹窗的焦点锁就破（20260925a）
       var main = document.querySelector("main");
-      if (main) main.toggleAttribute("inert", open);
+      var keyModalNow = document.getElementById("key-modal");
+      var festivalOpen = !!document.getElementById("fst-modal");
+      if (main && (open || ((!keyModalNow || keyModalNow.hidden) && !festivalOpen))) main.toggleAttribute("inert", open);
       // 3) nav 让位元素 class（≤640 媒体查询让它们 display:none）
       var nav = wrap.closest("nav");
       if (nav) nav.classList.toggle("nav-search-open", open);
@@ -2479,9 +2483,12 @@
       // 1) ARIA 状态
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       input.setAttribute("aria-expanded", open ? "true" : "false");
-      // 2) 主内容 inert 锁
+      // 2) 主内容 inert 锁。关闭时若口令弹窗或节日弹窗还开着，main 的 inert 归它们管，
+      //    不能顺手摘（与桌面分支同一坑，20260925a）
       var main = document.querySelector("main");
-      if (main) main.toggleAttribute("inert", open);
+      var keyModalNow = document.getElementById("key-modal");
+      var festivalOpen = !!document.getElementById("fst-modal");
+      if (main && (open || ((!keyModalNow || keyModalNow.hidden) && !festivalOpen))) main.toggleAttribute("inert", open);
       // 3) nav 让位元素 class
       var nav = wrap.closest("nav");
       if (nav) nav.classList.toggle("nav-search-open", open);
@@ -2726,6 +2733,9 @@
       // 不去拉起藏在弹窗（z 220）后面（z 101）的搜索面板，避免留下半开残态
       var keyModal = document.getElementById("key-modal");
       if (keyModal && !keyModal.hidden) return;
+      // 节日弹窗（festival.js）开着时键盘同样属于弹窗：不去拉起藏在它（z 220）后面
+      // （z 101）的搜索面板，避免留下半开残态
+      if (document.getElementById("fst-modal")) return;
       e.preventDefault();
       setOpen(!open);
     });
