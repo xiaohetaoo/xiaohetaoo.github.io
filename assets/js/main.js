@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260925a";
+  var DATA_VER = "20260926a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1818,6 +1818,10 @@
         giscusReady = true;
         clearTimeout(giscusTimer);
         dropSkeleton();
+        // 12s 兜底已经弹出、widget 后来又加载成功了：把兜底文案撤掉，
+        // 别让「重试」和「还在加载」压在正常评论区上（超时→迟到的组合）
+        var lateFallback = giscusBox.querySelector(".giscus-fallback");
+        if (lateFallback) lateFallback.remove();
       });
       // 预渲染副本里先不注入：还没被点开就去取 4 个外部域的资源，白花流量（10 节会预渲染本页）
       var armGiscus = function () {
@@ -2499,6 +2503,10 @@
         // 重开时先清掉上一轮关闭安排的清理定时器，否则快速 关→开→关 会让旧定时器
         // 在新一段收回动画中途把面板 hidden（动画被腰斩）
         if (mobileCloseTimer) { clearTimeout(mobileCloseTimer); mobileCloseTimer = null; }
+        // 桌面收回的遗留也一并作废：.closing 类与它的 170ms 隐藏定时器不能动刚打开的
+        // 移动面板（跨断点快速 关→开 的竞态；CSS 侧 .closing 已圈进桌面断点双保险）
+        if (panelCloseTimer) { clearTimeout(panelCloseTimer); panelCloseTimer = null; }
+        panel.classList.remove("closing");
         // 首次打开时插入 mobile input
         if (!panel.querySelector(".nav-search-mobile-input")) {
           var mobileInput = document.createElement("input");
@@ -2969,11 +2977,14 @@
         renderResult(input.value);
       } else {
         modal.hidden = true;
-        // 搜索面板若还开着，main 要保持 inert（它自己的 focus trap 仍需生效）
+        // 还锁要看脸色（与节日弹窗关闭同款）：搜索面板或节日弹窗还开着时，main 的
+        // inert 归它们管（它们自己的 focus trap 仍需生效）；节日弹窗还压着
+        // nav/footer，也不能顺手摘（inert 多方共享，见手册八·52）
         var searchOpen = !!document.querySelector(".nav-links.nav-search-open");
-        if (main && !searchOpen) main.removeAttribute("inert");
-        if (nav) nav.removeAttribute("inert");
-        if (footer) footer.removeAttribute("inert");
+        var fstOpen = !!document.getElementById("fst-modal");
+        if (main && !searchOpen && !fstOpen) main.removeAttribute("inert");
+        if (nav && !fstOpen) nav.removeAttribute("inert");
+        if (footer && !fstOpen) footer.removeAttribute("inert");
         btn.setAttribute("aria-expanded", "false");
         // 清空状态（含称呼流程），避免下次打开残留旧结果
         resetFlow();

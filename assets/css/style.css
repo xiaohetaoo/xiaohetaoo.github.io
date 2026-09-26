@@ -2283,10 +2283,14 @@ html.theme-anim::view-transition-new(root) {
   border-color: var(--accent-border);
   background: rgba(255, 255, 255, 0.06);
 }
-/* 收起时值/占位符立刻隐藏（opacity 不参与 clip-path 过渡时序），避免闪烁；
-   展开仍走上面的渐显 */
+/* 收起与展开对称：盒子 0.22s clip 收回 + 0.18s 淡出（不透明度不参与的话整个输入框
+   一帧消失，收回过渡全程播在透明元素上等于没播）。文字不闪由两条保证：
+   value 由 JS 在关闭瞬间清空；placeholder 在收起态直接置透明，不会在淡出中闪现 */
 .nav-search:not(.open) .nav-search-input {
-  transition: clip-path 0.22s var(--ease-out), border-color 0.2s, background 0.2s;
+  transition: clip-path 0.22s var(--ease-out), opacity 0.18s var(--ease-out), border-color 0.2s, background 0.2s;
+}
+.nav-search:not(.open) .nav-search-input::placeholder {
+  color: transparent;
 }
 
 /* 下拉浮层：导航栏下方浮窗，显示实时结果。
@@ -2331,9 +2335,13 @@ html.theme-anim::view-transition-new(root) {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-/* 桌面端面板收回：淡出上移后再由 JS 隐藏（.closing 期间 fill both 锁住终态不闪） */
-.nav-search-results.closing {
-  animation: nav-search-drop 0.16s ease-in both;
+/* 桌面端面板收回：淡出上移后再由 JS 隐藏（.closing 期间 fill both 锁住终态不闪）。
+   必须圈进桌面：本条特异性 (0,2,0) 会压过 ≤640 块的 animation:none (0,1,0)，
+   「桌面收回的 170ms 窗口内缩到手机再打开」时会把刚打开的移动面板锁在透明终态 */
+@media (min-width: 641px) {
+  .nav-search-results.closing {
+    animation: nav-search-drop 0.16s ease-in both;
+  }
 }
 @keyframes nav-search-drop {
   from { opacity: 1; transform: translateY(0); }
@@ -2614,6 +2622,17 @@ html.theme-anim::view-transition-new(root) {
 :root[data-theme="cn-red"] .tier-badge.tier-b,
 :root[data-theme="cn-red"] .tier-badge.tier-c,
 :root[data-theme="cn-red"] .tier-badge.tier-z { background: rgba(90, 30, 20, 0.06); }
+/* 浅底两主题补底色：这几处的暗色「白 5% 底」在亮底上不可见（只剩描边），各换各的深色低透明度 */
+:root[data-theme="light"] .hero-desc .formula,
+:root[data-theme="light"] .tag-gray,
+:root[data-theme="light"] .contact-card .c-icon,
+:root[data-theme="light"] .prof-lv3 { background: rgba(16, 24, 40, 0.05); }
+:root[data-theme="cn-red"] .hero-desc .formula,
+:root[data-theme="cn-red"] .tag-gray,
+:root[data-theme="cn-red"] .contact-card .c-icon,
+:root[data-theme="cn-red"] .prof-lv3 { background: rgba(90, 30, 20, 0.06); }
+:root[data-theme="light"] .prof-lv4 { background: rgba(16, 24, 40, 0.03); }
+:root[data-theme="cn-red"] .prof-lv4 { background: rgba(90, 30, 20, 0.04); }
 /* 亮色模式下二维码反相成白底深色码（hue-rotate 保持蓝色系、不破坏可扫描性） */
 :root[data-theme="light"] .contact-card .qr-box img,
 :root[data-theme="cn-red"] .contact-card .qr-box img {
@@ -3195,6 +3214,13 @@ html.theme-anim::view-transition-new(root) {
     border-color: var(--accent-border);
     background-color: rgba(255, 255, 255, 0.08);
   }
+  /* 浅底两主题：暗色的「白 6%」输入框底在亮色毛玻璃面板上不可见，换各自深色低透明度
+     （取值对齐桌面 .nav-search.open .nav-search-input 的覆写；只动 background-color，
+      不用简写——简写会抹掉上面的放大镜 background-image） */
+  :root[data-theme="light"] .nav-search-results > .nav-search-mobile-input { background-color: rgba(16, 24, 40, 0.05); }
+  :root[data-theme="light"] .nav-search-results > .nav-search-mobile-input:focus { background-color: rgba(16, 24, 40, 0.07); }
+  :root[data-theme="cn-red"] .nav-search-results > .nav-search-mobile-input { background-color: rgba(90, 30, 20, 0.07); }
+  :root[data-theme="cn-red"] .nav-search-results > .nav-search-mobile-input:focus { background-color: rgba(90, 30, 20, 0.09); }
   /* 移动端不需要单独遮罩 —— 面板本身已经覆盖剩余屏幕 + 毛玻璃模糊 */
 
   .hero-cta .btn {
@@ -3769,10 +3795,11 @@ html.intro-pending .reveal {
   @page { margin: 1.8cm 1.6cm; }
   html, body { background: #fff !important; }
 
-  /* 装饰层与交互组件：纸面上无意义 */
+  /* 装饰层与交互组件：纸面上无意义（.nav-search-results / #fst-modal 已被 JS 挂到
+     body 直下，不在 .nav / 任何被隐藏子树里，必须单独列出） */
   #dust-canvas,
   .nav, .footer, .skip-link, .key-modal,
-  .nav-search, .reading-progress,
+  .nav-search, .nav-search-results, #fst-modal, .reading-progress,
   .hero, .concept,
   .post-search,
   .all-posts-link, .all-projects-link,

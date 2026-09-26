@@ -182,12 +182,14 @@
       root.remove();
       document.removeEventListener("keydown", onKey);
       /* 还锁要看脸色（与 key-modal 关闭同款）：main 可能正被搜索面板或
-         口令弹窗压着——它们先来，就替它们保留；nav/footer 只有本弹窗会锁。 */
+         口令弹窗压着——它们先来，就替它们保留；nav/footer 同理，口令弹窗
+         也锁着这两处（inert 多方共享，摘之前清点，见手册八·52）。 */
       var keyModal = document.getElementById("key-modal");
+      var keyOpen = !!keyModal && !keyModal.hidden;
       var searchOpen = !!document.querySelector(".nav-links.nav-search-open");
-      if (mainEl && !searchOpen && (!keyModal || keyModal.hidden)) mainEl.removeAttribute("inert");
-      if (navEl) navEl.removeAttribute("inert");
-      if (footerEl) footerEl.removeAttribute("inert");
+      if (mainEl && !searchOpen && !keyOpen) mainEl.removeAttribute("inert");
+      if (navEl && !keyOpen) navEl.removeAttribute("inert");
+      if (footerEl && !keyOpen) footerEl.removeAttribute("inert");
       if (prevFocus && prevFocus.focus) prevFocus.focus();
     }
     function onKey(e) {
