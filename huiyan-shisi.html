@@ -87,8 +87,10 @@ body{
 .modal .btn-primary,.modal .btn-ghost{margin-left:18px;margin-right:18px;width:calc(100% - 36px);box-sizing:border-box;}
 .btn-link{background:transparent;color:var(--muted);font-size:13px;padding:8px;margin-top:6px;text-decoration:none;font-weight:400;letter-spacing:0;}
 
-/* 封面引导页 */
-#screen-intro{padding-top:14px;justify-content:center;}
+/* 封面引导页：垂直居中靠首尾块 auto 外边距——矮屏内容溢出时外边距归 0，从顶可滚不裁切 */
+#screen-intro{padding-top:14px;}
+#screen-intro .cover{margin-top:auto;}
+#screen-intro .ai-note{margin-bottom:auto;}
 .cover-hint{margin:12px 0;font-size:12px;color:var(--muted);text-align:center;letter-spacing:1px;flex:0 0 auto;}
 .ai-note{margin:10px 0 0;font-size:11px;color:var(--muted);opacity:.75;text-align:center;letter-spacing:1px;flex:0 0 auto;}
 #cover-lens{cursor:grab;touch-action:none;}
@@ -171,7 +173,7 @@ body{
 .hint-glow{fill:rgba(255,233,168,.6);stroke:#E8A93C;stroke-width:5;opacity:0;pointer-events:none;}
 .hazard.hinted .hint-glow{animation:glow 1s ease-in-out 3;}
 @keyframes glow{0%,100%{opacity:0}50%{opacity:1}}
-.ripple{fill:none;stroke:#B89A72;stroke-width:5;transform-box:fill-box;transform-origin:center;animation:rip .6s ease-out forwards;}
+.ripple{fill:none;stroke:#B89A72;stroke-width:5;pointer-events:none;transform-box:fill-box;transform-origin:center;animation:rip .6s ease-out forwards;}
 @keyframes rip{from{transform:scale(.25);opacity:.9}to{transform:scale(1.6);opacity:0}}
 
 /* 失败揭示：漏掉隐患的红虚线圈 + 名称标签 */
@@ -249,8 +251,10 @@ body{
 .modal .btn-primary,.modal .btn-ghost{margin-left:18px;margin-right:18px;width:calc(100% - 36px);}
 .modal .btn-link{margin-top:0;font-size:13px;padding:8px;}
 
-/* 结算页 */
-#screen-final{justify-content:center;text-align:center;}
+/* 结算页：同封面页的 auto 外边距居中法（矮屏溢出可滚） */
+#screen-final{text-align:center;}
+#screen-final .final-head{margin-top:auto;}
+#screen-final .final-actions{margin-bottom:auto;}
 .final-head{display:flex;flex-direction:column;align-items:center;}
 .medal{width:min(46%,190px);filter:drop-shadow(0 12px 26px rgba(232,169,60,.5));animation:float 3s ease-in-out infinite;}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -584,7 +588,7 @@ window.GAME_DATA = {
         { key: 'poster',     label: '虚假“海外直邮”宣传海报' }
       ],
       tip: '进口货得贴中文标签、说清来路。裸瓶外文保健品、没出处的表，是典型水货，出了问题都没处索赔。',
-      quiz: { q: '判断题：没有中文标签的进口保健品，多半是走私水货，买了也不受法律保护。', a: true,
+      quiz: { q: '判断题：没有中文标签的进口保健品，可能是走私水货，购买要谨慎。', a: true,
                why: '正经进口货，中文标签和溯源一样都不能少，缺了就别掏钱。' }
     },
     {
@@ -653,7 +657,8 @@ window.GAME_DATA = {
   /* 单音积木：freq 起始频率 · dur 时长(秒) · type 波形 · vol 音量 · when 延迟(秒)
      slide 为频率偏移（配合 exponentialRamp 做滑音） · toBgmBus=true 走 BGM 音量轨随淡入淡出 */
   function tone(freq, dur, type = 'sine', vol = .22, when = 0, slide = 0, toBgmBus = false) {
-    const c = ac(); if (!c || muted) return;
+    if (muted) return; /* 静音时不创建/唤醒 AudioContext */
+    const c = ac(); if (!c) return;
     const t0 = c.currentTime + when;
     const o = c.createOscillator(), g = c.createGain();
     live.add(o);
@@ -773,7 +778,7 @@ window.GAME_DATA = {
       <rect x="80" y="240" width="120" height="46" rx="12" fill="#FFF6E6"/><rect x="80" y="470" width="120" height="46" rx="12" fill="#FFF6E6"/>
       <rect x="68" y="262" width="292" height="38" rx="8" fill="${C.teal}"/><rect x="68" y="492" width="292" height="44" rx="8" fill="${C.coral}"/>
       <rect x="340" y="56" width="12" height="290" fill="${C.goldL}"/><rect x="362" y="56" width="12" height="290" fill="${C.goldL}"/>
-      <rect x="340" y="352" width="12" height="290" fill="${C.goldL}"/><rect x="362" y="352" width="12" height="290" fill="${C.goldL}"/>`;
+      <rect x="340" y="352" width="12" height="428" fill="${C.goldL}"/><rect x="362" y="352" width="12" height="428" fill="${C.goldL}"/>`;
     // 干扰：泰迪熊（坐上铺床垫，方脑袋三角耳）
     s += `<g transform="rotate(-2 290 238)"><path d="M268 222 l-12 -16 20 -2z" fill="#C98F4A"/><path d="M312 222 l12 -16 -20 -2z" fill="#C98F4A"/><rect x="266" y="214" width="48" height="48" rx="12" fill="#C98F4A"/><rect x="280" y="228" width="20" height="16" rx="5" fill="#F2D9B0"/><circle cx="280" cy="230" r="2.5" fill="${C.ink}"/><circle cx="300" cy="230" r="2.5" fill="${C.ink}"/></g>`;
     // 书桌（桌面线条带一点手绘起伏）
@@ -1236,7 +1241,13 @@ window.drawPoster = function (canvas, st) {
           if (g.dataset.done) continue;
           const h = g.querySelector('.hit');
           const x = +h.getAttribute('x'), y = +h.getAttribute('y');
-          if (p.x >= x && p.x <= x + +h.getAttribute('width') && p.y >= y && p.y <= y + +h.getAttribute('height')) { hitHazard(g); break; }
+          if (p.x >= x && p.x <= x + +h.getAttribute('width') && p.y >= y && p.y <= y + +h.getAttribute('height')) {
+            hitHazard(g);
+            /* 教学期点中隐患：本关提示同步记为已用，避免「教学白捡分 + 提示再发光」双份福利 */
+            state.hintUsed = true;
+            $('btn-hint').disabled = true; $('hint-count').textContent = '0';
+            break;
+          }
         }
       }
     }
@@ -1244,6 +1255,10 @@ window.drawPoster = function (canvas, st) {
     if ($('guide').classList.contains('hidden')) return;
     if ($('guide-2').classList.contains('hidden')) {
       $('guide-1').classList.add('hidden');
+      /* 第 1 步若点中隐患把提示用掉了，第 2 步话术照实说，不给灰掉的按钮打广告 */
+      $('guide-2').querySelector('.guide-bubble').innerHTML = state.hintUsed
+        ? '刚才那下就揪出一处！<br>本关提示算用过啦'
+        : '卡住了？上面「💡 提示」<br>每关能用 1 次';
       $('guide-2').classList.remove('hidden');
       removeGuidePoint();
       $('guide-up').classList.remove('hidden');
@@ -1273,6 +1288,7 @@ window.drawPoster = function (canvas, st) {
     pendingBegin = null;
     state.level = i; state.found = {}; state.hintUsed = false; state.quizDone = false;
     state.timeLeft = D.levelTime; state.running = false; /* 过场动画期间不接收点击、不计时 */
+    state.times.length = Math.max(state.times.length, i + 1); /* 补齐空洞，总用时统计不吃稀疏数组 */
     const lv = D.levels[i];
     $('hud-level').textContent = `第 ${i + 1} 关`;
     $('hud-scene').textContent = lv.name;
@@ -1329,6 +1345,7 @@ window.drawPoster = function (canvas, st) {
   function stopLevel() { state.running = false; clearInterval(state.timer); window.Sfx.stopBgm(); hideGuide(); }
 
   function askHome() {
+    pendingBegin = null; /* 主动退出后，过场遗留的开赛动作作废 */
     /* 教学未看完点首页：直接退，不弹暂停框（计时没走过） */
     if (!$('guide').classList.contains('hidden')) { hideGuide(); show('screen-intro'); refreshIntro(); return; }
     /* 结算/揭示窗口期计时已停，直接退出（延时弹窗有画面守卫） */
@@ -1407,6 +1424,7 @@ window.drawPoster = function (canvas, st) {
   /* 长按约 700ms 点亮提示按钮，手指移动会取消 */
   let lpTimer = null, lpFired = false;
   $('stage').addEventListener('pointerdown', (e) => {
+    lpFired = false; /* 新手势按下即让上一轮长按的吞点击标记过期（补发 click 若来过，已在 click 处理器里吞掉并清） */
     if (!state.running || state.hintUsed) return;
     const x0 = e.clientX, y0 = e.clientY;
     const cancel = () => {
@@ -1422,7 +1440,7 @@ window.drawPoster = function (canvas, st) {
       const b = $('btn-hint');
       b.classList.add('guide-glow');
       setTimeout(() => { if ($('guide').classList.contains('hidden')) b.classList.remove('guide-glow'); }, 2400);
-      toast('卡住了？上面那颗💡能用一次');
+      toast('卡住了？上面那颗💡能用一次'); /* lpFired 靠消费即清：补发 click 吞掉、或下一手势 pointerdown 过期，按住多久松手都吞得到 */
       setTimeout(() => { lpFired = false; }, 800);
     }, 700);
     window.addEventListener('pointermove', move);
@@ -1697,7 +1715,7 @@ window.drawPoster = function (canvas, st) {
     window.Sfx.setMuted(m);
     $('btn-mute').textContent = m ? '🔇' : '🔊';
     try { localStorage.setItem(MUTE_KEY, m ? '1' : '0'); } catch (e) { }
-    if (!m) window.Sfx.tap();
+    if (!m) { window.Sfx.unlock(); window.Sfx.tap(); } /* 取消静音的手势里先解锁 ctx 再出声 */
   });
   $('btn-restart').addEventListener('click', newGame);
   $('btn-home-final').addEventListener('click', () => { window.Sfx.tap(); show('screen-intro'); refreshIntro(); });
@@ -1708,9 +1726,13 @@ window.drawPoster = function (canvas, st) {
   });
   $('btn-back-final').addEventListener('click', () => show('screen-final'));
   function refreshPoster() {
+    if (posterBusy) return; /* 低端机 toDataURL 耗时长，防 resize 连发把主线程打满 */
+    posterBusy = true;
+    setTimeout(() => { posterBusy = false; }, 300);
     window.drawPoster($('poster-canvas'), window.__finalStats);
     $('btn-download').href = $('poster-canvas').toDataURL('image/png');
   }
+  let posterBusy = false;
   /* 手机地址栏收展会连发 resize，防抖避免反复重绘大画布 */
   let resizeTimer = null;
   window.addEventListener('resize', () => {
