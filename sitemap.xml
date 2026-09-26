@@ -36,6 +36,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://xiaohetaoo.github.io/huiyan-shisi.html</loc>
+    <lastmod>2026-09-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://xiaohetaoo.github.io/posts/games-i-played.html</loc>
     <lastmod>2026-09-06</lastmod>
     <priority>0.6</priority>
@@ -163,6 +168,11 @@
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html#p=%E6%94%AF%E6%8C%81%E6%88%91</loc>
     <lastmod>2026-08-29</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://xiaohetaoo.github.io/projects.html#p=%E6%85%A7%E7%9C%BC%E8%AF%86%E7%A7%81</loc>
+    <lastmod>2026-09-26</lastmod>
     <priority>0.5</priority>
   </url>
 </urlset>

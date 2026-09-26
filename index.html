@@ -11,7 +11,7 @@
   try{var _d=sessionStorage.getItem("xht-nav-dir");
     if(_d==="deep"||_d==="back"||_d==="side"){sessionStorage.removeItem("xht-nav-dir");
       document.documentElement.classList.add(_d==="deep"?"nav-deep":_d==="side"?"nav-side":"nav-back");}
-    else if(/\/(?:teacher-[a-z]+|birthday)\.html(?:[?#]|$)/.test(document.referrer||"")){
+    else if(/\/(?:teacher-[a-z]+|birthday|huiyan-shisi)\.html(?:[?#]|$)/.test(document.referrer||"")){
       document.documentElement.classList.add("nav-back");}}catch(e){}</script>
   <script>/* 首页入场动画（每会话一次，main.js 6.7）：在首次渲染前同步挂 intro-pending ——
      「自我介绍」按钮隐藏 + 整页压暗 + 锁交互。不放行的情况（本会话播过 / 减动效 /
@@ -92,7 +92,7 @@
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20260926a" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260926b" />
   <!-- 百度统计 -->
   <script>
 var _hmt = _hmt || [];
@@ -269,6 +269,7 @@ var _hmt = _hmt || [];
               <li><a href="https://space.bilibili.com/1114603634" target="_blank" rel="noopener">视频创作</a></li>
               <li><a href="https://vdse.bdstatic.com//192d9a98d782d9c74c96f09db9378d93.mp4" target="_blank" rel="noopener">神秘礼物</a></li>
               <li><a href="https://www.ifdian.net/a/xiaohetao" target="_blank" rel="noopener">支持我</a></li>
+              <li><a href="huiyan-shisi.html">慧眼识私</a></li>
               <li><a href="https://wwbau.lanzoub.com/i1IBC47dyd6d" target="_blank" rel="noopener">抗击病毒</a></li>
               <li><a href="https://wwbau.lanzoub.com/i4bXx47dv8wb" target="_blank" rel="noopener">巅峰竞技场</a></li>
               <li><a href="https://wwbau.lanzoub.com/iYA7o46m6o4h" target="_blank" rel="noopener">地理标识</a></li>
@@ -372,10 +373,10 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20260926a"></script>
+  <script src="assets/js/main.js?v=20260926b"></script>
   <!-- 节日祝福弹窗：文案与数据都在 festival.js 顶部（= 审核稿定稿），样式自包含不依赖 style.css；
        预览任一节日加 ?festival=<id>（如 ?festival=qixi），正式弹出门槛见文件头注释 -->
-  <script src="assets/js/festival.js?v=20260926a"></script>
+  <script src="assets/js/festival.js?v=20260926b"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

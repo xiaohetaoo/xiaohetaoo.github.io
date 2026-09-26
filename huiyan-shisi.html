@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<!--
+  慧眼识私 · 反走私科普小游戏（第四届“钱江杯”参赛作品）
+  单文件自包含 H5：零外部依赖、无构建，整页直接部署；改动后跑根目录 check-site.js 与探针回归。
+  文件结构（按出现顺序；除百度统计外，各段横幅均以「script N ·」标注）：
+    <style>    全部样式：主题变量 → 通用件 → 四块屏幕 → 弹窗/浮层，分节横幅索引自明
+    （百度统计  预渲染守卫，全站同款，见其上方注释）
+    script 1   灰屏兜底看门狗：脚本加载失败 / 启动异常时给出「重新加载」入口
+    script 2   GAME_DATA：关卡与科普文案（key/label/quiz 字段约定见其头部注释）
+    script 3   Sfx：WebAudio 合成音效 + 关卡 BGM（零素材；主音量轨与 BGM 音量轨分离）
+    script 4   SCENES：五关场景 SVG（750×1000，字符串拼接，按 id 缓存）
+    script 5   drawPoster：结算海报 Canvas 绘制（750×1250）
+    script 6   主逻辑：状态机 / 四屏切换 / 计时 / 命中判定 / 弹窗委托 / 存档 / 封面拖拽
+  收录进博客的增量（相对原版）：左上角返回首页、head 全站口径、百度统计（预渲染守卫）、
+  放开缩放（viewport + touch-action）、封面拖拽热区 #lens-hit（机制见样式表内注释）。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="走私隐患，看你能找到几个">
+<meta property="og:type" content="website">
+<meta property="og:title" content="慧眼识私 · 反走私守护官挑战">
+<meta property="og:description" content="考考眼力，敢不敢全找出来？">
+<meta property="og:url" content="https://xiaohetaoo.github.io/huiyan-shisi.html">
+<meta property="og:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png">
+<meta property="og:site_name" content="小核桃的个人博客">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="慧眼识私 · 反走私守护官挑战">
+<meta name="twitter:description" content="考考眼力，敢不敢全找出来？">
+<meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png">
+<link rel="canonical" href="https://xiaohetaoo.github.io/huiyan-shisi.html">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "慧眼识私 · 反走私科普小游戏",
+  "description": "《慧眼识私》是一款反走私科普小游戏，第四届“钱江杯”参赛作品。",
+  "inLanguage": "zh-CN",
+  "url": "https://xiaohetaoo.github.io/huiyan-shisi.html",
+  "isPartOf": { "@type": "WebSite", "name": "小核桃的个人博客", "url": "https://xiaohetaoo.github.io" }
+}
+</script>
+<title>慧眼识私 · 反走私 H5 小游戏 | 小核桃的个人博客</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%230B3A5D'/><path d='M50 22l7 15 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2z' fill='%23E8A93C'/></svg>">
+<style>
+/* 慧眼识私 · 海关蓝 × 暖阳橙 */
+:root{
+  --blue-900:#0B3A5D; --blue-700:#12507E; --blue:#1B6FA8;
+  --paper:#FFF8EF; --ink:#26221C;
+  --red:#E64545; --red-dark:#B32E2E;
+  --gold:#E8A93C; --sun:#FFC94D; --orange:#F58642;
+  --brown-ink:#5A4632; --muted:#9A8A76;
+  --green:#3CB371;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{text-size-adjust:100%;-webkit-text-size-adjust:100%;}
+html,body{height:100%;}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+  background:#0B3A5D;
+  color:var(--ink); user-select:none; -webkit-user-select:none;
+  /* 放开缩放的配套：manipulation 关掉双击变焦（快速点隐患/蜡烛不被误触），
+     捏合缩放在非游戏画布区照常可用（无障碍）；与各处 touch-action 沿命中链相交 */
+  touch-action:manipulation;
+}
+/* 应用外壳：竖屏手机版式，宽 480 封顶；桌面居中，两侧露出 body 深蓝底 */
+#app{
+  max-width:480px; margin:0 auto; min-height:100vh; min-height:100dvh;
+  display:flex; flex-direction:column; position:relative;
+  background:var(--paper);
+  box-shadow:0 0 60px rgba(0,0,0,.5); overflow:hidden;
+}
+.hidden{display:none !important;}
+/* 四块屏幕（intro/game/final/poster）共用外壳：纵向 flex + 底部安全区内边距 + 进场动画；hidden 类互斥显隐 */
+.screen{flex:1;display:flex;flex-direction:column;padding:20px 18px calc(18px + env(safe-area-inset-bottom));animation:fadein .35s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* 通用 */
+.card{background:#fff;border-radius:18px;box-shadow:0 8px 24px rgba(90,70,50,.10);padding:16px;border:1px solid #F4E7D3;}
+.btn{display:block;width:100%;box-sizing:border-box;border:none;border-radius:999px;padding:16px 20px;font-size:18px;font-weight:800;cursor:pointer;transition:transform .12s;font-family:inherit;letter-spacing:2px;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--orange);color:#fff;box-shadow:0 10px 26px rgba(245,134,66,.45), inset 0 -3px 0 rgba(0,0,0,.12);margin-top:14px;}
+.btn-ghost{background:#fff;color:var(--blue-700);border:2px solid var(--gold);margin-top:10px;font-weight:700;padding:14px 20px;}
+.modal .btn-primary,.modal .btn-ghost{margin-left:18px;margin-right:18px;width:calc(100% - 36px);box-sizing:border-box;}
+.btn-link{background:transparent;color:var(--muted);font-size:13px;padding:8px;margin-top:6px;text-decoration:none;font-weight:400;letter-spacing:0;}
+
+/* 封面引导页 */
+#screen-intro{padding-top:14px;justify-content:center;}
+.cover-hint{margin:12px 0;font-size:12px;color:var(--muted);text-align:center;letter-spacing:1px;flex:0 0 auto;}
+.ai-note{margin:10px 0 0;font-size:11px;color:var(--muted);opacity:.75;text-align:center;letter-spacing:1px;flex:0 0 auto;}
+#cover-lens{cursor:grab;touch-action:none;}
+#cover-lens:active{cursor:grabbing;}
+/* 放大镜触摸热区 #lens-hit：三条缺一不可的机制——
+   ① Chromium 判手势不看 SVG 内部节点的 touch-action（生效值只取 svg 根的 pan-y），
+     镜身的 none 必须落在 HTML 盒子上才生效。热区与镜身命中圆（r=104@480×360）同位同宽：
+     镜身起手的拖拽保留完整二维自由度（含拖到 12360 徽标的彩蛋），封面其余区域走 pan-y 滚屏；
+   ② 热区跟随镜片：拖动时 JS 按 getScreenCTM 缩放把位移同步写进本盒的 style.transform
+     （见主逻辑「封面放大镜拖动」段），镜片停哪儿热区跟到哪儿，松手不回弹；
+   ③ z-index:1 压过 .cover-title：镜片拖到标题字面上时热区必须仍可命中（标题纯装饰无交互） */
+#lens-hit{position:absolute;left:47.5%;top:25.5%;width:43.3%;height:57.8%;touch-action:none;cursor:grab;z-index:1;}
+#lens-hit:active{cursor:grabbing;}
+.lens-bob{animation:lensBob 5s ease-in-out infinite;}
+.lens-bob.still{animation:none;}
+.cover-badge{opacity:0;transition:opacity .4s;}
+.cover-badge.show{opacity:1;}
+@keyframes lensBob{0%,100%{transform:translate(0,0)}50%{transform:translate(-16px,12px)}}
+/* 封面容器：圆角裁切框——SVG、热区、标题都裁在同一盒内（热区跟随镜片时同样被裁） */
+.cover{position:relative;border-radius:22px;overflow:hidden;box-shadow:0 14px 34px rgba(11,58,93,.28);flex:0 0 auto;}
+.cover svg{display:block;width:100%;touch-action:pan-y;cursor:grab;} /* svg 根只接管横向：纵向还给滚屏（引导页小屏要滚动，从封面起手划不动=版式事故）。镜身起手的二维拖拽（含纵拖到 12360 徽标的彩蛋）靠盖在镜身上的 HTML 热区 #lens-hit（touch-action:none）；77 行 #cover-lens 的 none 因此对 Chromium 是无效声明——它判手势不看 SVG 内部节点——保留只为完全按规范实现手势的引擎 */
+.cover svg:active{cursor:grabbing;}
+.cover-title{position:absolute;left:22px;right:22px;bottom:16px;display:flex;justify-content:center;}
+.cover-title h1{
+  font-size:clamp(38px, 13.5vw, 58px);font-weight:900;letter-spacing:.18em;text-indent:.18em;line-height:1.05;white-space:nowrap;
+  color:var(--sun);
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.45));
+}
+.intro-card{padding:14px 16px;}
+.role-line{display:flex;gap:12px;align-items:center;}
+.role-badge{flex:0 0 auto;width:48px;height:48px;border-radius:14px;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;box-shadow:0 4px 10px rgba(232,169,60,.4);}
+.role-line b{color:var(--blue-900);font-size:16px;}
+.role-line p{color:#7A6A55;font-size:13px;line-height:1.65;margin-top:4px;}
+.rules{list-style:none;margin-top:12px;border-top:1px dashed #EFDCC2;padding-top:12px;display:flex;flex-direction:column;gap:9px;}
+.rules li{position:relative;padding-left:18px;font-size:14px;color:#5F5142;line-height:1.55;}
+.rules .dot{position:absolute;left:0;top:.78em;transform:translateY(-50%);}
+.rules .hl{color:var(--red-dark);font-weight:900;font-size:15px;}
+.rules .hl2{color:var(--orange);font-weight:900;font-size:15px;}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+.dot-red{background:var(--red);} .dot-blue{background:var(--blue);}
+
+/* HUD */
+#screen-game{padding:12px 12px calc(10px + env(safe-area-inset-bottom));position:relative;}
+.hud{background:var(--blue-700);border-radius:16px;padding:10px 14px;color:#fff;box-shadow:0 8px 20px rgba(11,58,93,.3);position:relative;overflow:hidden;}
+.hud-row{display:flex;align-items:center;gap:10px;}
+.hud-level{background:var(--red);font-size:13px;font-weight:800;padding:4px 12px;border-radius:999px;box-shadow:0 3px 8px rgba(230,69,69,.4);}
+.hud-scene{font-size:16px;font-weight:800;flex:1;letter-spacing:1px;}
+.icon-btn{position:relative;z-index:2;background:rgba(255,255,255,.16);border:none;border-radius:8px;font-size:17px;padding:5px 9px;cursor:pointer;line-height:1;}
+.hud-row,.timer-wrap{position:relative;z-index:2;}
+.timer-wrap{display:flex;align-items:center;gap:8px;margin:8px 0 6px;}
+.timer-bar{flex:1;height:10px;background:rgba(255,255,255,.18);border-radius:999px;overflow:hidden;}
+.timer-fill{height:100%;width:100%;border-radius:999px;background:var(--sun);transition:width .95s linear;} /* .95s 线性过渡贴着 1s 计时心跳：秒间平滑收缩不跳格 */
+.timer-fill.warn{background:var(--red);}
+@keyframes blink{to{opacity:.5}}
+/* tabular-nums 让数字等宽：倒数跳秒时末位不左右抖 */
+.timer-num{font-size:18px;font-weight:900;min-width:34px;text-align:right;font-variant-numeric:tabular-nums;color:var(--sun);transform-origin:right center;}
+.timer-num.danger{color:#FF8A75;animation:numPulse .55s ease-in-out infinite alternate;text-shadow:0 0 14px rgba(255,110,80,.65);}
+.timer-num.sprint{animation-duration:.36s;color:#FF6B57;text-shadow:0 0 18px rgba(255,90,60,.85);}
+@keyframes numPulse{from{transform:scale(1)}to{transform:scale(1.28)}}
+.hud-sub{font-size:13px;color:#E8D9BD;justify-content:space-between;}
+.hud-sub b{color:#fff;font-size:16px;}
+.btn-hint{background:var(--sun);border:none;color:#5A3A00;font-size:12.5px;font-weight:800;border-radius:999px;padding:6px 13px;cursor:pointer;font-family:inherit;box-shadow:0 3px 8px rgba(232,169,60,.45);}
+.btn-hint:disabled{background:#5E7A8E;color:#B7CBD9;cursor:not-allowed;box-shadow:none;}
+
+/* 舞台 */
+.stage-wrap{flex:1;position:relative;margin-top:10px;border-radius:16px;overflow:hidden;box-shadow:0 10px 26px rgba(120,80,30,.18);background:#FFF9F0;border:1px solid #F0E2CC;}
+.stage{position:absolute;inset:0;}
+.stage svg{width:100%;height:100%;display:block;}
+/* 隐患/彩蛋的命中模型：可见图形只是画，点击判定全看场景 JS 叠加的透明矩形
+   （.hit 命中区、.egg 彩蛋区，见 script 4 的 haz()/egg()） */
+.hazard{cursor:pointer;}
+.hit{pointer-events:all;}
+
+/* 找到隐患的红色标记圈（挂在 SVG 根上，不挡后续点击） */
+.ring{pointer-events:none;}
+.ring circle{fill:none;stroke:var(--red);stroke-width:6;}
+.ring .ring-outer{stroke:var(--gold);stroke-dasharray:10 8;}
+.ring-pop{transform-box:fill-box;transform-origin:center;animation:pop .32s cubic-bezier(.17,.89,.32,1.24);}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.hint-glow{fill:rgba(255,233,168,.6);stroke:#E8A93C;stroke-width:5;opacity:0;pointer-events:none;}
+.hazard.hinted .hint-glow{animation:glow 1s ease-in-out 3;}
+@keyframes glow{0%,100%{opacity:0}50%{opacity:1}}
+.ripple{fill:none;stroke:#B89A72;stroke-width:5;transform-box:fill-box;transform-origin:center;animation:rip .6s ease-out forwards;}
+@keyframes rip{from{transform:scale(.25);opacity:.9}to{transform:scale(1.6);opacity:0}}
+
+/* 失败揭示：漏掉隐患的红虚线圈 + 名称标签 */
+.reveal-ring{fill:rgba(230,69,69,.08);stroke:var(--red);stroke-width:7;stroke-dasharray:20 14;transform-box:fill-box;animation:revealIn .34s cubic-bezier(.22,.9,.3,1.04) both, revealBlink 1s .4s ease-in-out 3 alternate;}
+@keyframes revealIn{from{opacity:0;transform:scale(1.5)}to{opacity:1;transform:scale(1)}}
+@keyframes revealBlink{from{opacity:.55}to{opacity:1}}
+.reveal-label{font-size:36px;font-weight:800;fill:var(--red-dark);stroke:#FFF9F0;stroke-width:9;paint-order:stroke;text-anchor:middle;font-family:inherit;opacity:0;animation:labelIn .35s .25s ease-out forwards;}
+@keyframes labelIn{to{opacity:1}}
+
+/* Toast */
+/* 轻提示浮层：不接收点击；.ok 红底强调（揪出隐患/答对时用） */
+.toast{position:absolute;left:50%;top:10px;transform:translateX(-50%) translateY(-8px);background:rgba(38,34,28,.88);color:#fff;font-size:14px;line-height:1.45;padding:8px 16px;border-radius:18px;opacity:0;pointer-events:none;transition:opacity .18s ease, transform .18s cubic-bezier(.2,.8,.3,1);white-space:normal;text-align:center;max-width:84%;z-index:8;box-shadow:0 6px 18px rgba(38,34,28,.28);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{background:var(--red);font-weight:800;letter-spacing:1px;}
+
+/* 关卡开场过场（1 秒大字，期间不计时） */
+.lv-open{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--blue-900);animation:lvIn .3s ease;pointer-events:none;}
+.lv-open.out{animation:lvOut .35s ease forwards;}
+.lv-open-n{font-size:19px;font-weight:800;color:var(--sun);letter-spacing:5px;text-indent:5px;}
+.lv-open-s{font-size:31px;font-weight:900;color:#fff;letter-spacing:4px;text-indent:4px;text-shadow:0 4px 16px rgba(255,201,77,.35);}
+@keyframes lvIn{from{opacity:0}to{opacity:1}}
+@keyframes lvOut{from{opacity:1}to{opacity:0}}
+
+/* 首关新手教学（两步点击推进，期间不计时） */
+.guide{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;background:rgba(38,34,28,.28);pointer-events:auto;cursor:pointer;animation:fadein .3s ease;}
+.guide-step{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;height:100%;width:100%;}
+/* 手指在画面中部时，气泡自动让位到顶端/底端（底端避开"点击屏幕继续"胶囊） */
+.guide-step.bubble-top{justify-content:flex-start;padding-top:16px;}
+.guide-step.bubble-bottom{justify-content:flex-end;padding-bottom:60px;}
+.guide-bubble{background:rgba(38,34,28,.88);color:#fff;font-size:14px;font-weight:700;line-height:1.6;padding:10px 16px;border-radius:22px;letter-spacing:.5px;box-shadow:0 8px 20px rgba(38,34,28,.35);max-width:84%;text-align:center;}
+/* 第一步手指：由 JS 注入场景 SVG 内（图层在物品之上、气泡之下），指尖精确对准隐患 */
+.guide-point{pointer-events:none;animation:guideTap .85s cubic-bezier(.3,.7,.3,1) infinite;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45));}
+@keyframes guideTap{0%,100%{transform:translateY(0)}45%{transform:translateY(26px)}60%{transform:translateY(16px)}}
+/* 第二步：☝️ 由 JS 定位到提示按钮正下方 */
+.guide-up{position:absolute;left:50%;top:50%;pointer-events:none;transform:translate(-50%,0);z-index:9;}
+.guide-up span{display:block;font-size:36px;line-height:1;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));animation:guideUp .7s ease-in-out infinite alternate;}
+@keyframes guideUp{from{transform:translateY(0)}to{transform:translateY(-14px)}}
+.guide-next{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-size:12.5px;color:#fff;background:rgba(38,34,28,.55);padding:5px 14px;border-radius:999px;letter-spacing:1px;animation:blink 1.2s infinite alternate;}
+.btn-hint.guide-glow{animation:hintGlow .65s ease-in-out infinite alternate;}
+@keyframes hintGlow{from{box-shadow:0 3px 8px rgba(232,169,60,.45)}to{box-shadow:0 0 0 6px rgba(255,201,77,.6),0 3px 12px rgba(232,169,60,.6);transform:translateY(-2px)}}
+
+/* 弹窗 */
+/* 弹窗层（z50）：盖过返回首页按钮（z40），又被灰屏兜底（z999）盖住 */
+.modal-mask{position:fixed;inset:0;background:rgba(35,22,10,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:22px;animation:fadein .2s;}
+.modal{width:100%;max-width:400px;max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);padding:0 0 20px;text-align:center;animation:pop .35s cubic-bezier(.2,1.5,.4,1);overflow-y:auto;overscroll-behavior:contain;}
+.modal-head{background:var(--blue-700);padding:16px 20px 18px;position:relative;}
+.modal-head .tag{display:inline-block;font-size:12.5px;font-weight:800;color:#5A3A00;background:var(--sun);border-radius:999px;padding:4px 14px;letter-spacing:1px;}
+.modal-head .tag.fail{background:var(--red);color:#fff;}
+.modal-head h3{color:#fff;font-size:21px;margin-top:8px;letter-spacing:2px;}
+.modal-head h3.pause-title{font-size:34px;letter-spacing:10px;text-align:center;text-indent:10px;margin-top:2px;}
+.modal-head .scene-name{color:var(--sun);font-size:13px;margin-top:4px;font-weight:600;}
+.modal-body{padding:14px 18px 0;text-align:left;}
+.tip-box{background:#FFF3DE;border-left:4px solid var(--orange);padding:12px 14px;border-radius:0 12px 12px 0;font-size:14.5px;line-height:1.8;color:#6B5637;}
+.tip-box b{color:var(--red-dark);}
+.found-list{margin-top:10px;font-size:14px;color:#8A7358;line-height:1.9;}
+.found-list b{color:var(--blue-700);}
+.quiz{margin-top:14px;background:#F4F9F4;border-radius:12px;padding:12px 14px;}
+.quiz .q{font-size:15px;font-weight:700;color:var(--ink);line-height:1.7;}
+.quiz .opts{display:flex;gap:12px;margin-top:12px;}
+.quiz .opts .btn{flex:1;padding:11px;font-size:15px;margin-top:0;letter-spacing:0;}
+.btn-true{background:var(--green);color:#fff;box-shadow:0 5px 14px rgba(60,179,113,.35);}
+.btn-false{background:var(--red);color:#fff;box-shadow:0 5px 14px rgba(230,69,69,.35);}
+.quiz-result{margin-top:10px;font-size:14px;font-weight:700;min-height:18px;line-height:1.65;}
+.quiz-result.ok{color:var(--green);} .quiz-result.no{color:var(--red-dark);}
+.quiz-result.no b{color:var(--red);}
+
+/* 知识回顾弹窗 */
+.rev-sec{margin-top:16px;padding-top:14px;border-top:1px dashed #EFDCC2;}
+.rev-sec:first-child{margin-top:0;padding-top:0;border-top:none;}
+.rev-lv{display:flex;align-items:center;gap:8px;font-size:15.5px;font-weight:900;color:var(--blue-900);margin-bottom:8px;letter-spacing:1px;}
+.rev-n{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:var(--gold);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;font-weight:800;}
+.rev-haz{font-size:14px;color:#8A7358;line-height:1.9;margin-bottom:8px;}
+.rev-haz b{color:var(--blue-700);}
+.rev-ans{margin-top:8px;font-size:14px;font-weight:700;color:var(--green);line-height:1.65;}
+.modal .btn-primary,.modal .btn-ghost{margin-left:18px;margin-right:18px;width:calc(100% - 36px);}
+.modal .btn-link{margin-top:0;font-size:13px;padding:8px;}
+
+/* 结算页 */
+#screen-final{justify-content:center;text-align:center;}
+.final-head{display:flex;flex-direction:column;align-items:center;}
+.medal{width:min(46%,190px);filter:drop-shadow(0 12px 26px rgba(232,169,60,.5));animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.final-title{font-size:23px;color:var(--blue-900);margin-top:12px;letter-spacing:3px;font-weight:900;}
+.final-rank{margin-top:6px;font-size:15px;color:var(--orange);font-weight:900;}
+.stat-card{display:flex;justify-content:space-around;margin-top:18px;padding:18px 8px;background:#fff;}
+.stat{display:flex;flex-direction:column;gap:2px;}
+.stat b{font-size:26px;color:var(--blue-900);font-weight:900;}
+.stat span{font-size:12px;color:var(--muted);letter-spacing:1px;}
+.final-slogan{margin-top:16px;font-size:15px;color:var(--brown-ink);line-height:1.8;font-weight:700;}
+.final-slogan small{color:var(--muted);font-weight:400;font-size:12.5px;}
+.final-actions{display:flex;gap:12px;margin-top:10px;}
+.final-actions .btn{margin-top:0;flex:1;font-size:16px;letter-spacing:1px;padding:14px 8px;}
+
+/* 海报页 */
+#screen-poster{align-items:center;justify-content:flex-start;padding-top:14px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.poster-tip{font-size:13px;color:#8A7358;margin-bottom:10px;flex:0 0 auto;}
+/* 宽度 = 可用高度 × 海报比例(750/1250=0.6)，保证海报完整显示且不被按钮遮挡 */
+.poster-box{width:min(84%, 340px, calc((100vh - 200px) * 0.6));flex:0 0 auto;border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(11,58,93,.4);}
+.poster-box canvas{width:100%;height:auto;display:block;}
+.poster-actions{width:min(84%,340px);display:flex;gap:12px;flex:0 0 auto;margin-top:14px;padding-bottom:env(safe-area-inset-bottom);}
+.poster-actions .btn{margin-top:0;flex:1;font-size:16px;letter-spacing:1px;padding:14px 8px;}
+a.btn{text-align:center;text-decoration:none;}
+
+/* 封面动画 */
+@keyframes pulseStar{0%,100%{transform:scale(1);filter:drop-shadow(0 0 8px rgba(255,201,77,.8))}50%{transform:scale(1.06);filter:drop-shadow(0 0 22px rgba(255,201,77,1))}}
+.big-star{transform-origin:center;transform-box:fill-box;animation:pulseStar 2.2s ease-out 2;}
+
+/* 微信灰屏兜底浮层：z999 全站最高层，只由看门狗脚本（head 内第 1 段 script）拉起 */
+#err-fallback{position:fixed;inset:0;z-index:999;background:var(--blue-900);align-items:center;justify-content:center;padding:32px;text-align:center;}
+.err-card{max-width:320px;}
+.err-card h3{color:#fff;font-size:19px;margin:16px 0 10px;letter-spacing:1.5px;}
+.err-card p{color:#C9DCEF;font-size:14px;line-height:1.8;margin-bottom:24px;}
+.err-card .btn{width:100%;margin-top:0;}
+
+/* 返回博客首页（左上角固定）：海关蓝玻璃底 + 金边，贴游戏视觉。
+   关卡进行页让位给 HUD 的 🏠（CSS 兄弟选择器，零 JS 改动）；
+   弹窗蒙层 z50 高于本按钮 z40，弹窗打开时自然盖住。 */
+.back-blog{position:fixed;top:max(12px, env(safe-area-inset-top));left:max(12px, env(safe-area-inset-left));z-index:40;display:inline-flex;align-items:center;gap:7px;padding:9px 15px 9px 12px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:1px;color:#EAF4FC;text-decoration:none;background:rgba(11,58,93,.6);border:1px solid rgba(255,201,77,.5);box-shadow:0 4px 14px rgba(7,31,53,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s,transform .2s;}
+.back-blog:hover{background:rgba(18,80,126,.8);transform:translateY(-1px);}
+.back-blog:active{transform:scale(.96);}
+.back-blog svg{width:14px;height:14px;}
+#screen-game:not(.hidden) ~ .back-blog{display:none;}
+
+</style>
+
+<!-- 百度统计（全站同款 + 预渲染守卫：首页投机规则会把本页设为悬停即预渲染，
+     预渲染副本里不注入、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
+<script>
+var _hmt = _hmt || [];
+(function () {
+  var load = function () {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?71e27b77d658234ecf485c0c6905cd9d";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  };
+  if (document.prerendering) {
+    document.addEventListener("prerenderingchange", load, { once: true });
+  } else {
+    load();
+  }
+})();
+</script>
+</head>
+<body>
+<div id="app">
+
+  <!-- 开篇引导页 -->
+  <section class="screen" id="screen-intro">
+    <div class="cover">
+      <svg viewBox="0 0 480 360" aria-hidden="true">
+        <defs>
+          <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#071F35"/><stop offset=".5" stop-color="#1B4A73"/>
+            <stop offset=".82" stop-color="#C96F3A"/><stop offset="1" stop-color="#F5A054"/>
+          </linearGradient>
+          <linearGradient id="starG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFF3C4"/><stop offset=".55" stop-color="#FFC94D"/><stop offset="1" stop-color="#E8862C"/>
+          </linearGradient>
+          <radialGradient id="sunG" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#FFD98A" stop-opacity=".95"/><stop offset="1" stop-color="#FFD98A" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="lensC"><circle cx="332" cy="196" r="74"/></clipPath>
+        </defs>
+        <!-- 天空与暖日落 -->
+        <rect width="480" height="360" fill="url(#skyG)"/>
+        <circle cx="240" cy="300" r="150" fill="url(#sunG)"/>
+        <!-- 星点（静态） -->
+        <g fill="#FFE9B8">
+          <circle cx="52" cy="46" r="2.6"/>
+          <circle cx="404" cy="52" r="2.4"/>
+          <circle cx="96" cy="104" r="1.8"/>
+        </g>
+        <!-- 国门剪影 -->
+        <g fill="#0A2C47">
+          <rect x="150" y="150" width="14" height="120"/><rect x="316" y="150" width="14" height="120"/>
+          <rect x="132" y="128" width="216" height="16" rx="5"/>
+          <rect x="158" y="110" width="164" height="14" rx="5"/>
+          <rect x="186" y="94" width="108" height="12" rx="5"/>
+          <rect x="60" y="200" width="52" height="70"/><rect x="46" y="192" width="80" height="10" rx="4"/>
+          <rect x="378" y="206" width="46" height="64"/>
+          <path d="M400 206 l0 -66 8 0 0 66z"/><path d="M368 148 l86 -18 4 10 -86 18z"/>
+        </g>
+        <!-- 主五角星 -->
+        <g class="big-star">
+          <path d="M240 108 l13.6 29.5 32 4.4 -23.6 22 6 31.9L240 181.5 212 195.8l6-31.9-23.6-22 32-4.4z" fill="url(#starG)" stroke="#B8860B" stroke-width="3"/>
+        </g>
+        <!-- 集装箱与海面 -->
+        <rect y="270" width="480" height="90" fill="#0B3A5D"/>
+        <g>
+          <rect x="18" y="240" width="70" height="30" rx="3" fill="#C0533B"/><rect x="26" y="212" width="70" height="30" rx="3" fill="#2E7DAF"/>
+          <rect x="104" y="240" width="70" height="30" rx="3" fill="#E8A93C"/><rect x="392" y="240" width="70" height="30" rx="3" fill="#2E7DAF"/>
+          <rect x="352" y="212" width="70" height="30" rx="3" fill="#C0533B"/>
+        </g>
+        <path d="M0 286 q60 -10 120 0 t120 0 t120 0 t120 0" stroke="#F5A054" stroke-width="4" fill="none" opacity=".55"/>
+        <path d="M0 306 q60 -10 120 0 t120 0 t120 0 t120 0" stroke="#3E92CC" stroke-width="3" fill="none" opacity=".4"/>
+        <!-- 放大镜（可拖动） -->
+        <g id="cover-lens">
+          <g class="lens-bob">
+          <circle cx="332" cy="196" r="104" fill="transparent"/><!-- 加大可抓取热区 -->
+          <circle cx="332" cy="196" r="82" fill="rgba(255,236,190,.10)"/>
+          <g clip-path="url(#lensC)"><rect x="258" y="122" width="148" height="148" fill="rgba(255,210,120,.16)"/></g>
+          <circle cx="332" cy="196" r="76" fill="none" stroke="#FFC94D" stroke-width="7"/>
+          <circle cx="332" cy="196" r="84" fill="none" stroke="rgba(255,201,77,.35)" stroke-width="3"/>
+          <rect x="392" y="262" width="18" height="66" rx="9" fill="#8A5A2B" transform="rotate(-42 401 295)"/>
+          <rect x="392" y="256" width="18" height="20" rx="8" fill="#C98F4A" transform="rotate(-42 401 266)"/>
+          </g>
+        </g>
+        <!-- 12360 徽标（隐藏，放大镜移到右上角才显现） -->
+        <g id="cover-badge" class="cover-badge">
+          <rect x="364" y="14" width="96" height="30" rx="15" fill="rgba(230,69,69,.92)"/>
+          <text x="412" y="34" text-anchor="middle" font-size="16" fill="#fff" font-weight="800">12360</text>
+        </g>
+      </svg>
+      <!-- 放大镜触摸热区（见样式表 #lens-hit 注释）：HTML 盒子上的 touch-action:none 才被手势判定采纳 -->
+      <div id="lens-hit" aria-hidden="true"></div>
+      <div class="cover-title">
+        <h1>慧眼识私</h1>
+      </div>
+    </div>
+    <p class="cover-hint">放大镜能拖，好像能看到隐藏的东西</p>
+
+    <div class="card intro-card">
+      <div class="role-line">
+        <span class="role-badge">见习</span>
+        <div>
+          <b>你的身份：反走私见习守护官</b>
+        </div>
+      </div>
+      <ul class="rules">
+        <li><i class="dot dot-red"></i>点击可疑的地方，每关有 <span class="hl">3 处隐患</span></li>
+        <li><i class="dot dot-blue"></i>每关限时 <span class="hl2">90 秒</span>。点错不扣分，超时能重来</li>
+      </ul>
+    </div>
+
+    <button class="btn btn-primary" id="btn-start">开始游戏</button>
+    <button class="btn btn-ghost hidden" id="btn-continue">继续闯关</button>
+    <button class="btn btn-link hidden" id="btn-reset">清空进度</button>
+    <p class="ai-note">本作品含 AI 生成内容</p>
+  </section>
+
+  <!-- 关卡进行页 -->
+  <section class="screen hidden" id="screen-game">
+    <header class="hud">
+      <!-- 行 1：关号 · 场景名 · 🏠 返回 · 🔊 静音 -->
+      <div class="hud-row">
+        <span class="hud-level" id="hud-level">第 1 关</span>
+        <span class="hud-scene" id="hud-scene">校园宿舍</span>
+        <button class="icon-btn" id="btn-home" title="返回首页">🏠</button>
+        <button class="icon-btn" id="btn-mute" title="静音开关">🔊</button>
+      </div>
+      <!-- 行 2：倒计时（JS 每秒刷条宽与数字） -->
+      <div class="timer-wrap">
+        <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+        <span class="timer-num" id="timer-num">90</span>
+      </div>
+      <!-- 行 3：进度 / 得分 / 提示按钮 -->
+      <div class="hud-row hud-sub">
+        <span>隐患 <b id="hud-found">0</b>/3</span>
+        <span>得分 <b id="hud-score">0</b></span>
+        <button class="btn-hint" id="btn-hint">💡 提示 ×<span id="hint-count">1</span></button>
+      </div>
+    </header>
+
+    <!-- 舞台：场景 SVG 注入 #stage；过场大字 / toast / 新手教学都叠在其上 -->
+    <div class="stage-wrap">
+      <div class="stage" id="stage"><!-- SVG 场景注入处 --></div>
+      <div class="lv-open hidden" id="lv-open">
+        <div class="lv-open-n" id="lv-open-n">第 1 关</div>
+        <div class="lv-open-s" id="lv-open-s">校园宿舍</div>
+      </div>
+      <div class="toast" id="toast"></div>
+      <div class="guide hidden" id="guide">
+        <div class="guide-step" id="guide-1">
+          <div class="guide-bubble">点点可疑的地方<br>把 3 处隐患揪出来</div>
+        </div>
+        <div class="guide-step hidden" id="guide-2">
+          <div class="guide-bubble">卡住了？上面「💡 提示」<br>每关能用 1 次</div>
+        </div>
+        <div class="guide-up hidden" id="guide-up"><span>☝️</span></div>
+        <div class="guide-next">点击屏幕继续 ▸</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 通用弹窗（通关科普 / 失败 / 确认） -->
+  <div class="modal-mask hidden" id="modal-mask">
+    <div class="modal card" id="modal-box"></div>
+  </div>
+
+  <!-- 结算 / 勋章页 -->
+  <section class="screen hidden" id="screen-final">
+    <div class="final-head">
+      <svg viewBox="0 0 200 200" class="medal" id="medal-svg">
+        <defs>
+          <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFE9A8"/><stop offset="1" stop-color="#E8A93C"/>
+          </linearGradient>
+          <linearGradient id="mg2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#F2C05A"/><stop offset="1" stop-color="#CE8F22"/>
+          </linearGradient>
+        </defs>
+        <path d="M62 8 L138 8 L120 78 L80 78 Z" fill="#E8A93C"/>
+        <path d="M74 8 L126 8 L116 46 L84 46 Z" fill="#B8860B" opacity=".45"/>
+        <circle cx="100" cy="118" r="66" fill="url(#mg)" stroke="#B8860B" stroke-width="4"/>
+        <circle cx="100" cy="118" r="52" fill="url(#mg2)"/>
+        <circle cx="100" cy="118" r="52" fill="none" stroke="#FFF6DF" stroke-width="2" stroke-dasharray="4 4"/>
+        <path d="M100 92 l5.5 12 13 1.6 -9.6 9 2.6 13.2 -11.5 -6.4 -11.5 6.4 2.6 -13.2 -9.6 -9 13 -1.6z" fill="#FFF6DF" stroke="#B8860B" stroke-width="1.5"/>
+        <text x="100" y="150" text-anchor="middle" font-size="13" fill="#7A4A10" font-weight="700">反走私守护官</text>
+      </svg>
+      <h2 class="final-title">慧眼识私</h2>
+      <p class="final-rank" id="final-rank">称号：金牌守护官</p>
+    </div>
+    <div class="card stat-card">
+      <div class="stat"><b id="stat-score">0</b><span>总得分</span></div>
+      <div class="stat"><b id="stat-time">0s</b><span>总通关用时</span></div>
+      <div class="stat"><b id="stat-found">15</b><span>找出隐患</span></div>
+    </div>
+    <p class="final-slogan">青年拒绝走私，全民守护国门<br><small>发现线索，打 12360 就行</small></p>
+    <button class="btn btn-primary" id="btn-poster">生成我的海报</button>
+    <button class="btn btn-ghost" id="btn-review">知识回顾 · 15 处隐患</button>
+    <div class="final-actions">
+      <button class="btn btn-ghost" id="btn-restart">再玩一次</button>
+      <button class="btn btn-ghost" id="btn-home-final">返回首页</button>
+    </div>
+  </section>
+
+  <!-- 海报页 -->
+  <section class="screen hidden" id="screen-poster">
+    <p class="poster-tip">长按图片就能保存、转发</p>
+    <div class="poster-box"><canvas id="poster-canvas" width="750" height="1250"></canvas></div>
+    <div class="poster-actions">
+      <a class="btn btn-primary" id="btn-download" download="慧眼识私-反走私守护官海报.png">下载海报</a>
+      <button class="btn btn-ghost" id="btn-back-final">返回</button>
+    </div>
+  </section>
+
+  <!-- 返回博客首页（左上角固定；进行中关卡由 HUD 的 🏠 负责，这里在关卡页让位） -->
+  <a class="back-blog" href="index.html" aria-label="返回博客首页">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    返回首页
+  </a>
+
+</div>
+
+<!-- 微信灰屏兜底：脚本异常/加载失败时给可操作的恢复入口 -->
+<div id="err-fallback" style="display:none">
+  <div class="err-card">
+    <h3>加载卡住了？</h3>
+    <p>微信偶尔闹点小脾气，点下面重新加载就好</p>
+    <button class="btn btn-primary" onclick="location.reload()">重新加载</button>
+  </div>
+</div>
+<script>
+/* ============ script 1 · 灰屏兜底看门狗 ============
+   load 后 2s 内没见到 GAME_DATA/SCENES/Sfx 三件套 → 亮兜底浮层；
+   资源（script/link）加载失败随时兜底（统计脚本除外）；运行期报错只在启动阶段算致命 */
+(function () {
+  var shown = false, bootOk = false;
+  function show() { if (shown) return; shown = true; var el = document.getElementById('err-fallback'); if (el) el.style.display = 'flex'; }
+  window.__showErrFallback = show;
+  window.addEventListener('error', function (e) {
+    /* 资源（脚本/样式）加载失败：任何时候都兜底。
+       统计脚本被广告拦截器拦掉属正常现象，不算页面故障 */
+    if (e.target && e.target !== window && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+      if (e.target.tagName === 'SCRIPT' && e.target.src && e.target.src.indexOf('hm.baidu.com') !== -1) return;
+      show(); return;
+    }
+    /* 运行时错误：只在启动阶段视为致命；进入游戏后微信内核注入的良性报错不再盖屏 */
+    if (!bootOk && e.message) show();
+  }, true);
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!window.GAME_DATA || !window.SCENES || !window.Sfx) { show(); return; }
+      bootOk = true;
+    }, 2000);
+  });
+})();
+</script>
+
+<script>
+/* ============ script 2 · 关卡与文案数据 ============
+   科普知识点表述请勿改义。字段约定：
+   levelTime 每关秒数 · scorePerHazard 单处隐患得分 · quizBonus 判断题答对加分
+   levels[].hazards[].key ↔ 场景 SVG 的 data-key（与 script 4 必须对齐）；label 为揭示/回顾展示名
+   quiz：q 题干 · a 正确答案（true=对） · why 答错时的解析 */
+window.GAME_DATA = {
+  levelTime: 90,
+  scorePerHazard: 100,
+  quizBonus: 50,
+  levels: [
+    {
+      id: 'dorm',
+      name: '校园宿舍',
+      hazards: [
+        { key: 'beauty',  label: '无报关凭证的进口化妆品' },
+        { key: 'bag',     label: '低价名牌包包' },
+        { key: 'snack',   label: '没有检疫证明的境外零食' }
+      ],
+      tip: '没报关、没检疫的境外货，帮忙带一单就可能沾上走私。跑腿费哪有那么好拿。',
+      quiz: { q: '判断题：帮同学代买几件没报关的境外货，赚点“跑腿费”，不算违法。', a: false,
+               why: '照样算。帮着代购、转卖没报关的货，也是走私。' }
+    },
+    {
+      id: 'live',
+      name: '带货直播间',
+      hazards: [
+        { key: 'supplement', label: '未贴中文标签的保健品' },
+        { key: 'watch',      label: '来源不明的境外手表' },
+        { key: 'poster',     label: '虚假“海外直邮”宣传海报' }
+      ],
+      tip: '进口货得贴中文标签、说清来路。裸瓶外文保健品、没出处的表，是典型水货，出了问题都没处索赔。',
+      quiz: { q: '判断题：没有中文标签的进口保健品，多半是走私水货，买了也不受法律保护。', a: true,
+               why: '正经进口货，中文标签和溯源一样都不能少，缺了就别掏钱。' }
+    },
+    {
+      id: 'station',
+      name: '快递驿站跨境包裹',
+      hazards: [
+        { key: 'tobacco', label: '超量未申报烟酒包裹' },
+        { key: 'hidden',  label: '藏匿在日用品内的违禁品' },
+        { key: 'waybill', label: '伪造面单的国际快件' }
+      ],
+      tip: '跨境寄件有数量和金额限制。把烟酒拆成几包寄、乱改品名“省税”，就是走私手法。',
+      quiz: { q: '判断题：把超量烟酒拆成多个包裹寄、伪报品名“省税”，属于走私行为。', a: true,
+               why: '伪报品名、拆分偷运，正是邮寄渠道走私的典型玩法。' }
+    },
+    {
+      id: 'customs',
+      name: '口岸旅检通道',
+      hazards: [
+        { key: 'lining',   label: '行李箱夹层藏匿高档烟酒' },
+        { key: 'jewelry',  label: '未申报的贵重首饰' },
+        { key: 'ivory',    label: '违规携带濒危动植物制品' }
+      ],
+      tip: '值钱的东西要主动申报。象牙手串这类濒危制品，留着自己用也不能带入境，严重的要负刑责。',
+      quiz: { q: '判断题：旅游带回象牙手串这类濒危制品，只要自己用就不违法。', a: false,
+               why: '濒危制品一律禁止带入境，跟自用不用没关系，重的构成刑事犯罪。' }
+    },
+    {
+      id: 'shop',
+      name: '海淘购物页面',
+      hazards: [
+        { key: 'phone',   label: '低价水货电子产品' },
+        { key: 'bonded',  label: '虚假“保税仓直发”标识' },
+        { key: 'notax',   label: '无法提供完税证明的商品' }
+      ],
+      tip: '便宜得离谱的水货机，税多半没交，官方也不认保修。下单前把完税证明和保税资质看一遍。',
+      quiz: { q: '判断题：海淘时价格低得离谱的“水货”手机更划算，可以放心买。', a: false,
+               why: '水货多是逃了税的走私货，没有官方保修，买卖本身就不合法。' }
+    }
+  ]
+};
+
+</script>
+<script>
+/* ============ script 3 · Sfx 合成音效（Web Audio，零素材依赖） ============
+   主音量轨（静音总闸）与 BGM 音量轨（淡入淡出）分离；ac() 惰性建上下文、待首次手势解锁 */
+(function () {
+  let ctx = null, muted = false;
+  const live = new Set(); // 正在发声/已排期的振荡器
+  /* 惰性建 AudioContext 并在挂起时 resume：移动端须待首次用户手势才许出声 */
+  function ac() {
+    if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } }
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  /* 立即停掉全部在响/排期中的振荡器（切静音即清场） */
+  function killAll() {
+    live.forEach(o => { try { o.stop(0); } catch (e) { } });
+    live.clear();
+  }
+  /* 总音量轨：静音时把已排期的长音效一并压掉，比只 kill 当前振荡器可靠 */
+  let masterGain = null;
+  function master(c) {
+    if (!masterGain) { masterGain = c.createGain(); masterGain.gain.value = muted ? 0 : 1; masterGain.connect(c.destination); }
+    return masterGain;
+  }
+  /* 单音积木：freq 起始频率 · dur 时长(秒) · type 波形 · vol 音量 · when 延迟(秒)
+     slide 为频率偏移（配合 exponentialRamp 做滑音） · toBgmBus=true 走 BGM 音量轨随淡入淡出 */
+  function tone(freq, dur, type = 'sine', vol = .22, when = 0, slide = 0, toBgmBus = false) {
+    const c = ac(); if (!c || muted) return;
+    const t0 = c.currentTime + when;
+    const o = c.createOscillator(), g = c.createGain();
+    live.add(o);
+    o.onended = () => live.delete(o);
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t0 + dur);
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
+    o.connect(g).connect(toBgmBus ? bgmBus(c) : master(c));
+    o.start(t0); o.stop(t0 + dur + .02);
+  }
+  /* BGM 专用音量轨：支持淡入淡出，不影响音效 */
+  let bgmGain = null;
+  function bgmBus(c) {
+    if (!bgmGain) { bgmGain = c.createGain(); bgmGain.gain.value = 1; bgmGain.connect(master(c)); }
+    return bgmGain;
+  }
+  function bgmFade(target, secs) {
+    const c = ac(); if (!c || !bgmGain) return;
+    const t = c.currentTime;
+    bgmGain.gain.cancelScheduledValues(t);
+    bgmGain.gain.setValueAtTime(bgmGain.gain.value, t);
+    bgmGain.gain.linearRampToValueAtTime(target, t + secs);
+  }
+  /* 关卡 BGM：五声音阶循环，300ms/步 × 32 步 */
+  let bgmTimer = null, bgmStep = 0;
+  const MEL = [
+    523, 659, 784, 880, 784, 659, 587, 523, 440, 523, 659, 523, 440, 392, 523, 0,
+    659, 784, 880, 1047, 880, 784, 659, 587, 523, 587, 659, 784, 659, 587, 523, 0
+  ];
+  /* 每步：一个旋律音；每 8 步补一个低音（131/196 交替）撑节奏 */
+  function bgmTick() {
+    const f = MEL[bgmStep % MEL.length];
+    if (f) tone(f, .42, 'sine', .045, 0, 0, true);
+    if (bgmStep % 8 === 0) tone(131, .9, 'triangle', .05, 0, 0, true);
+    else if (bgmStep % 8 === 4) tone(196, .7, 'triangle', .035, 0, 0, true);
+    bgmStep++;
+  }
+  window.Sfx = {
+    unlock() { ac(); },
+    setMuted(v) { muted = v; if (ctx && masterGain) masterGain.gain.value = v ? 0 : 1; if (v) killAll(); },
+    isMuted() { return muted; },
+    startBgm() {
+      const c = ac(); if (!c || bgmTimer) return;
+      bgmBus(c);                       /* 预建音量轨 */      bgmGain.gain.cancelScheduledValues(c.currentTime);  /* 清掉上一次未走完的淡出，避免事件打架 */
+      bgmGain.gain.setValueAtTime(0, c.currentTime);
+      bgmGain.gain.linearRampToValueAtTime(1, c.currentTime + .8);  /* 0.8s 淡入 */
+      bgmTimer = setInterval(bgmTick, 300);
+    },
+    stopBgm() { clearInterval(bgmTimer); bgmTimer = null; if (bgmGain) bgmFade(0, .5); },  /* 0.5s 淡出；从未播过 BGM 就不碰 AudioContext */
+    tap() { tone(520, .07, 'triangle', .12); },
+    found() { tone(880, .1, 'sine', .3); tone(1320, .18, 'sine', .26, .09); },        // 清脆"叮~哒"
+    miss() { tone(300, .12, 'sine', .12, 0, -80); },                                   // 低沉"嗒"
+    hint() { tone(660, .09, 'triangle', .2); tone(990, .12, 'triangle', .18, .08); },
+    win() { /* 通关庆祝号角：上行三连音 + 收尾大和弦 + 高音星光 */
+      [523, 659, 784].forEach((f, i) => tone(f, .12, 'triangle', .26, i * .1));
+      tone(1047, .3, 'triangle', .3, .3);
+      [1047, 1319, 1568].forEach((f, i) => tone(f, .2, 'triangle', .22, .3 + i * .05));
+      [523, 659, 784, 1047].forEach(f => tone(f, .55, 'sine', .1, .5));
+      tone(2093, .35, 'sine', .12, .62); tone(2637, .4, 'sine', .08, .74);
+      tone(131, .25, 'triangle', .28, .3); tone(196, .3, 'triangle', .2, .55);
+    },
+    fail() { [392, 330, 262].forEach((f, i) => tone(f, .22, 'sawtooth', .12, i * .16)); },
+    warn() { tone(980, .09, 'square', .08); },
+    tick3() { tone(1320, .1, 'square', .16); },                                        // 最后 3 秒急促滴答
+    badge() { [659, 831, 988, 1319, 1568].forEach((f, i) => tone(f, .2, 'sine', .22, i * .1)); }
+  };
+})();
+
+</script>
+<script>
+/* ============ script 4 · 五关场景 SVG（暖色扁平插画 750×1000） ============
+   每关一个函数拼 SVG 字符串：背景 → 干扰物 → 三处隐患（haz 包装）→ 彩蛋（egg） */
+(function () {
+  /* 调色板：五关共用（后缀 D=深 M=中 L=浅） */
+  const C = {
+    blueD: '#0B3A5D', blueM: '#12507E', blue: '#1B6FA8', blueL: '#3E92CC',
+    sky: '#BFE3F7', line: '#EAD9BE',
+    red: '#E64545', redD: '#B32E2E', coral: '#FF6B57',
+    gold: '#E8A93C', goldL: '#FFE9A8', sun: '#FFC94D', orange: '#F58642',
+    green: '#3CB371', greenL: '#9AD1A0', ink: '#26221C',
+    wood: '#D9A05B', woodD: '#B47B3A', woodR: '#8C5A2E',
+    wallA: '#FBEDD8', floorA: '#E3C79F',
+    gray: '#9FB6C6', teal: '#4FB3A9', plum: '#B0713F'
+  };
+  /* 隐患通用包装：可见图形 inner 外包一层 .hazard（data-key/label 供判定与展示），
+     末尾叠两件套——透明命中矩形 .hit（点击判定的唯一依据）与提示光晕 .hint-glow（用提示时闪） */
+  const haz = (key, label, x, y, w, h, inner) =>
+    `<g class="hazard" data-key="${key}" data-label="${label}">${inner}
+       <rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent"/>
+       <rect class="hint-glow" x="${x - 6}" y="${y - 6}" width="${w + 12}" height="${h + 12}" rx="14"/>
+     </g>`;
+  /* 彩蛋热区：点干扰物弹一句玩笑，不加分 */
+  const egg = (msg, x, y, w, h) =>
+    `<rect class="egg" data-msg="${msg}" x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent"/>`;
+  const txt = (x, y, s, size, fill, w = 400, anchor = 'start') =>
+    `<text x="${x}" y="${y}" font-size="${size}" fill="${fill}" font-weight="${w}" text-anchor="${anchor}">${s}</text>`;
+  /* 背景：整幅墙色 + 地面色带（floorY 起为地面） */
+  const bg = (wall, floorY, floor) =>
+    `<rect width="750" height="1000" fill="${wall}"/><rect y="${floorY}" width="750" height="${1000 - floorY}" fill="${floor}"/>`;
+
+  /* 第 1 关 · 校园宿舍 */
+  function dorm() {
+    let s = bg(C.wallA, 780, C.floorA);
+    // 窗户（暖色黄昏校园）
+    s += `<rect x="470" y="70" width="220" height="180" rx="10" fill="#FFD9A0" stroke="#fff" stroke-width="10"/>
+      <circle cx="640" cy="120" r="26" fill="#FF9A52"/>
+      <path d="M478 210 l0 -40 34 0 0 40z M524 214 l0 -58 26 0 0 58z M566 210 l0 -34 40 0 0 34z" fill="#E8B98A"/>
+      <line x1="580" y1="76" x2="580" y2="244" stroke="#fff" stroke-width="8"/><line x1="476" y1="160" x2="684" y2="160" stroke="#fff" stroke-width="8"/>`;
+    // 墙上两张海报（贴在床架上方的净空墙面，避免被横梁切断、被床垫半透明层染色）
+    s += `<g transform="rotate(-2 120 29)"><rect x="60" y="4" width="120" height="50" rx="8" fill="#fff" stroke="${C.line}" stroke-width="3"/><text x="120" y="26" font-size="17" fill="${C.blue}" text-anchor="middle" font-weight="700">动漫社</text><text x="120" y="44" font-size="11" fill="#A08462" text-anchor="middle">招新啦</text></g>
+      <g transform="rotate(1.5 256 30)"><rect x="196" y="6" width="120" height="48" rx="8" fill="${C.goldL}" stroke="${C.gold}" stroke-width="3"/><text x="256" y="35" font-size="15" fill="${C.redD}" text-anchor="middle" font-weight="700">校园歌手大赛</text></g>`;
+    // 上下铺（暖木色）
+    s += `<rect x="50" y="60" width="18" height="720" fill="${C.woodD}"/><rect x="360" y="60" width="18" height="720" fill="${C.woodD}"/>
+      <rect x="50" y="60" width="328" height="14" fill="${C.woodD}"/><rect x="50" y="330" width="328" height="16" fill="${C.woodD}"/>
+      <rect x="68" y="120" width="292" height="180" fill="${C.teal}" opacity=".28"/><rect x="68" y="356" width="292" height="200" fill="${C.coral}" opacity=".22"/>
+      <rect x="80" y="240" width="120" height="46" rx="12" fill="#FFF6E6"/><rect x="80" y="470" width="120" height="46" rx="12" fill="#FFF6E6"/>
+      <rect x="68" y="262" width="292" height="38" rx="8" fill="${C.teal}"/><rect x="68" y="492" width="292" height="44" rx="8" fill="${C.coral}"/>
+      <rect x="340" y="56" width="12" height="290" fill="${C.goldL}"/><rect x="362" y="56" width="12" height="290" fill="${C.goldL}"/>
+      <rect x="340" y="352" width="12" height="290" fill="${C.goldL}"/><rect x="362" y="352" width="12" height="290" fill="${C.goldL}"/>`;
+    // 干扰：泰迪熊（坐上铺床垫，方脑袋三角耳）
+    s += `<g transform="rotate(-2 290 238)"><path d="M268 222 l-12 -16 20 -2z" fill="#C98F4A"/><path d="M312 222 l12 -16 -20 -2z" fill="#C98F4A"/><rect x="266" y="214" width="48" height="48" rx="12" fill="#C98F4A"/><rect x="280" y="228" width="20" height="16" rx="5" fill="#F2D9B0"/><circle cx="280" cy="230" r="2.5" fill="${C.ink}"/><circle cx="300" cy="230" r="2.5" fill="${C.ink}"/></g>`;
+    // 书桌（桌面线条带一点手绘起伏）
+    s += `<path d="M430 470 q145 -3 290 0 q3 10 0 20 q-145 3 -290 0 q-3 -10 0 -20z" fill="${C.wood}"/><rect x="445" y="490" width="16" height="290" fill="${C.woodD}"/><rect x="690" y="490" width="16" height="290" fill="${C.woodD}"/>`;
+    // 笔记本电脑（干扰）
+    s += `<g transform="rotate(-1.6 490 450)"><path d="M448 442 h84 l8 26 h-100z" fill="#5B7085"/><rect x="452" y="404" width="76" height="40" rx="4" fill="#2E4257"/></g>`;
+    // 墙上挂钟（干扰）
+    s += `<g transform="rotate(-4 418 252)"><circle cx="418" cy="252" r="30" fill="#fff" stroke="${C.woodD}" stroke-width="6"/><circle cx="418" cy="252" r="3" fill="${C.ink}"/><line x1="418" y1="252" x2="418" y2="234" stroke="${C.ink}" stroke-width="4"/><line x1="418" y1="252" x2="432" y2="258" stroke="${C.red}" stroke-width="3"/></g>`;
+    // 地面干扰：方仙人掌、篮球
+    s += `<g transform="rotate(1.5 52 730)"><path d="M44 758 l-1 -50 5 -12 10 -1 5 13 1 50z" fill="${C.green}"/><path d="M44 728 l-9 -1 -4 -15 5 -5 8 12z" fill="#57B77E"/><path d="M64 716 l9 -1 4 -13 -5 -5 -8 10z" fill="#57B77E"/><path d="M50 706 h6 M47 736 h8 M60 744 h6" stroke="#2E7A47" stroke-width="2.5"/></g><rect x="28" y="756" width="48" height="42" rx="6" fill="${C.coral}" transform="rotate(-1 52 777)"/>
+      <circle cx="420" cy="756" r="26" fill="#E07A3E"/><path d="M394 756 h52 M420 730 q14 26 0 52" stroke="#8C4A20" stroke-width="3" fill="none"/>`;
+    // 隐患①：无报关凭证的进口化妆品（桌上，外文包装标签）
+    s += haz('beauty', '无报关凭证的进口化妆品', 540, 344, 176, 128, `
+      <rect x="552" y="370" width="44" height="100" rx="10" fill="#F7C9D4"/><rect x="562" y="354" width="24" height="18" rx="4" fill="${C.gold}"/>
+      <rect x="612" y="396" width="40" height="74" rx="8" fill="#EAD9F2"/><rect x="620" y="382" width="24" height="16" rx="4" fill="${C.gray}"/>
+      <rect x="660" y="412" width="36" height="58" rx="8" fill="#CDEBDC"/>
+      ${txt(574, 424, 'LOTION', 9, '#B0728E', 700, 'middle')}${txt(632, 436, 'CREAM', 9, '#9B7BB0', 700, 'middle')}${txt(678, 444, 'OIL', 9, '#5E9C85', 700, 'middle')}`);
+    // 隐患②：低价名牌包包（放在下铺床垫上，箱底贴床面）
+    s += haz('bag', '低价名牌包包', 150, 363, 170, 129, `<g transform="translate(0 -178)">
+      <path d="M176 588 q56 -44 112 0 l6 82 h-124 z" fill="${C.ink}"/>
+      <path d="M204 576 q28 -30 56 0" fill="none" stroke="${C.gold}" stroke-width="8"/>
+      <rect x="214" y="610" width="36" height="24" rx="5" fill="${C.gold}"/>${txt(232, 626, 'BAG', 9, '#7A5410', 800, 'middle')}
+      <circle cx="172" cy="626" r="26" fill="${C.red}"/>${txt(172, 633, '1折', 19, '#fff', 800, 'middle')}</g>`);
+    // 隐患③：没有检疫证明的境外零食（桌下纸箱落地，外文货签）
+    s += haz('snack', '没有检疫证明的境外零食', 470, 644, 200, 136, `<g transform="translate(0 12)">
+      <path d="M486 666 h168 l-14 102 h-140 z" fill="${C.wood}"/><rect x="480" y="650" width="180" height="24" rx="6" fill="${C.woodD}"/>
+      <circle cx="524" cy="658" r="24" fill="#F5B04A"/><rect x="546" y="634" width="20" height="26" rx="4" fill="${C.red}"/>
+      <path d="M600 636 l26 0 6 34 -38 0 z" fill="${C.greenL}"/>
+      <rect x="556" y="700" width="72" height="26" rx="4" fill="#FFF3D8"/>${txt(592, 718, 'SNACKS', 13, '#8A5A2B', 700, 'middle')}</g>`);
+    // 代购小广告（贴在窗下墙上，氛围）
+    s += `<g transform="rotate(-4 635 295)"><rect x="580" y="252" width="110" height="86" rx="8" fill="#FFF3B8" stroke="${C.gold}" stroke-width="4"/>
+      ${txt(635, 280, '境外代购', 17, C.redD, 800, 'middle')}${txt(635, 303, '正品低价', 12, C.ink, 500, 'middle')}${txt(635, 325, '私聊看货', 11, '#A08462', 400, 'middle')}</g>`;
+    // 彩蛋：篮球、泰迪熊
+    s += egg('你喜欢唱、跳、rap、篮球？', 392, 728, 56, 58);
+    s += egg('泰迪：翻遍了，嘴里真没藏东西。', 258, 206, 80, 60);
+    return s;
+  }
+
+  /* 第 2 关 · 带货直播间 */
+  function live() {
+    let s = bg('#FCE9D2', 800, '#E7C79E');
+    // 霓虹字
+    s += `<g transform="rotate(1.2 375 85)"><rect x="255" y="52" width="240" height="66" rx="33" fill="${C.blueD}"/><circle cx="292" cy="85" r="10" fill="${C.red}"/>${txt(316, 97, 'LIVE 直播间', 30, '#fff', 700)}</g>`;
+    // 补光灯（灯杆落到展示桌面）
+    s += `<circle cx="90" cy="330" r="52" fill="#FFF0CE" stroke="${C.goldL}" stroke-width="10"/><rect x="84" y="380" width="12" height="260" fill="${C.gray}"/>`;
+    // 手机支架 + 主播（右移让开保健品热区；支架底座立在展示桌面上；方脸棱角主播）
+    s += `<rect x="323" y="150" width="170" height="330" rx="22" fill="${C.ink}"/><rect x="335" y="164" width="146" height="302" rx="14" fill="#FFE9CF"/>
+      <rect x="366" y="210" width="84" height="86" rx="16" fill="#FFD9B8" transform="rotate(-2 408 252)"/><path d="M367 224 l41 -20 42 20 0 -26 -42 -12 -41 12z" fill="#4A3524"/>
+      <path d="M368 336 l40 -18 40 18 0 42 -80 0z" fill="${C.blue}"/>
+      <rect x="349" y="392" width="118" height="26" rx="13" fill="rgba(230,69,69,.92)"/>${txt(408, 410, '全网最低价!', 15, '#fff', 700, 'middle')}
+      <rect x="404" y="480" width="10" height="136" fill="${C.gray}"/><path d="M396 616 h26 l8 24 h-42z" fill="${C.gray}"/>`;
+    // 弹幕气泡（干扰，随支架右移避开镜身）
+    s += `<rect x="500" y="200" width="130" height="40" rx="20" fill="#fff"/><circle cx="514" cy="234" r="8" fill="#fff"/>${txt(565, 227, '已抢光？！', 17, C.blueM, 500, 'middle')}`;
+    // 展示桌（暖色桌布，桌沿线条微弧）
+    s += `<path d="M70 640 q305 -3 610 0 q2 13 0 26 q-305 3 -610 0 q-2 -13 0 -26z" fill="${C.wood}"/><path d="M70 666 h610 l-14 120 q-288 26 -582 0z" fill="${C.coral}" opacity=".9"/>`;
+    // 干扰：退货箱（落地摆放，不悬空）
+    s += `<g transform="rotate(-1.5 668 762)"><rect x="620" y="724" width="96" height="76" rx="6" fill="${C.wood}"/><rect x="620" y="724" width="96" height="16" fill="${C.woodD}"/>${txt(668, 774, '退货区', 16, '#6E4A1C', 600, 'middle')}</g>`;
+    // 隐患①：未贴中文标签的保健品（瓶身只有外文；热区贴合实物，避免与广告海报角重叠）
+    s += haz('supplement', '未贴中文标签的保健品', 250, 516, 138, 126, `<g transform="translate(0 4)">
+      <rect x="256" y="532" width="52" height="104" rx="10" fill="#F0A86E"/><rect x="262" y="516" width="40" height="20" rx="5" fill="${C.gold}"/><rect x="258" y="558" width="48" height="42" rx="6" fill="#fff" opacity=".85"/>
+      ${txt(282, 576, 'VITAMIN', 9, '#C77B3F', 800, 'middle')}${txt(282, 590, 'SOFTGEL', 7, '#C77B3F', 400, 'middle')}
+      <rect x="322" y="552" width="58" height="84" rx="10" fill="#7EC8B4"/><rect x="330" y="538" width="42" height="18" rx="5" fill="#5EA793"/>
+      <rect x="330" y="572" width="42" height="30" rx="4" fill="#fff" opacity=".85"/>${txt(351, 591, 'FISH OIL', 8, '#3E7D6B', 700, 'middle')}</g>`);
+    // 隐患②：来源不明的境外手表（展示牌无品牌信息）
+    s += haz('watch', '来源不明的境外手表', 430, 556, 190, 124, `
+      <rect x="446" y="624" width="160" height="16" rx="6" fill="${C.goldL}"/>
+      <rect x="486" y="644" width="56" height="16" rx="3" fill="#fff"/>${txt(514, 656, 'WATCH', 10, C.blueD, 700, 'middle')}
+      <rect x="470" y="586" width="16" height="46" rx="6" fill="${C.ink}"/><rect x="536" y="586" width="16" height="46" rx="6" fill="${C.ink}"/>
+      <circle cx="514" cy="609" r="34" fill="${C.goldL}" stroke="${C.gold}" stroke-width="6"/><circle cx="514" cy="609" r="22" fill="#fff"/>
+      <line x1="514" y1="609" x2="514" y2="594" stroke="${C.ink}" stroke-width="4"/><line x1="514" y1="609" x2="526" y2="614" stroke="${C.red}" stroke-width="3"/>`);
+    // 隐患③：虚假"海外直邮"宣传海报（下移落到展示桌沿，不悬空）
+    s += haz('poster', '虚假“海外直邮”宣传海报', 60, 430, 180, 212, `<g transform="translate(0 130)">
+      <g transform="rotate(-3 150 405)"><rect x="64" y="306" width="172" height="200" rx="10" fill="#fff" stroke="${C.line}" stroke-width="4"/>
+      <rect x="64" y="306" width="172" height="52" rx="10" fill="${C.blue}"/><text x="150" y="340" font-size="24" fill="#fff" text-anchor="middle" font-weight="700">海外直邮</text>
+      <circle cx="150" cy="426" r="44" fill="${C.sky}" stroke="${C.blueL}" stroke-width="5"/><path d="M106 426 h88 M150 382 q28 44 0 88 M150 382 q-28 44 0 88" stroke="${C.blueL}" stroke-width="4" fill="none"/>
+      ${txt(150, 496, '“100%正品”', 18, C.red, 800, 'middle')}</g></g>`);
+    // 彩蛋：弹幕
+    s += egg('弹幕喊“已抢光”，你也信？', 500, 200, 130, 40);
+    return s;
+  }
+
+  /* 第 3 关 · 快递驿站跨境包裹 */
+  function station() {
+    let s = bg('#F5E6CC', 820, '#DCC193');
+    s += `<rect x="0" y="0" width="750" height="92" fill="${C.blueD}"/><rect x="0" y="92" width="750" height="8" fill="${C.gold}"/>${txt(375, 62, '快递驿站 · 跨境包裹区', 34, '#fff', 700, 'middle')}`;
+    // 墙上：时钟 + 价目表（放在货架间空墙上，不被纸箱遮挡）
+    s += `<circle cx="350" cy="275" r="26" fill="#fff" stroke="${C.woodD}" stroke-width="5"/><line x1="350" y1="275" x2="350" y2="259" stroke="${C.ink}" stroke-width="4"/><line x1="350" y1="275" x2="362" y2="281" stroke="${C.red}" stroke-width="3"/>
+      <g transform="rotate(-1.5 188 279)"><rect x="140" y="246" width="96" height="66" rx="6" fill="#FFF3D8" stroke="${C.gold}" stroke-width="3"/>${txt(188, 274, '寄件价目', 16, '#8A5A2B', 700, 'middle')}${txt(188, 298, '首重 12 元起', 13, '#A08462', 400, 'middle')}</g>`;
+    // 货架
+    const shelf = (y) => `<rect x="46" y="${y}" width="658" height="16" rx="4" fill="${C.woodD}"/><rect x="60" y="${y + 16}" width="12" height="34" fill="${C.plum}"/><rect x="678" y="${y + 16}" width="12" height="34" fill="${C.plum}"/>`;
+    s += shelf(210) + shelf(420) + shelf(630);
+    // 干扰纸箱群
+    const box = (x, y, w, h, c = C.wood) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${c}"/><rect x="${x + w / 2 - 5}" y="${y}" width="10" height="${h}" fill="rgba(255,255,255,.5)"/>`;
+    s += box(60, 122, 96, 88) + box(262, 116, 110, 94) + box(560, 132, 130, 78)
+      + box(60, 320, 108, 100)
+      + box(180, 540, 96, 90) + box(560, 540, 100, 90, '#EAD9BE')
+      + `<g transform="rotate(1 375 765)"><rect x="300" y="710" width="150" height="110" rx="8" fill="${C.woodR}"/>${txt(375, 772, '待取件', 22, '#FFF3D8', 700, 'middle')}</g>`;
+    // 普通纸箱的中性标签（与隐患箱文字量对齐）
+    s += `<rect x="286" y="140" width="62" height="30" rx="4" fill="#fff" stroke="${C.line}" stroke-width="2"/>${txt(317, 160, '易碎↑↑', 12, '#B47B3A', 700, 'middle')}
+      <rect x="592" y="152" width="66" height="30" rx="4" fill="#FFF6E0"/>${txt(625, 172, '日用品', 12, '#8A5A2B', 600, 'middle')}
+      <rect x="80" y="344" width="64" height="34" rx="4" fill="#fff" stroke="${C.line}" stroke-width="2"/><rect x="86" y="350" width="40" height="4" fill="${C.gray}"/><rect x="86" y="358" width="50" height="4" fill="${C.goldL}"/><rect x="86" y="366" width="30" height="6" fill="${C.ink}" opacity=".7"/>`;
+    // 顶层干扰：方形转页扇（底部落在层板上）
+    s += `<g transform="rotate(-1.5 510 168)"><rect x="480" y="138" width="60" height="60" rx="10" fill="none" stroke="${C.gray}" stroke-width="5"/><path d="M510 168 l20 -11 M510 168 l-20 11 M510 168 l11 20 M510 168 l-11 -20" stroke="${C.gray}" stroke-width="4"/><circle cx="510" cy="168" r="5" fill="${C.gray}"/></g><rect x="506" y="196" width="8" height="16" fill="${C.gray}"/>`;
+    // 隐患①：超量未申报烟酒包裹（货架中层，箱底落在层板上）
+    s += haz('tobacco', '超量未申报烟酒包裹', 384, 262, 190, 164, `<g transform="translate(0 12)">
+      <path d="M396 300 h164 l-10 108 h-144z" fill="${C.wood}"/><path d="M396 300 l-14 -22 h192 l-14 22" fill="${C.woodD}"/>
+      ${[0, 1, 2, 3].map(i => `<rect x="${410 + i * 34}" y="272" width="26" height="34" rx="4" fill="${i % 2 ? C.red : C.gold}"/>`).join('')}
+      <path d="M534 316 q4 -40 24 -50 q0 34 12 50z" fill="#6B8E4E"/>
+      <rect x="452" y="330" width="60" height="26" rx="4" fill="#FFF3D8"/>${txt(482, 348, '茶叶', 13, '#8A5A2B', 700, 'middle')}</g>`);
+    // 隐患②：藏匿在日用品内的违禁品（箱底落在下层层板上）
+    s += haz('hidden', '藏匿在日用品内的违禁品', 320, 484, 200, 152, `<g transform="translate(0 32)">
+      <rect x="330" y="486" width="180" height="112" rx="8" fill="${C.wood}"/><rect x="330" y="486" width="180" height="20" fill="${C.woodD}"/>
+      <rect x="344" y="506" width="40" height="72" rx="10" fill="#8FC6E8"/><rect x="392" y="516" width="36" height="62" rx="10" fill="#F2A9C2"/>
+      <path d="M452 566 q26 -70 52 -78 q-2 46 -30 82z" fill="#F6EFDD" stroke="#D8C9A3" stroke-width="4"/>
+      <rect x="436" y="487" width="68" height="18" rx="3" fill="#FFF3D8"/>${txt(470, 501, '洗护用品', 11, '#8A5A2B', 600, 'middle')}</g>`);
+    // 隐患③：伪造面单的国际快件
+    s += haz('waybill', '伪造面单的国际快件', 84, 690, 210, 152, `
+      <rect x="96" y="706" width="186" height="120" rx="8" fill="${C.wood}"/>
+      <g transform="rotate(-6 150 750)"><rect x="106" y="718" width="96" height="64" rx="5" fill="#fff" stroke="${C.line}" stroke-width="3"/>${txt(112, 738, '品名: 玩具', 13, C.ink)}<rect x="112" y="748" width="80" height="4" fill="${C.goldL}"/><rect x="112" y="758" width="60" height="12" fill="${C.ink}" opacity=".8"/></g>
+      <g transform="rotate(7 230 770)"><rect x="186" y="740" width="96" height="64" rx="5" fill="#FFF6D8" stroke="${C.gold}" stroke-width="3"/>${txt(192, 760, '品名: 电子产品', 12, C.redD)}<rect x="192" y="770" width="80" height="4" fill="#D4E2EC"/><rect x="192" y="780" width="60" height="12" fill="${C.red}" opacity=".75"/></g>`);
+    // 右侧：工作台 + 扫码枪（干扰，落地摆放；枪架右移避开纸箱）
+    s += `<rect x="560" y="680" width="170" height="140" rx="8" fill="${C.plum}"/><rect x="560" y="680" width="170" height="18" fill="${C.woodR}"/>
+      <rect x="690" y="600" width="24" height="80" rx="8" fill="${C.blueM}"/><path d="M678 600 h48 l-8 -34 h-32z" fill="${C.blue}"/>`;
+    // 手推车（干扰，停在空地；把手与立杆相接）
+    s += `<path d="M180 940 l90 0 12 -60 h-90z" fill="${C.gray}"/><circle cx="200" cy="960" r="12" fill="${C.ink}"/><circle cx="262" cy="960" r="12" fill="${C.ink}"/><rect x="270" y="850" width="4" height="94" fill="${C.ink}"/><rect x="270" y="850" width="46" height="8" rx="4" fill="${C.ink}"/>`;
+    // 彩蛋：待取件箱、电风扇
+    s += egg('别催。', 300, 710, 150, 110);
+    s += egg('一屋子商品，就它会吹。', 478, 136, 64, 78);
+    return s;
+  }
+
+  /* 第 4 关 · 口岸旅检通道 */
+  function customs() {
+    let s = bg('#F3E4C8', 760, '#E0C79A');
+    // 玻璃幕墙外的黄昏海港
+    s += `<rect x="0" y="0" width="750" height="330" fill="#FBD9A8"/>
+      <circle cx="620" cy="120" r="46" fill="#FF9A52" opacity=".9"/>
+      <path d="M0 300 l120 -60 40 0 0 60z M200 300 l0 -80 60 0 0 80z" fill="#D9A268" opacity=".7"/>
+      <path d="M656 300 l0 -96 12 0 0 96z M618 204 l96 -12 3 10 -96 12z" fill="#B87438"/>
+      <path d="M640 208 l0 28" stroke="#B87438" stroke-width="4"/><rect x="632" y="236" width="16" height="10" fill="#B87438"/>
+      ${[150, 375, 600].map(x => `<line x1="${x}" y1="0" x2="${x}" y2="330" stroke="#fff" stroke-width="8" opacity=".7"/>`).join('')}
+      <rect x="0" y="322" width="750" height="10" fill="#fff" opacity=".8"/>`;
+    // 左侧：通道拱门（收窄，不与 X 光机叠压）
+    s += `<rect x="90" y="350" width="380" height="38" rx="10" fill="${C.blueD}"/>
+      <rect x="90" y="388" width="24" height="372" fill="${C.blueM}"/><rect x="446" y="388" width="24" height="372" fill="${C.blueM}"/>
+      <rect x="140" y="410" width="280" height="60" rx="10" fill="${C.green}"/>${txt(280, 450, '无申报通道', 30, '#fff', 700, 'middle')}
+      <rect x="140" y="484" width="280" height="50" rx="10" fill="${C.red}"/>${txt(280, 516, '海关检查', 24, '#fff', 700, 'middle')}`;
+    // 海关人员（拱门左侧，站立到地面；方脸）
+    s += `<rect x="27" y="474" width="50" height="54" rx="13" fill="#FFD9B8" transform="rotate(2 52 500)"/><path d="M26 486 h52 l-7 -16 h-38z" fill="${C.blueM}"/>
+      <rect x="24" y="528" width="56" height="112" rx="12" fill="${C.blueD}"/><rect x="24" y="548" width="56" height="12" fill="${C.gold}"/>
+      <rect x="30" y="640" width="18" height="110" fill="#0A2F4E"/><rect x="56" y="640" width="18" height="110" fill="#0A2F4E"/>
+      <rect x="24" y="746" width="27" height="14" rx="6" fill="${C.ink}"/><rect x="53" y="746" width="27" height="14" rx="6" fill="${C.ink}"/>`;
+    // 右侧：X 光机（独立区域）+ 传送带
+    s += `<rect x="500" y="520" width="230" height="160" rx="14" fill="${C.blueM}"/>
+      <rect x="520" y="545" width="120" height="90" rx="8" fill="#0E4265"/>
+      <path d="M535 595 q45 -40 90 0" stroke="${C.green}" stroke-width="6" fill="none"/><circle cx="580" cy="600" r="22" stroke="${C.red}" stroke-width="5" fill="none" stroke-dasharray="8 6"/>
+      <rect x="650" y="540" width="66" height="120" rx="8" fill="#FBEEDC"/>${[0,1,2,3].map(i => `<rect x="658" y="${552 + i * 26}" width="50" height="14" rx="4" fill="${C.orange}" opacity=".55"/>`).join('')}
+      <rect x="510" y="680" width="210" height="80" rx="6" fill="#0A2F4E"/>
+      <rect x="470" y="680" width="130" height="22" rx="8" fill="${C.gray}"/><circle cx="488" cy="712" r="10" fill="${C.ink}"/><circle cx="582" cy="712" r="10" fill="${C.ink}"/>`;
+    // 隔离桩 + 护照（右区，互不叠压；护照落地在传送带前上方空地）
+    s += `${[520, 640].map(x => `<rect x="${x}" y="720" width="10" height="64" fill="${C.gray}"/><circle cx="${x + 5}" cy="714" r="10" fill="${C.gold}"/>`).join('')}<path d="M525 730 q60 22 120 0" stroke="${C.red}" stroke-width="8" fill="none"/>
+      <g transform="rotate(2 688 799)"><rect x="656" y="778" width="64" height="42" rx="6" fill="${C.goldL}" stroke="${C.gold}" stroke-width="4"/>${txt(688, 804, '护照', 14, C.ink, 600, 'middle')}</g>`;
+    // 隐患①：行李箱夹层藏匿高档烟酒（立在通道地面上，与指示牌留距）
+    s += haz('lining', '行李箱夹层藏匿高档烟酒', 150, 574, 240, 200, `<g transform="translate(0 14)">
+      <rect x="166" y="596" width="200" height="150" rx="16" fill="${C.redD}"/><rect x="166" y="596" width="200" height="34" rx="16" fill="${C.red}"/>
+      ${txt(266, 620, 'TRAVEL', 14, '#FFE9A8', 800, 'middle')}
+      <rect x="184" y="640" width="164" height="84" rx="10" fill="#F9E8C8"/>
+      ${[0,1,2,3].map(i => `<rect x="${192 + i * 36}" y="652" width="28" height="24" rx="4" fill="${i % 2 ? C.gold : C.blue}"/>`).join('')}
+      <rect x="192" y="690" width="110" height="24" rx="6" fill="#7A4A1E"/><rect x="228" y="680" width="12" height="12" fill="#7A4A1E"/></g>`);
+    // 隐患③：违规携带濒危动植物制品（地面左位）
+    s += haz('ivory', '违规携带濒危动植物制品', 80, 790, 210, 150, `
+      <rect x="96" y="820" width="180" height="100" rx="12" fill="${C.blueD}" opacity=".92"/>
+      <rect x="186" y="832" width="72" height="24" rx="4" fill="#FFF3D8"/>${txt(222, 849, '纪念品', 12, '#8A5A2B', 700, 'middle')}
+      <path d="M120 906 q8 -56 48 -68 q-6 44 -28 70z" fill="#F6EFDD"/>
+      <path d="M176 904 q20 -44 56 -50 q-12 38 -36 50z" fill="#E88FA0"/>`);
+    // 隐患②：未申报贵重首饰（地面中右位）
+    s += haz('jewelry', '未申报的贵重首饰', 430, 790, 200, 140, `
+      <path d="M446 826 q80 -56 160 0 l-12 76 h-136z" fill="#EFE2F5" stroke="#C9AEDC" stroke-width="4"/>
+      <rect x="560" y="834" width="40" height="20" rx="3" fill="#fff" stroke="${C.gold}" stroke-width="2"/>${txt(580, 849, '首饰', 11, '#8A5A2B', 700, 'middle')}
+      <circle cx="486" cy="832" r="12" fill="${C.gold}"/><circle cx="524" cy="824" r="12" fill="#7FD4A5"/><circle cx="562" cy="834" r="12" fill="#8FC6E8"/>
+      <path d="M476 862 q50 26 100 0" stroke="${C.gold}" stroke-width="6" fill="none"/><circle cx="526" cy="880" r="13" fill="${C.red}"/>`);
+    // 干扰：免税袋（地面右位）
+    s += `<g transform="rotate(-1.8 680 880)"><rect x="640" y="850" width="80" height="60" rx="6" fill="#fff" stroke="${C.line}" stroke-width="3"/>${txt(680, 884, 'DUTY FREE', 13, C.blue, 700, 'middle')}</g>`;
+    // 彩蛋：免税袋
+    s += egg('人家免税店是有票的。', 638, 848, 84, 64);
+    return s;
+  }
+
+  /* 第 5 关 · 海淘购物页面 */
+  function shop() {
+    let s = `<rect width="750" height="1000" fill="#FFE9CF"/>
+      <circle cx="80" cy="120" r="60" fill="rgba(255,201,77,.3)"/>`;
+    // 大手机外框
+    s += `<rect x="60" y="40" width="630" height="920" rx="46" fill="${C.ink}"/><rect x="76" y="56" width="598" height="888" rx="34" fill="#FFFBF4"/>
+          <rect x="300" y="66" width="150" height="20" rx="10" fill="${C.ink}"/>`;
+    // 顶部搜索栏
+    s += `<rect x="96" y="104" width="460" height="58" rx="29" fill="#FFF1DC" stroke="${C.goldL}" stroke-width="3"/>${txt(130, 142, '海淘优选 · 全球好物', 24, '#B79A6E', 600)}
+          <circle cx="620" cy="133" r="27" fill="${C.coral}"/>${txt(620, 143, '99', 22, '#fff', 800, 'middle')}`;
+    // 干扰：秒杀横幅
+    s += `<rect x="96" y="182" width="558" height="70" rx="14" fill="${C.red}"/>
+      <path d="M130 198 l-14 24 h9 l-7 22 18 -26 h-9 l7 -20z" fill="#FFE9A8"/>${txt(148, 227, '黑五狂欢 · 跨店满300减50', 26, '#FFF3D8', 800)}<g transform="rotate(2.5 586 217)"><rect x="536" y="198" width="100" height="38" rx="19" fill="${C.sun}"/>${txt(586, 223, '去凑单', 18, '#8A5A2B', 800, 'middle')}</g>`;
+    // 干扰卡片：正规洗衣液
+    s += `<rect x="96" y="270" width="558" height="80" rx="14" fill="#F2FAF2" stroke="#D8ECD8" stroke-width="3"/>
+      <rect x="110" y="282" width="56" height="56" rx="10" fill="#CFE9DB"/><rect x="124" y="292" width="28" height="38" rx="6" fill="${C.green}"/><rect x="128" y="300" width="20" height="10" rx="2" fill="#fff"/>${txt(138, 309, '标签', 8, C.green, 700, 'middle')}
+      ${txt(182, 306, '进口洗衣液 900ml · 已贴中文标签', 19, C.ink, 600)}${txt(182, 334, '正规报关 · 完税凭证齐全', 15, C.green)}
+      ${txt(560, 322, '￥29.9', 20, C.red, 800)}`;
+    // 隐患①：低价水货电子产品
+    s += haz('phone', '低价水货电子产品', 96, 368, 558, 172, `
+      <rect x="96" y="368" width="558" height="172" rx="16" fill="#FFF1F1" stroke="#F3C9C9" stroke-width="3"/>
+      <rect x="116" y="390" width="80" height="128" rx="12" fill="${C.blueD}"/><rect x="124" y="402" width="64" height="96" rx="6" fill="${C.sky}"/><circle cx="156" cy="508" r="6" fill="#fff"/>
+      ${txt(218, 420, '“港版旗舰机 全新未激活”', 23, C.ink, 700)}
+      ${txt(218, 456, '无中文标签 · 无三包保修', 19, C.redD, 600)}
+      ${txt(218, 494, '￥1299', 32, C.red, 800)}${txt(340, 494, '￥6999', 20, '#B7A795', 400)}<line x1="340" y1="487" x2="408" y2="487" stroke="#B7A795" stroke-width="2.5"/>
+      <rect x="480" y="460" width="154" height="44" rx="22" fill="${C.red}"/>${txt(557, 489, '马上抢', 20, '#fff', 700, 'middle')}
+      ${txt(218, 528, '已售 2000+ · 支持验货：不支持', 16, '#B79A6E')}`);
+    // 隐患②：虚假"保税仓直发"标识
+    s += haz('bonded', '虚假“保税仓直发”标识', 96, 556, 558, 148, `
+      <rect x="96" y="556" width="558" height="148" rx="16" fill="#FFF8EC" stroke="${C.goldL}" stroke-width="3"/>
+      <rect x="116" y="578" width="106" height="104" rx="12" fill="#E8D9F5"/><rect x="136" y="634" width="66" height="38" rx="6" fill="#B98FDD"/><path d="M130 634 l39 -32 39 32z" fill="#9257C6"/>
+      <rect x="248" y="576" width="196" height="40" rx="20" fill="${C.goldL}" stroke="${C.gold}" stroke-width="3"/><path d="M270 596 l8 9 16 -18" stroke="#8A5B00" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${txt(378, 603, '保税仓直发', 20, '#8A5B00', 800, 'middle')}
+      ${txt(248, 652, '“仓库照片”疑似网络盗图', 19, C.redD, 600)}
+      ${txt(248, 688, '发货地：境外某地址 · 物流轨迹缺失', 17, '#B79A6E')}`);
+    // 隐患③：无法提供完税证明的商品
+    s += haz('notax', '无法提供完税证明的商品', 96, 720, 558, 148, `
+      <rect x="96" y="720" width="558" height="148" rx="16" fill="#F6F2FF" stroke="#E2D8F5" stroke-width="3"/>
+      <rect x="116" y="742" width="106" height="104" rx="12" fill="#DDECF8"/><circle cx="169" cy="794" r="34" fill="none" stroke="${C.blueM}" stroke-width="10"/><rect x="150" y="758" width="38" height="14" rx="7" fill="${C.blueM}"/>
+      ${txt(248, 772, '进口降噪耳机 轻奢款', 22, C.ink, 700)}
+      ${txt(248, 806, '客服：完税证明“开不了哦”', 19, C.redD, 600)}
+      ${txt(248, 842, '￥499 · 不包税 · 售后无保障', 18, '#B79A6E')}
+      <rect x="520" y="756" width="114" height="42" rx="21" fill="${C.blue}"/>${txt(577, 783, '加入购物车', 16, '#fff', 600, 'middle')}
+      <path d="M600 816 l16 16 M616 816 l-16 16" stroke="${C.red}" stroke-width="5"/>`);
+    // 干扰：奶粉卡片（正规） + 底部导航
+    s += `<rect x="96" y="884" width="558" height="44" rx="12" fill="#F4EFE6"/>
+      ${['首页', '分类', '消息', '购物车', '我的'].map((t, i) => `${txt(150 + i * 112, 912, t, 17, i === 3 ? C.coral : '#A89A86', i === 3 ? 800 : 400, 'middle')}`).join('')}`;
+    // 彩蛋：正规洗衣液
+    s += egg('全场就它证件齐全。', 96, 270, 558, 80);
+    return s;
+  }
+
+  /* 关卡注册表：键与 GAME_DATA.levels[].id 一一对应 */
+  window.SCENES = {
+    dorm: { w: 750, h: 1000, svg: dorm },
+    live: { w: 750, h: 1000, svg: live },
+    station: { w: 750, h: 1000, svg: station },
+    customs: { w: 750, h: 1000, svg: customs },
+    shop: { w: 750, h: 1000, svg: shop }
+  };
+  /* 场景 SVG 整串（带缓存）：同一关反复进入不重拼 */
+  window.buildSceneSVG = (function () {
+    const cache = {};
+    return function (id) {
+      if (!cache[id]) {
+        const sc = window.SCENES[id];
+        cache[id] = `<svg viewBox="0 0 ${sc.w} ${sc.h}" preserveAspectRatio="xMidYMid meet" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif">${sc.svg()}</svg>`;
+      }
+      return cache[id];
+    };
+  })();
+})();
+
+</script>
+<script>
+/* ============ script 5 · 结算海报绘制（Canvas 750×1250） ============
+   与封面同一套主视觉（日落/国门/五角星/放大镜），画完 toDataURL 供长按保存与下载 */
+window.drawPoster = function (canvas, st) {
+  const c = canvas.getContext('2d'), W = 750, H = 1250;
+  const FONT = '"PingFang SC","Microsoft YaHei",sans-serif';
+  // 背景：夜空→日落暖橙
+  const bg = c.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#071F35'); bg.addColorStop(.38, '#1B4A73');
+  bg.addColorStop(.72, '#C96F3A'); bg.addColorStop(1, '#F5A054');
+  c.fillStyle = bg; c.fillRect(0, 0, W, H);
+  // 地平线暖阳光晕
+  const sun = c.createRadialGradient(W / 2, 470, 40, W / 2, 470, 420);
+  sun.addColorStop(0, 'rgba(255,217,138,.55)'); sun.addColorStop(1, 'rgba(255,217,138,0)');
+  c.fillStyle = sun; c.fillRect(0, 60, W, 860);
+  // 星点（arc 终角 7 > 2π，是画整圆的省写）
+  c.fillStyle = '#FFE9B8';
+  [[60,90,3],[150,50,2],[260,120,2.4],[420,60,2.6],[560,110,2],[680,70,3],[620,180,1.8],[90,200,1.8]].forEach(p => {
+    c.beginPath(); c.arc(p[0], p[1], p[2], 0, 7); c.fill();
+  });
+  // 国门剪影
+  c.fillStyle = 'rgba(10,44,71,.9)';
+  c.fillRect(150, 300, 16, 130); c.fillRect(584, 300, 16, 130);
+  c.fillRect(120, 276, 510, 26); c.fillRect(170, 250, 410, 24); c.fillRect(240, 226, 270, 22);
+  c.fillRect(40, 360, 70, 70); c.fillRect(640, 370, 60, 60);
+
+  // 主五角星（勋章核心）
+  star(c, W / 2, 470, 118, '#FFC94D', '#E8862C');
+  star(c, W / 2, 470, 74, '#FFF3C4', '#FFC94D');
+
+  // 放大镜（与首页封面主视觉统一）
+  c.save();
+  c.beginPath(); c.arc(468, 540, 88, 0, 7);
+  c.fillStyle = 'rgba(255,210,120,.14)'; c.fill();
+  c.beginPath(); c.arc(468, 540, 88, 0, 7);
+  c.strokeStyle = '#FFC94D'; c.lineWidth = 9; c.stroke();
+  c.beginPath(); c.arc(468, 540, 99, 0, 7);
+  c.strokeStyle = 'rgba(255,201,77,.35)'; c.lineWidth = 4; c.stroke();
+  c.strokeStyle = '#8A5A2B'; c.lineWidth = 20; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(531, 603); c.lineTo(588, 660); c.stroke();
+  c.strokeStyle = '#C98F4A'; c.lineWidth = 20;
+  c.beginPath(); c.moveTo(528, 600); c.lineTo(543, 615); c.stroke();
+  c.restore();
+
+  // 标题
+  c.textAlign = 'center';
+  const tg = c.createLinearGradient(0, 640, 0, 720);
+  tg.addColorStop(0, '#FFF6DF'); tg.addColorStop(1, '#FFB85C');
+  c.fillStyle = tg; c.font = 'bold 76px ' + FONT;
+  c.fillText('慧眼识私', W / 2, 706);
+
+  // 称号
+  c.fillStyle = '#FFF3C4'; c.font = 'bold 40px ' + FONT;
+  c.fillText('「' + st.rank + '」', W / 2, 810);
+
+  // 数据卡片（暖米色玻璃）
+  roundRect(c, 70, 922, 610, 150, 22);
+  c.fillStyle = 'rgba(255,244,224,.94)'; c.fill();
+  const stats = [['总得分', String(st.score), '#B32E2E'], ['总通关用时', st.totalTime + ' 秒', '#12507E'], ['找出隐患', st.totalFound + ' 处', '#C96F3A']];
+  stats.forEach((s, i) => {
+    const x = 70 + 102 + i * 204;
+    c.fillStyle = '#9A8A76'; c.font = '21px ' + FONT; c.fillText(s[0], x, 962);
+    c.fillStyle = s[2]; c.font = 'bold 42px ' + FONT; c.fillText(s[1], x, 1018);
+    if (i < 2) { c.strokeStyle = '#EAD9BE'; c.beginPath(); c.moveTo(x + 102, 944); c.lineTo(x + 102, 1050); c.stroke(); }
+  });
+
+  // 底部
+  c.fillStyle = '#FFF6DF'; c.font = 'bold 32px ' + FONT;
+  c.fillText('青年拒绝走私 · 共同守护国门', W / 2, 1130);
+  c.fillStyle = 'rgba(255,241,216,.85)'; c.font = '22px ' + FONT;
+  c.fillText('发现走私线索，拨打 12360', W / 2, 1176);
+  // 底部海浪线
+  c.strokeStyle = 'rgba(255,241,216,.4)'; c.lineWidth = 4;
+  c.beginPath();
+  for (let x = 0; x <= W; x += 60) { c.moveTo(x, 1210); c.quadraticCurveTo(x + 15, 1200, x + 30, 1210); c.quadraticCurveTo(x + 45, 1220, x + 60, 1210); }
+  c.stroke();
+
+  /* 圆角矩形路径（数据卡底板用） */
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  /* 五角星：外内半径交替 10 段，渐变填充 + 褐边 */
+  function star(ctx, x, y, r, fill, edge) {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const rr = i % 2 ? r * .45 : r, a = Math.PI / 5 * i - Math.PI / 2;
+      ctx[i ? 'lineTo' : 'moveTo'](x + rr * Math.cos(a), y + rr * Math.sin(a));
+    }
+    ctx.closePath();
+    const g = ctx.createLinearGradient(x, y - r, x, y + r);
+    g.addColorStop(0, fill); g.addColorStop(1, edge);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = '#B8860B'; ctx.lineWidth = 3; ctx.stroke();
+  }
+};
+
+</script>
+<script>
+/* ============ script 6 · 主逻辑 ============
+   流转：intro → startLevel（过场大字 → [首关]新手教学 → 计时找茬）
+        → 找齐：通关弹窗（科普 + 判断题）→ 下一关… → finishGame 结算 → poster
+        → 超时：红圈揭示漏项 → 重打 / 回首页
+   切后台自动暂停；存档 level 存「下一个该玩的关」（0 基），领勋章 / 重开即清档 */
+(function () {
+  const D = window.GAME_DATA, $ = (id) => document.getElementById(id);
+  const SAVE_KEY = 'hyss_save_v1';
+  /* 全局状态：level 当前关（0 起） · score 累计分（本关得分通关才入账，杜绝失败刷分）
+     found 本关已找{key:true} · timeLeft 剩余秒 · timer 计时句柄
+     hintUsed/quizDone 本关一次性标志 · times 各关用时（按关下标存） · running 计时进行中 */
+  const state = {
+    level: 0, score: 0, found: {}, timeLeft: D.levelTime, timer: null,
+    hintUsed: false, quizDone: false, times: [], running: false
+  };
+
+  /* 四屏互斥切换：intro / game / final / poster */
+  function show(id) {
+    ['screen-intro', 'screen-game', 'screen-final', 'screen-poster']
+      .forEach(s => $(s).classList.toggle('hidden', s !== id));
+  }
+
+  /* 存档 */
+  function save() {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({
+      level: state.level, score: state.score, times: state.times
+    })); } catch (e) { }
+  }
+  function loadSave() {
+    try { return JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { return null; }
+  }
+  function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } }
+
+  /* 轻提示：1.4s 自动收起；ok=true 换红底强调 */
+  let toastTimer = null;
+  function toast(msg, ok) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.toggle('ok', !!ok);
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
+  }
+  /* 震动反馈：不支持的设备静默跳过 */
+  const vib = p => { if (navigator.vibrate) navigator.vibrate(p); };
+
+  /* 首关教学：两步点击推进，期间不计时；每次「开始游戏」都弹，「继续闯关」不弹 */
+  let guidePoint = null; /* 教学手指：注入场景 SVG，图层在物品之上 */
+  function removeGuidePoint() { if (guidePoint) { guidePoint.remove(); guidePoint = null; } }
+  function hideGuide() { $('guide').classList.add('hidden'); $('btn-hint').classList.remove('guide-glow'); $('guide-up').classList.add('hidden'); removeGuidePoint(); }
+  function showGuide() {
+    state.running = false;
+    $('guide-1').classList.remove('hidden');
+    $('guide-2').classList.add('hidden');
+    $('guide').classList.remove('hidden');
+    $('guide-up').classList.add('hidden');
+    const svg = $('stage').querySelector('svg');
+    const gs = Array.from(document.querySelectorAll('#stage .hazard'));
+    if (!svg || !gs.length) return;
+    const center = (g) => {
+      const hit = g.querySelector('.hit');
+      return { cx: +hit.getAttribute('x') + +hit.getAttribute('width') / 2, cy: +hit.getAttribute('y') + +hit.getAttribute('height') / 2 };
+    };
+    /* 优先挑画面边缘的隐患，避开中部气泡带 */
+    const far = gs.filter(g => { const c = center(g); return c.cy < 320 || c.cy > 700; });
+    const pool = gs.filter(g => center(g).cy < 600);
+    const candidates = far.length ? far : (pool.length ? pool : gs);
+    const { cx, cy } = center(candidates[Math.floor(Math.random() * candidates.length)]);
+    removeGuidePoint();
+    guidePoint = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    guidePoint.setAttribute('class', 'guide-point');
+    guidePoint.innerHTML = `<text x="${cx + 16}" y="${cy + 84}" font-size="96" text-anchor="middle">👆</text>`;
+    svg.appendChild(guidePoint);
+    /* 指尖在画面中部时，气泡让位到另一端 */
+    const step = $('guide-1');
+    step.classList.remove('bubble-top', 'bubble-bottom');
+    if (cy > 300 && cy < 700) step.classList.add(cy < 500 ? 'bubble-bottom' : 'bubble-top');
+  }
+  /* 第二步：☝️ 对准「💡 提示」按钮（挂关卡页上，避免被舞台圆角裁掉） */
+  function pointHintBtn() {
+    const sg = $('screen-game'), s = sg.getBoundingClientRect(), b = $('btn-hint').getBoundingClientRect();
+    const u = $('guide-up');
+    if (u.parentElement !== sg) sg.appendChild(u);
+    u.style.left = (b.left - s.left + b.width / 2) + 'px';
+    u.style.top = (b.bottom - s.top + 2) + 'px';
+  }
+  function endGuide() {
+    hideGuide(); state.running = true; startTimer();
+  }
+  /* 推进一步：第 1 步→第 2 步→结束。点击遮罩或「💡 提示」按钮都走这里 */
+  function guideAdvance(e) {
+    window.Sfx.tap();
+    /* 教学期间点中隐患：遮罩挡住了 stage 监听，手动换算坐标照常计分 */
+    if (e) {
+      const p = svgPoint(e);
+      if (p) {
+        const gs = document.querySelectorAll('#stage .hazard');
+        for (const g of gs) {
+          if (g.dataset.done) continue;
+          const h = g.querySelector('.hit');
+          const x = +h.getAttribute('x'), y = +h.getAttribute('y');
+          if (p.x >= x && p.x <= x + +h.getAttribute('width') && p.y >= y && p.y <= y + +h.getAttribute('height')) { hitHazard(g); break; }
+        }
+      }
+    }
+    /* 刚好找齐全部隐患时 stopLevel 已收起教学，别再推进 */
+    if ($('guide').classList.contains('hidden')) return;
+    if ($('guide-2').classList.contains('hidden')) {
+      $('guide-1').classList.add('hidden');
+      $('guide-2').classList.remove('hidden');
+      removeGuidePoint();
+      $('guide-up').classList.remove('hidden');
+      pointHintBtn();
+      $('btn-hint').classList.add('guide-glow');
+    } else endGuide();
+  }
+  $('guide').addEventListener('click', guideAdvance);
+
+  /* 本关得分通关时才入账，HUD 先显示预览 */
+  function displayScore() { return state.score + Object.keys(state.found).length * D.scorePerHazard; }
+
+  /* 通用弹窗：内容整块注入 #modal-box；按钮不带监听，统一走下方 data-action 委托 */
+  function openModal(html) {
+    $('modal-box').innerHTML = html;
+    $('modal-mask').classList.remove('hidden');
+  }
+  function closeModal() { $('modal-mask').classList.add('hidden'); $('modal-box').innerHTML = ''; }
+
+  /* 结算/过场延时器：startLevel 统一清掉，防止旧弹窗砸到新局 */
+  let endTimer = null;
+  let openTimer = null;
+  let pendingBegin = null; /* 过场结束时页面不可见：开赛动作推迟到回到前台 */
+
+  function startLevel(i) {
+    clearTimeout(endTimer); clearTimeout(openTimer);
+    pendingBegin = null;
+    state.level = i; state.found = {}; state.hintUsed = false; state.quizDone = false;
+    state.timeLeft = D.levelTime; state.running = false; /* 过场动画期间不接收点击、不计时 */
+    const lv = D.levels[i];
+    $('hud-level').textContent = `第 ${i + 1} 关`;
+    $('hud-scene').textContent = lv.name;
+    $('hud-found').textContent = '0';
+    $('hud-score').textContent = displayScore();
+    $('btn-hint').disabled = false; $('hint-count').textContent = '1';
+    $('stage').innerHTML = window.buildSceneSVG(lv.id);
+    updateTimerUI();
+    /* 1 秒大字过场，结束后第一关弹教学、其余开赛 */
+    openLevelIntro(i);
+    show('screen-game');
+  }
+  function openLevelIntro(i) {
+    const lv = D.levels[i], el = $('lv-open');
+    const hold = [820, 700, 640, 760, 680][i]; /* 各关过场时长略有差异，避免千篇一律 */
+    $('lv-open-n').textContent = `第 ${i + 1} 关`;
+    $('lv-open-s').textContent = lv.name;
+    el.classList.remove('hidden'); el.classList.remove('out');
+    openTimer = setTimeout(() => {
+      el.classList.add('out');
+      openTimer = setTimeout(() => {
+        el.classList.add('hidden'); el.classList.remove('out');
+        if ($('screen-game').classList.contains('hidden')) return; /* 过场中已退出 */
+        const begin = i === 0 ? showGuide
+          : () => { hideGuide(); state.running = true; startTimer(); };
+        if (document.hidden) pendingBegin = begin; /* 切后台时 setTimeout 可能照跑，别让计时器空转 */
+        else begin();
+      }, 340);
+    }, hold);
+  }
+  /* 计时心跳（1s 一次）：≤10s 警告音，≤3s 急促滴答 + 震动，归零判负 */
+  function tick() {
+    if (!state.running) return;
+    state.timeLeft--;
+    const t = state.timeLeft;
+    if (t > 0 && t <= 10) {
+      if (t <= 3) { window.Sfx.tick3(); vib(60); }
+      else window.Sfx.warn();
+    }
+    if (t <= 0) { state.timeLeft = 0; updateTimerUI(); timeUp(); return; }
+    updateTimerUI();
+  }
+  /* 倒计时条与数字同步：warn 变红、sprint 加大脉冲 */
+  function updateTimerUI() {
+    const t = state.timeLeft, fill = $('timer-fill'), num = $('timer-num');
+    fill.style.width = Math.max(0, t / D.levelTime * 100) + '%';
+    fill.classList.toggle('warn', t <= 10);
+    num.textContent = t;
+    num.classList.toggle('danger', t > 0 && t <= 10);
+    num.classList.toggle('sprint', t > 0 && t <= 3);
+  }
+  /* 计时开始（BGM 同起）；下一行的 stopLevel 为整关收停（计时 + BGM + 教学一起收） */
+  function startTimer() { window.Sfx.startBgm(); clearInterval(state.timer); state.timer = setInterval(tick, 1000); }
+  function stopLevel() { state.running = false; clearInterval(state.timer); window.Sfx.stopBgm(); hideGuide(); }
+
+  function askHome() {
+    /* 教学未看完点首页：直接退，不弹暂停框（计时没走过） */
+    if (!$('guide').classList.contains('hidden')) { hideGuide(); show('screen-intro'); refreshIntro(); return; }
+    /* 结算/揭示窗口期计时已停，直接退出（延时弹窗有画面守卫） */
+    if (!state.running) {
+      if (!$('modal-mask').classList.contains('hidden')) return;
+      show('screen-intro'); refreshIntro(); return;
+    }
+    stopLevel();
+    openModal(`
+      <div class="modal-head">
+        <span class="tag">离开本关？</span>
+        <h3>计时已经停了</h3>
+        <div class="scene-name">这关得重打，攒下的分跑不了</div>
+      </div>
+      <button class="btn btn-primary" data-action="stay">接着来</button>
+      <button class="btn btn-ghost" data-action="homequit">回首页</button>
+    `);
+  }
+
+  /* 切后台自动暂停；回前台先补执行过场遗留的开赛动作 */
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      if (pendingBegin) {
+        const f = pendingBegin; pendingBegin = null;
+        if (!$('screen-game').classList.contains('hidden')) f();
+      }
+      return;
+    }
+    if (!state.running) return;
+    if ($('screen-game').classList.contains('hidden')) return;
+    stopLevel();
+    openModal(`
+      <div class="modal-head">
+        <h3 class="pause-title">暂停</h3>
+      </div>
+      <button class="btn btn-primary" data-action="stay">继续</button>
+      <button class="btn btn-ghost" data-action="homequit">回首页</button>
+    `);
+  });
+
+  function hitHazard(g) {
+    if (g.dataset.done) return;
+    g.dataset.done = '1';
+    const key = g.dataset.key, lv = D.levels[state.level];
+    state.found[key] = true;
+    drawRing(g);
+    window.Sfx.found();
+    vib(30);
+    const label = lv.hazards.find(h => h.key === key).label;
+    toast(`「${label}」揪出来了 +${D.scorePerHazard}`, true);
+    $('hud-found').textContent = Object.keys(state.found).length;
+    $('hud-score').textContent = displayScore();
+    if (Object.keys(state.found).length === lv.hazards.length) {
+      stopLevel();
+      /* 850ms 内可能已退出，弹窗前查画面 */
+      endTimer = setTimeout(() => {
+        if ($('screen-game').classList.contains('hidden')) return;
+        levelComplete();
+      }, 850);
+    }
+  }
+  /* 点空随机安慰语 */
+  const MISSES = ['这儿没问题。', '不是它。', '想多了，换个地方。', '别急，问题不在这。'];
+  /* 舞台点击分诊：隐患 → 计分；彩蛋 → 玩笑话；其余 → 涟漪 + 安慰 */
+  $('stage').addEventListener('click', (e) => {
+    if (!state.running) return;
+    window.Sfx.unlock();
+    const g = e.target.closest('.hazard');
+    if (g) { hitHazard(g); return; }
+    const egg = e.target.closest('.egg');
+    if (egg) { window.Sfx.hint(); toast(egg.dataset.msg); return; }
+    ripple(e); window.Sfx.miss(); vib([40, 30, 40]);
+    toast(MISSES[Math.floor(Math.random() * MISSES.length)]);
+  });
+
+  /* 长按约 700ms 点亮提示按钮，手指移动会取消 */
+  let lpTimer = null, lpFired = false;
+  $('stage').addEventListener('pointerdown', (e) => {
+    if (!state.running || state.hintUsed) return;
+    const x0 = e.clientX, y0 = e.clientY;
+    const cancel = () => {
+      clearTimeout(lpTimer); lpTimer = null;
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+    };
+    const move = (ev) => { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 12) cancel(); };
+    const up = () => cancel();
+    lpTimer = setTimeout(() => {
+      cancel(); lpFired = true;
+      const b = $('btn-hint');
+      b.classList.add('guide-glow');
+      setTimeout(() => { if ($('guide').classList.contains('hidden')) b.classList.remove('guide-glow'); }, 2400);
+      toast('卡住了？上面那颗💡能用一次');
+      setTimeout(() => { lpFired = false; }, 800);
+    }, 700);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
+  });
+  /* 吞掉长按松手补发的 click，避免误判成点空 */
+  window.addEventListener('click', (e) => {
+    if (!lpFired) return;
+    lpFired = false;
+    if (e.target && e.target.closest && e.target.closest('#stage')) {
+      e.stopPropagation(); e.preventDefault();
+    }
+  }, true);
+
+  function svgPoint(e) {
+    const svg = $('stage').querySelector('svg');
+    const m = svg ? svg.getScreenCTM() : null;
+    if (!m) return null; /* 页面切换瞬间 CTM 可能为 null，跳过即可 */
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    return pt.matrixTransform(m.inverse());
+  }
+  /* 点空涟漪：屏幕坐标换算成 SVG 用户坐标后画一圈扩散 */
+  function ripple(e) {
+    const svg = $('stage').querySelector('svg'); if (!svg) return;
+    const p = svgPoint(e); if (!p) return;
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', 26);
+    c.setAttribute('class', 'ripple');
+    svg.appendChild(c); setTimeout(() => c.remove(), 650);
+  }
+  function drawRing(g) {
+    const svg = $('stage').querySelector('svg');
+    const hit = g.querySelector('rect.hit');
+    const x = +hit.getAttribute('x'), y = +hit.getAttribute('y');
+    const w = +hit.getAttribute('width'), h = +hit.getAttribute('height');
+    const cx = x + w / 2, cy = y + h / 2, r = Math.min(w, h) / 2 + 14;
+    /* 对勾徽章放圆环左上沿，压在红环上 */
+    const br = Math.max(19, r * .34), bx = cx - r * .72, by = cy - r * .72;
+    const grp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    grp.setAttribute('class', 'ring ring-pop');
+    grp.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}"/>
+      <circle class="ring-outer" cx="${cx}" cy="${cy}" r="${r + 12}"/>
+      <g transform="translate(${bx} ${by})">
+        <circle r="${br}" fill="#2E9E5B" stroke="#fff" stroke-width="${Math.max(3, br * .16)}"/>
+        <path d="M${-br * .44} ${-br * .02} L${-br * .1} ${br * .32} L${br * .5} ${-br * .34}" stroke="#fff" stroke-width="${br * .34}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>`;
+    svg.appendChild(grp);
+    g.style.pointerEvents = 'none';
+  }
+
+  $('btn-hint').addEventListener('click', () => {
+    /* 教学期间点提示按钮 = 推进/结束教学（不消耗本关提示次数） */
+    if (!$('guide').classList.contains('hidden')) { guideAdvance(); return; }
+    if (state.hintUsed || !state.running) return;
+    state.hintUsed = true;
+    $('btn-hint').disabled = true; $('hint-count').textContent = '0';
+    const lv = D.levels[state.level];
+    const target = $('stage').querySelectorAll('.hazard');
+    for (const g of target) {
+      if (!state.found[g.dataset.key]) {
+        g.classList.add('hinted');
+        setTimeout(() => g.classList.remove('hinted'), 3200);
+        break;
+      }
+    }
+    window.Sfx.hint();
+    toast('喏，盯这块看…');
+  });
+
+  /* 通关弹窗：科普 + 判断题 */
+  function levelComplete() {
+    /* 本关得分此刻入账（失败不保留，杜绝刷分） */
+    const foundScore = Object.keys(state.found).length * D.scorePerHazard;
+    const bonus = state.timeLeft * 2;
+    state.score += foundScore + bonus;
+    $('hud-score').textContent = state.score;
+    state.times[state.level] = D.levelTime - state.timeLeft;
+    const lv = D.levels[state.level];
+    window.Sfx.win();
+    const optsDisabled = state.quizDone ? 'disabled' : '';
+    openModal(`
+      <div class="modal-head">
+        <span class="tag">第 ${state.level + 1} 关通过</span>
+        <h3>${lv.name}</h3>
+        <div class="scene-name">还剩 ${state.timeLeft} 秒 · 本关 +${foundScore + bonus} 分</div>
+      </div>
+      <div class="modal-body">
+        <div class="found-list"><b>这关的隐患：</b><br>${lv.hazards.map(h => '· ' + h.label).join('<br>')}</div>
+        <div class="quiz">
+          <div class="q">${lv.quiz.q}</div>
+          <div class="opts">
+            <button class="btn btn-true" data-action="quiz" data-v="true" ${optsDisabled}>对 ✓</button>
+            <button class="btn btn-false" data-action="quiz" data-v="false" ${optsDisabled}>错 ✗</button>
+          </div>
+          <div class="quiz-result" id="quiz-result">${state.quizDone ? '这题答过啦' : ''}</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" data-action="next">${state.level === D.levels.length - 1 ? '领勋章' : '下一关 →'}</button>
+      <button class="btn btn-ghost" data-action="homequit2">回首页</button>
+    `);
+  }
+  /* 弹窗按钮事件委托（按钮由各 openModal 动态生成，监听只挂一次）：
+     closerev 关回顾 · quiz 答题 · next 下一关/领勋章 · retry 重打本关
+     stay 继续（暂停/离开弹窗） · quit|homequit 回首页 · homequit2 通关后回首页（末关清档防刷分） */
+  $('modal-box').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]'); if (!btn) return;
+    const act = btn.dataset.action;
+    if (act === 'closerev') { closeModal(); return; }
+    if (act === 'quiz' && !state.quizDone) {
+      state.quizDone = true;
+      const right = (btn.dataset.v === 'true') === D.levels[state.level].quiz.a;
+      const res = $('quiz-result');
+      document.querySelectorAll('#modal-box .opts .btn').forEach(b => b.disabled = true);
+      if (right) {
+        state.score += D.quizBonus;
+        res.textContent = `答对了，+${D.quizBonus} 分。`; res.className = 'quiz-result ok';
+        window.Sfx.found();
+      } else {
+        const ans = D.levels[state.level].quiz.a ? '对 ✓' : '错 ✗';
+        res.innerHTML = `猜反了。答案是<b>「${ans}」</b>——${D.levels[state.level].quiz.why}`; res.className = 'quiz-result no';
+        window.Sfx.miss();
+      }
+    } else if (act === 'next') {
+      closeModal();
+      if (state.level === D.levels.length - 1) {
+        finishGame(); /* 通关结算内部会清档 */
+      } else {
+        /* 存下一关：重打已通关会重复入账 */
+        const cur = state.level;
+        state.level = cur + 1; save(); state.level = cur;
+        startLevel(cur + 1);
+      }
+    } else if (act === 'retry') {
+      closeModal(); startLevel(state.level);
+    } else if (act === 'stay') {
+      closeModal(); state.running = true; startTimer();
+    } else if (act === 'quit' || act === 'homequit') {
+      closeModal(); save(); show('screen-intro'); refreshIntro();
+    } else if (act === 'homequit2') {
+      closeModal();
+      const cur = state.level;
+      if (cur === D.levels.length - 1) {
+        /* 已通全部关却不领勋章直接回首页：清档，防止「继续闯关」反复重玩最后一关刷分 */
+        clearSave();
+      } else {
+        state.level = cur + 1; save(); state.level = cur;
+      }
+      show('screen-intro'); refreshIntro();
+    }
+  });
+
+  function timeUp() {
+    stopLevel(); window.Sfx.fail();
+    const lv = D.levels[state.level];
+    revealMissed();
+    const remain = lv.hazards.filter(h => !state.found[h.key]).length;
+    /* 红圈先亮 1.3 秒再弹结算窗 */
+    endTimer = setTimeout(() => {
+      if ($('screen-game').classList.contains('hidden')) return;
+      openModal(`
+        <div class="modal-head">
+          <span class="tag fail">时间到</span>
+          <h3>还差 ${remain} 处</h3>
+          <div class="scene-name">第 ${state.level + 1} 关 · ${lv.name}</div>
+        </div>
+        <div class="modal-body">
+          <div class="tip-box">红圈圈出的就是漏掉的，下回记住。发现走私线索，打 <b>12360</b>。</div>
+        </div>
+        <button class="btn btn-primary" data-action="retry">再试一次</button>
+        <button class="btn btn-ghost" data-action="quit">回首页</button>
+      `);
+    }, 1300);
+  }
+  /* 失败揭示：漏掉的隐患画红虚线圈 + 名称标签 */
+  function revealMissed() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = $('stage').querySelector('svg');
+    document.querySelectorAll('#stage .hazard').forEach(g => {
+      if (state.found[g.dataset.key]) return;
+      const hit = g.querySelector('.hit');
+      const x = +hit.getAttribute('x'), y = +hit.getAttribute('y');
+      const w = +hit.getAttribute('width'), h = +hit.getAttribute('height');
+      const r = document.createElementNS(ns, 'rect');
+      r.setAttribute('class', 'reveal-ring');
+      r.setAttribute('x', x - 10); r.setAttribute('y', y - 10);
+      r.setAttribute('width', w + 20); r.setAttribute('height', h + 20);
+      r.setAttribute('rx', 18);
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('class', 'reveal-label');
+      const half = (g.dataset.label || '').length * 19 + 10;
+      const cx = Math.min(Math.max(x + w / 2, half), 750 - half);
+      t.setAttribute('x', cx);
+      t.setAttribute('y', y < 90 ? y + h + 44 : y - 26);
+      t.textContent = g.dataset.label;
+      svg.appendChild(r); svg.appendChild(t);
+    });
+  }
+
+  function finishGame() {
+    if (state.times[D.levels.length - 1] == null) state.times[D.levels.length - 1] = 0; /* 兼容老 WebView，不用 ??= */
+    const totalTime = state.times.reduce((a, b) => a + (b || 0), 0);
+    const totalFound = D.levels.length * 3;
+    $('final-rank').textContent = '称号：' + rankOf(state.score);
+    $('stat-score').textContent = state.score;
+    $('stat-time').textContent = totalTime + 's';
+    $('stat-found').textContent = totalFound;
+    window.__finalStats = { score: state.score, totalTime, totalFound, rank: rankOf(state.score) };
+    clearSave();
+    window.Sfx.badge();
+    show('screen-final');
+  }
+  /* 称号分档：≥1700 金牌 / ≥1200 高级 / 其余见习 */
+  function rankOf(score) {
+    if (score >= 1700) return '金牌反走私守护官';
+    if (score >= 1200) return '高级反走私守护官';
+    return '见习反走私守护官';
+  }
+
+  /* 知识回顾弹窗：五关的 tip 与判断题答案汇总成一篇 */
+  function openReview() {
+    const secs = D.levels.map((lv, i) => `
+      <div class="rev-sec">
+        <div class="rev-lv"><span class="rev-n">${i + 1}</span>${lv.name}</div>
+        <div class="rev-haz"><b>这关隐患：</b>${lv.hazards.map(h => '· ' + h.label).join('<br>')}</div>
+        <div class="tip-box">${lv.tip}</div>
+        <div class="quiz">
+          <div class="q">${lv.quiz.q}</div>
+          <div class="rev-ans">答案：${lv.quiz.a ? '对 ✓' : '错 ✗'}｜${lv.quiz.why}</div>
+        </div>
+      </div>`).join('');
+    openModal(`
+      <div class="modal-head">
+        <span class="tag">知识回顾</span>
+        <h3>15 处隐患，都在这儿了</h3>
+      </div>
+      <div class="modal-body">${secs}</div>
+      <button class="btn btn-primary" data-action="closerev">记住了</button>
+    `);
+    $('modal-box').scrollTop = 0;
+  }
+
+  /* 首页状态刷新：有存档才亮「继续闯关 / 清空进度」 */
+  function refreshIntro() {
+    stopLevel(); closeModal();
+    const s = loadSave();
+    const lv = s ? parseInt(s.level, 10) : NaN;
+    const can = lv > 0 && lv < D.levels.length;
+    $('btn-continue').classList.toggle('hidden', !can);
+    $('btn-reset').classList.toggle('hidden', !can);
+    if (can) $('btn-continue').textContent = `继续闯关（从第 ${lv + 1} 关）`;
+  }
+  function newGame() { state.score = 0; state.times = []; startLevel(0); }
+  $('btn-start').addEventListener('click', () => { window.Sfx.unlock(); clearSave(); newGame(); });
+  $('btn-continue').addEventListener('click', () => {
+    const s = loadSave(); if (!s) return;
+    window.Sfx.unlock();
+    /* 存档可能来自老版本或被手改：字段兜底校验，避免 NaN 渗进游戏状态 */
+    const lvNum = Math.min(Math.max(parseInt(s.level, 10) || 0, 0), D.levels.length - 1);
+    state.score = Number(s.score) || 0;
+    state.times = Array.isArray(s.times) ? s.times : [];
+    startLevel(lvNum);
+  });
+  $('btn-reset').addEventListener('click', () => { clearSave(); refreshIntro(); });
+  $('btn-home').addEventListener('click', () => { window.Sfx.tap(); askHome(); });
+  const MUTE_KEY = 'hyss_mute_v1';
+  try {
+    if (localStorage.getItem(MUTE_KEY) === '1') { window.Sfx.setMuted(true); $('btn-mute').textContent = '🔇'; }
+  } catch (e) { }
+  $('btn-mute').addEventListener('click', () => {
+    const m = !window.Sfx.isMuted();
+    window.Sfx.setMuted(m);
+    $('btn-mute').textContent = m ? '🔇' : '🔊';
+    try { localStorage.setItem(MUTE_KEY, m ? '1' : '0'); } catch (e) { }
+    if (!m) window.Sfx.tap();
+  });
+  $('btn-restart').addEventListener('click', newGame);
+  $('btn-home-final').addEventListener('click', () => { window.Sfx.tap(); show('screen-intro'); refreshIntro(); });
+  $('btn-review').addEventListener('click', () => { window.Sfx.tap(); openReview(); });
+  $('btn-poster').addEventListener('click', () => {
+    show('screen-poster');
+    refreshPoster();
+  });
+  $('btn-back-final').addEventListener('click', () => show('screen-final'));
+  function refreshPoster() {
+    window.drawPoster($('poster-canvas'), window.__finalStats);
+    $('btn-download').href = $('poster-canvas').toDataURL('image/png');
+  }
+  /* 手机地址栏收展会连发 resize，防抖避免反复重绘大画布 */
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if ($('screen-poster').classList.contains('hidden')) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(refreshPoster, 200);
+  });
+
+  /* 封面放大镜拖动：鼠标/触摸统一走 pointer 事件 + setPointerCapture，只认左键主指 */
+  (function () {
+    const lens = $('cover-lens'), svg = document.querySelector('.cover svg'), lensHit = $('lens-hit');
+    if (!lens || !svg) return;
+    const badge = $('cover-badge');
+    let dragging = false, from = null, startOff = null, activeId = null;
+    const off = { x: 0, y: 0 };
+    /* 放大镜罩住右上角 12360 徽标时才显示徽标 */
+    function checkBadge() {
+      if (!badge) return;
+      const cx = 332 + off.x, cy = 196 + off.y, r = 80;
+      const dx = Math.max(364 - cx, 0, cx - 460), dy = Math.max(14 - cy, 0, cy - 44);
+      badge.classList.toggle('show', dx * dx + dy * dy < r * r);
+    }
+    const pt = (e) => {
+      const m = svg.getScreenCTM();
+      if (!m) return null; /* 页面切换/隐藏瞬间 CTM 可能为 null */
+      const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+      return p.matrixTransform(m.inverse());
+    };
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    /* 整个封面按下就能拖放大镜（手机上只点镜身太难抓） */
+    const startDrag = (e) => {
+      /* 只认左键与主指：右键不起手，拖拽途中落下的第二根手指也不另起一场 */
+      if (e.button !== 0 || !e.isPrimary) return;
+      from = pt(e); if (!from) return;
+      dragging = true; startOff = { x: off.x, y: off.y }; activeId = e.pointerId;
+      try { svg.setPointerCapture(e.pointerId); } catch (err) { }
+      const bob = lens.querySelector('.lens-bob'); if (bob) bob.classList.add('still');
+      /* 不 preventDefault：它会抑制兼容性鼠标事件且无助于防滚（防滚靠 touch-action），去掉更干净 */
+    };
+    svg.addEventListener('pointerdown', startDrag);
+    /* 热区（#lens-hit）上的 touch-action:none 让镜身起手的纵向拖拽不被滚屏抢走 */
+    if (lensHit) lensHit.addEventListener('pointerdown', startDrag);
+    window.addEventListener('pointermove', (e) => {
+      if (!dragging || e.pointerId !== activeId) return; /* 别的手指的移动不抢镜 */
+      const p = pt(e); if (!p) return;
+      off.x = clamp(startOff.x + p.x - from.x, -300, 130);
+      off.y = clamp(startOff.y + p.y - from.y, -160, 130);
+      lens.setAttribute('transform', `translate(${off.x} ${off.y})`);
+      /* 热区跟着镜片走：off 是 SVG 用户单位，热区是 HTML 盒子，按 CTM 缩放比换算成 CSS 像素，
+         镜片停在哪热区就跟到哪——否则新位置起手纵拖又被滚屏抢走、原地热区空抓 */
+      const ctm = svg.getScreenCTM();
+      if (lensHit && ctm) lensHit.style.transform = `translate(${off.x * ctm.a}px, ${off.y * ctm.d}px)`;
+      checkBadge();
+      e.preventDefault();
+    }, { passive: false });
+    const stop = (e) => {
+      if (!dragging || e.pointerId !== activeId) return; /* 只有起手那根手指的抬手/取消才收拖 */
+      dragging = false; activeId = null;
+      const bob = lens.querySelector('.lens-bob'); if (bob) bob.classList.remove('still'); /* 松手恢复浮动动画 */
+    };
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+  })();
+
+  refreshIntro();
+})();
+
+</script>
+</body>
+</html>
