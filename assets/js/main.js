@@ -21,7 +21,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260926b";
+  var DATA_VER = "20260927a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1897,7 +1897,7 @@
       if (u.origin !== location.origin) return false;
       if (u.protocol !== "http:" && u.protocol !== "https:") return false;
       if (u.pathname === location.pathname) return false; // 当前页（含纯锚点）
-      if (u.search.indexOf("q=") !== -1) return false;    // 搜索结果页不值得预热
+      if (/[?&]q=/.test(u.search)) return false;         // 搜索结果页不值得预热（[?&] 锚定参数名，别让 ?topic= 这类含 q= 子串的误伤）
       u.hash = "";                                        // 同一文档的不同锚点只预热一次
       if (seen[u.href]) return false;
       seen[u.href] = 1;
@@ -2528,7 +2528,7 @@
             }, 120);
           });
           mobileInput.addEventListener("keydown", function (e) {
-            if (e.key === "Escape") { setOpen(false); return; }
+            if (e.key === "Escape") { setOpen(false); btn.focus(); return; }
             // ↑↓ 在结果间移动（与桌面端 nav input 行为一致）
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
               var opts = panel.querySelectorAll("[data-option]");
@@ -2772,8 +2772,10 @@
       if (nav) nav.classList.remove("nav-search-open");
       var main = document.querySelector("main");
       var keyModal = document.getElementById("key-modal");
-      // 口令弹窗若也开着，main 的 inert 归它管，不能顺手摘
-      if (main && (!keyModal || keyModal.hidden)) main.removeAttribute("inert");
+      // 口令弹窗若也开着，main 的 inert 归它管，不能顺手摘；
+      // 节日弹窗（festival.js，关闭即整体 remove）同理要登记——bfcache 恢复时它仍可能开着
+      var festivalOpen = !!document.getElementById("fst-modal");
+      if (main && (!keyModal || keyModal.hidden) && !festivalOpen) main.removeAttribute("inert");
     });
   })();
 

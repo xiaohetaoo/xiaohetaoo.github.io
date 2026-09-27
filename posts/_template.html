@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
+  <meta name="robots" content="noindex" />
   <script>try{var m=location.search.match(/theme=(light|dark|cn-red)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":t==="cn-red"?"#faf4f0":"#000000"}}catch(e){}</script>
   <script>/* 方向性滑动：nav-deep / nav-back / nav-side 必须在新页第一次渲染前挂到 <html> 上。
      pagereveal 有时早于 body 末尾脚本执行，那时才挂类会让过渡从默认淡入突变成横滑（看着像"淡入后瞬移"），
@@ -95,15 +96,22 @@
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20260926b" />
-  <!-- 百度统计 -->
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260927a" />
+  <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "https://hm.baidu.com/hm.js?71e27b77d658234ecf485c0c6905cd9d";
-  var s = document.getElementsByTagName("script")[0];
-  s.parentNode.insertBefore(hm, s);
+(function () {
+  var load = function () {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?71e27b77d658234ecf485c0c6905cd9d";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  };
+  if (document.prerendering) {
+    document.addEventListener("prerenderingchange", load, { once: true });
+  } else {
+    load();
+  }
 })();
 </script>
 </head>
@@ -233,7 +241,7 @@ console.log("hello xiaohetao");</code></pre>
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20260926b"></script>
+  <script src="../assets/js/main.js?v=20260927a"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

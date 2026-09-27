@@ -23,6 +23,15 @@
     <category term="了解我"/>
   </entry>
   <entry>
+    <title>存在错误</title>
+    <link href="https://xiaohetaoo.github.io/posts/exist-error.html"/>
+    <id>https://xiaohetaoo.github.io/posts/exist-error.html</id>
+    <updated>2026-08-29T00:00:00+08:00</updated>
+    <summary>初高中构思四年写的中长篇科幻小说，感谢领路人刘慈欣老师。</summary>
+    <category term="科幻"/>
+    <category term="小说"/>
+  </entry>
+  <entry>
     <title>lemonge（柠檬鸡）</title>
     <link href="https://xiaohetaoo.github.io/posts/lemonge.html"/>
     <id>https://xiaohetaoo.github.io/posts/lemonge.html</id>
@@ -138,15 +147,6 @@
     <category term="议论文"/>
   </entry>
   <entry>
-    <title>存在错误</title>
-    <link href="https://xiaohetaoo.github.io/posts/exist-error.html"/>
-    <id>https://xiaohetaoo.github.io/posts/exist-error.html</id>
-    <updated>2026-08-29T00:00:00+08:00</updated>
-    <summary>初高中构思四年写的中长篇科幻小说，感谢领路人刘慈欣老师。</summary>
-    <category term="科幻"/>
-    <category term="小说"/>
-  </entry>
-  <entry>
     <title>善恶论</title>
     <link href="https://xiaohetaoo.github.io/posts/good-and-evil.html"/>
     <id>https://xiaohetaoo.github.io/posts/good-and-evil.html</id>
@@ -155,4 +155,19 @@
     <category term="思考"/>
     <category term="议论文"/>
   </entry>
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
+@@ITEMS@@
 </feed>
