@@ -272,8 +272,8 @@ body{
 /* 海报页 */
 #screen-poster{align-items:center;justify-content:flex-start;padding-top:14px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .poster-tip{font-size:13px;color:#8A7358;margin-bottom:10px;flex:0 0 auto;}
-/* 宽度 = 可用高度 × 海报比例(750/1250=0.6)，保证海报完整显示且不被按钮遮挡 */
-.poster-box{width:min(84%, 340px, calc((100vh - 200px) * 0.6));flex:0 0 auto;border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(11,58,93,.4);}
+/* 宽度 = 可用高度 × 海报比例(750/1250=0.6)，保证海报完整显示且不被按钮遮挡；dvh 跟手机场栏收展，旧内核回退 vh */
+.poster-box{width:min(84%, 340px, calc((100vh - 200px) * 0.6));width:min(84%, 340px, calc((100dvh - 200px) * 0.6));flex:0 0 auto;border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(11,58,93,.4);}
 .poster-box canvas{width:100%;height:auto;display:block;}
 .poster-actions{width:min(84%,340px);display:flex;gap:12px;flex:0 0 auto;margin-top:14px;padding-bottom:env(safe-area-inset-bottom);}
 .poster-actions .btn{margin-top:0;flex:1;font-size:16px;letter-spacing:1px;padding:14px 8px;}
@@ -1188,7 +1188,8 @@ window.drawPoster = function (canvas, st) {
 
   /* 首关教学：两步点击推进，期间不计时；每次「开始游戏」都弹，「继续闯关」不弹 */
   let guidePoint = null; /* 教学手指：注入场景 SVG，图层在物品之上 */
-  function removeGuidePoint() { if (guidePoint) { guidePoint.remove(); guidePoint = null; } }
+  let guidePt = null;    /* 手指指向的隐患中心（SVG 坐标）：教学期只认指尖附近的命中 */
+  function removeGuidePoint() { if (guidePoint) { guidePoint.remove(); guidePoint = null; } guidePt = null; }
   function hideGuide() { $('guide').classList.add('hidden'); $('btn-hint').classList.remove('guide-glow'); $('guide-up').classList.add('hidden'); removeGuidePoint(); }
   function showGuide() {
     state.running = false;
@@ -1209,6 +1210,7 @@ window.drawPoster = function (canvas, st) {
     const candidates = far.length ? far : (pool.length ? pool : gs);
     const { cx, cy } = center(candidates[Math.floor(Math.random() * candidates.length)]);
     removeGuidePoint();
+    guidePt = { cx, cy };
     guidePoint = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     guidePoint.setAttribute('class', 'guide-point');
     guidePoint.innerHTML = `<text x="${cx + 16}" y="${cy + 84}" font-size="96" text-anchor="middle">👆</text>`;
@@ -1232,10 +1234,11 @@ window.drawPoster = function (canvas, st) {
   /* 推进一步：第 1 步→第 2 步→结束。点击遮罩或「💡 提示」按钮都走这里 */
   function guideAdvance(e) {
     window.Sfx.tap();
-    /* 教学期间点中隐患：遮罩挡住了 stage 监听，手动换算坐标照常计分 */
-    if (e) {
+    /* 教学期间点中隐患：遮罩挡住了 stage 监听，手动换算坐标照常计分。
+       只认指尖附近的点——热区矩形比实物大一圈，盲点空白常蹭进矩形白捡分 */
+    if (e && guidePt) {
       const p = svgPoint(e);
-      if (p) {
+      if (p && Math.hypot(p.x - guidePt.cx, p.y - guidePt.cy) <= 90) {
         const gs = document.querySelectorAll('#stage .hazard');
         for (const g of gs) {
           if (g.dataset.done) continue;
@@ -1243,9 +1246,6 @@ window.drawPoster = function (canvas, st) {
           const x = +h.getAttribute('x'), y = +h.getAttribute('y');
           if (p.x >= x && p.x <= x + +h.getAttribute('width') && p.y >= y && p.y <= y + +h.getAttribute('height')) {
             hitHazard(g);
-            /* 教学期点中隐患：本关提示同步记为已用，避免「教学白捡分 + 提示再发光」双份福利 */
-            state.hintUsed = true;
-            $('btn-hint').disabled = true; $('hint-count').textContent = '0';
             break;
           }
         }
@@ -1255,10 +1255,6 @@ window.drawPoster = function (canvas, st) {
     if ($('guide').classList.contains('hidden')) return;
     if ($('guide-2').classList.contains('hidden')) {
       $('guide-1').classList.add('hidden');
-      /* 第 1 步若点中隐患把提示用掉了，第 2 步话术照实说，不给灰掉的按钮打广告 */
-      $('guide-2').querySelector('.guide-bubble').innerHTML = state.hintUsed
-        ? '刚才那下就揪出一处！<br>本关提示算用过啦'
-        : '卡住了？上面「💡 提示」<br>每关能用 1 次';
       $('guide-2').classList.remove('hidden');
       removeGuidePoint();
       $('guide-up').classList.remove('hidden');
@@ -1286,6 +1282,7 @@ window.drawPoster = function (canvas, st) {
   function startLevel(i) {
     clearTimeout(endTimer); clearTimeout(openTimer);
     pendingBegin = null;
+    lpFired = false; /* 跨关不留长按吞点击的残值（let 提升，运行时已初始化） */
     state.level = i; state.found = {}; state.hintUsed = false; state.quizDone = false;
     state.timeLeft = D.levelTime; state.running = false; /* 过场动画期间不接收点击、不计时 */
     state.times.length = Math.max(state.times.length, i + 1); /* 补齐空洞，总用时统计不吃稀疏数组 */
@@ -1424,7 +1421,7 @@ window.drawPoster = function (canvas, st) {
   /* 长按约 700ms 点亮提示按钮，手指移动会取消 */
   let lpTimer = null, lpFired = false;
   $('stage').addEventListener('pointerdown', (e) => {
-    lpFired = false; /* 新手势按下即让上一轮长按的吞点击标记过期（补发 click 若来过，已在 click 处理器里吞掉并清） */
+    lpFired = false; /* 新手势开始时把上一轮长按的吞点击标记作废（正常那一下补发 click 已在舞台内消费掉） */
     if (!state.running || state.hintUsed) return;
     const x0 = e.clientX, y0 = e.clientY;
     const cancel = () => {
@@ -1441,17 +1438,16 @@ window.drawPoster = function (canvas, st) {
       b.classList.add('guide-glow');
       setTimeout(() => { if ($('guide').classList.contains('hidden')) b.classList.remove('guide-glow'); }, 2400);
       toast('卡住了？上面那颗💡能用一次'); /* lpFired 靠消费即清：补发 click 吞掉、或下一手势 pointerdown 过期，按住多久松手都吞得到 */
-      setTimeout(() => { lpFired = false; }, 800);
     }, 700);
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', cancel);
   });
-  /* 吞掉长按松手补发的 click，避免误判成点空 */
+  /* 吞掉长按松手补发的 click，避免误判成点空；只认补发到舞台的那一下，别的点击不吃标记 */
   window.addEventListener('click', (e) => {
     if (!lpFired) return;
-    lpFired = false;
     if (e.target && e.target.closest && e.target.closest('#stage')) {
+      lpFired = false;
       e.stopPropagation(); e.preventDefault();
     }
   }, true);
