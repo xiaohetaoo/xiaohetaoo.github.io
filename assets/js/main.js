@@ -9,6 +9,8 @@
 (function () {
   "use strict";
 
+  // 系统减动效偏好：所有动画/倾斜/预取走终态降级
+  // ?static：
   var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // ?static：跳过所有动画，直接渲染最终状态（用于截图/打印等确定性场景）。
   // 必须按完整参数名精确匹配——子串匹配会被 archive.html?q=static 这类搜索词误触发
@@ -21,7 +23,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260927a";
+  var DATA_VER = "20260927b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -117,6 +119,7 @@
   // 侧栏项、推荐卡、上/下篇都在文章页内，起飞时当前文章头要让出标记（html.side-morph），
   // 否则同页重名会直接跳过过渡。
   var morphedEl = null;
+  /* 摘掉被点元素的 view-transition-name 标记与 side-morph 作用域：点击别处、导航触发、页面恢复时都会调 */
   function clearNavMorph() {
     if (morphedEl) {
       morphedEl.style.viewTransitionName = "";
@@ -1270,6 +1273,7 @@
          #post-list     首页，只显示最新 5 篇
          #archive-list  归档页，显示全部
          #sidebar-posts 文章页侧栏导航，当前篇高亮 ---------- */
+  /* HTML 转义：posts.json / projects.json 的所有字段进 innerHTML 前必经 */
   var esc = function (s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -1301,6 +1305,7 @@
     return postsCache;
   }
 
+  /* 站内显示序 = 置顶优先 → 日期倒序：列表 / 侧栏 / post-nav 回填 / feed 全部同源此序 */
   function sortPosts(posts) {
     return posts.slice().sort(function (a, b) {
       if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
@@ -1328,11 +1333,13 @@
     );
   }
 
+  /* 文章搜索：title+excerpt+tags 的小写子串匹配（q 由调用方 trim+lowercase） */
   function postMatches(p, q) {
     var hay = (p.title + " " + p.excerpt + " " + (p.tags || []).join(" ")).toLowerCase();
     return hay.indexOf(q) !== -1;
   }
 
+  /* 渲染文章列表：limit>0 按配额截取（首页 5），搜索态全库匹配不限条数并显示命中总数 */
   function renderPostCards(container, limit, query) {
     var q = (query || "").trim().toLowerCase();
     loadPosts()
@@ -1568,6 +1575,7 @@
   /* ---------- 8. 项目列表（projects.json 驱动）
          #project-list     首页，只显示前 6 个
          #project-all-list projects.html，显示全部 ---------- */
+  /* 项目卡图标库：key ↔ projects.json 的 icon 字段；未命中回落 cube */
   var PROJECT_ICONS = {
     cube: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
     gamepad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>',
@@ -1641,11 +1649,13 @@
     });
   }
 
+  /* 项目搜索：title+desc+tags 的小写子串匹配（与 postMatches 同口径） */
   function projectMatches(p, q) {
     var hay = (p.title + " " + p.desc + " " + (p.tags || []).join(" ")).toLowerCase();
     return hay.indexOf(q) !== -1;
   }
 
+  /* renderPostCards 的项目版（首页 6 / 项目页全部）；结果提示写外置 [data-project-hint]，不占网格格子 */
   function renderProjects(container, limit, query) {
     var q = (query || "").trim().toLowerCase();
     loadProjects()
@@ -2264,6 +2274,7 @@
   var sections = ["posts", "projects", "contact"]
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
+  /* 滚动高亮的锚链接集合，与上方 sections 的 id 一一对应 */
   var navAnchors = document.querySelectorAll(".nav-links a[href^='#']");
 
   if (sections.length && "IntersectionObserver" in window) {

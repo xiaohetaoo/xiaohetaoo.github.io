@@ -357,6 +357,7 @@ button {
   z-index: var(--z-base);
 }
 
+/* hero 背景光晕两层：::before 右上主色大晕、::after 补充晕；浅色/中国红的两套在下方主题覆写区 */
 .hero-glow::before {
   content: "";
   position: absolute;
@@ -580,6 +581,7 @@ button {
 }
 
 /* noscript 兜底列表（JS 被禁用时显示） */
+/* 列表 noscript 降级形态：JS 被禁用时各页 <noscript> 里的纯文本/链接列表用这组样式 */
 .fallback-list {
   padding-left: 22px;
 }
@@ -710,6 +712,7 @@ button {
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
+/* 右侧目录（main.js 7.5 注入 .side-toc）：与侧栏同壳同宽，细滚动条；高亮项由滚动联动驱动 */
 .side-toc::-webkit-scrollbar { width: 4px; }
 .side-toc::-webkit-scrollbar-track { background: transparent; }
 .side-toc::-webkit-scrollbar-thumb {
@@ -1884,6 +1887,7 @@ button {
   margin-top: 2.2em;
 }
 
+/* 游戏名单页的档位标题 / 档位徽章 / 熟练度分组 / 中英条目（posts/games-i-played.html 专用，main.js 5.5 索引同批选择器） */
 .prose .tier-head h2 {
   margin-top: 0;
   border-bottom: none;
@@ -2353,6 +2357,7 @@ html.theme-anim::view-transition-new(root) {
   padding: 12px 14px;
 }
 /* 面板里没有 .post-list 容器提供 gap，文章卡间距自己兜（桌面面板 / 移动端 mobile-list 都在此选择器范围内） */
+/* 下拉结果里的文章卡是压缩版：纵向间距与标题字号收窄、摘要截一行，面板要一屏放得下多条 */
 .nav-search-results .post-card + .post-card {
   margin-top: 10px;
 }
@@ -2783,6 +2788,7 @@ html.theme-anim::view-transition-new(root) {
   .giscus-skeleton, .giscus-fallback { display: none !important; }
 }
 
+/* 评论区标题 + 章节折叠导航（exist-error 的 32 章用 <details> 收纳，展开态在 .chapter-nav[open]） */
 .comments-head {
   margin-bottom: 24px;
 }
@@ -2828,6 +2834,7 @@ html.theme-anim::view-transition-new(root) {
   background: var(--accent-dim);
 }
 
+/* 正文术语名强调：亮红加粗（加密法文章的「核氏××」一类词） */
 .prose .term-name {
   color: var(--accent-bright);
   font-weight: 550;
@@ -3297,6 +3304,7 @@ html.theme-anim::view-transition-new(root) {
 }
 
 /* 页面整体：旧页下沉淡出，新页上浮淡入（html.theme-anim 期间让位给主题圆形扩散） */
+/* 跨文档页面过渡：普通导航旧页滑出/新页滑入（nav-deep/nav-back/nav-side 的方向规则在下方，类由各页 head 内联脚本挂、main.js 0.6 标记） */
 html:not(.theme-anim)::view-transition-old(root) {
   animation: vt-page-out 0.18s ease-in both;
 }
@@ -3600,6 +3608,7 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: none; }
 }
+/* 抽屉式换屏两段动画：口令态旧表单滑出（is-swapping 0.22s）→ 称呼态新表单滑入（is-entering 0.28s），时序由 main.js 4.5 驱动 */
 .key-modal-body.is-swapping .key-modal-field,
 .key-modal-body.is-swapping .key-modal-result {
   animation: keySwapOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
@@ -3619,6 +3628,7 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 }
 
 /* 浅色主题：遮罩稍浅，阴影更柔和（中国红是暖色基底，遮罩换暖褐，见上方浅底覆盖区说明） */
+/* 口令弹窗的浅底两套：遮罩与面板阴影随主题换色（黑影/冷灰/暖褐，与卡片做法一致） */
 :root[data-theme="light"] .key-modal-backdrop {
   background: rgba(16, 24, 40, 0.32);
 }
@@ -3745,6 +3755,7 @@ html.intro-pending .reveal {
   --intro-glow: rgba(47, 108, 235, 0.50);
   --intro-glow-soft: rgba(47, 108, 235, 0.24);
 }
+/* 中国红的首页入场动画配色覆盖（main.js 6.7 读 --intro-* 与 --accent 画星尘汇聚） */
 :root[data-theme="cn-red"] {
   --intro-veil: rgba(50, 16, 10, 0.44);
   --intro-dot: #de2910;
