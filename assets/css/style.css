@@ -197,7 +197,8 @@ button {
   margin-bottom: 44px;
 }
 
-.section-head h2 {
+.section-head h2,
+.section-head h1 {
   font-size: clamp(26px, 3.6vw, 34px);
   font-weight: 600;
   letter-spacing: -0.01em;

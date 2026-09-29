@@ -23,7 +23,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20260927b";
+  var DATA_VER = "20260929a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -2539,7 +2539,9 @@
             }, 120);
           });
           mobileInput.addEventListener("keydown", function (e) {
-            if (e.key === "Escape") { setOpen(false); btn.focus(); return; }
+            // Esc 关闭后焦点还放大镜；口令/节日弹窗开着时 nav 处于 inert，focus 会抛错，
+            // 与站内 focus 调用同款 try/catch，preventScroll 防页面跳顶
+            if (e.key === "Escape") { setOpen(false); try { btn.focus({ preventScroll: true }); } catch (e) {} return; }
             // ↑↓ 在结果间移动（与桌面端 nav input 行为一致）
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
               var opts = panel.querySelectorAll("[data-option]");
@@ -2591,6 +2593,10 @@
         // 桌面端跨断点拖窗过来时 wrap 上可能残留 .open（导航输入框 600px 展开态）。
         // 移动端不用这个类，不摘的话 nav 里输入框会一直保持展开宽度
         wrap.classList.remove("open");
+        // 跨断点关闭也清 nav 输入框（与桌面关闭分支一致），拖窗回桌面重开不带旧词；
+        // 清的是 nav 那份 input，移动面板渲染用自带 input 副本，收回动画不受影响
+        input.value = "";
+        input.removeAttribute("aria-activedescendant");
         if (mobileCloseTimer) clearTimeout(mobileCloseTimer);
         mobileCloseTimer = setTimeout(function () {
           mobileCloseTimer = null;
@@ -2697,7 +2703,9 @@
     // 上下箭头在结果间移动（文章在前、项目在后），回车跳转选中项
     input.addEventListener("keydown", function (e) {
       var opts = options();
-      if (e.key === "Escape") { setOpen(false); btn.focus(); return; }
+      // Esc 关闭后焦点还放大镜；口令/节日弹窗开着时 nav 处于 inert，focus 会抛错，
+      // 与站内 focus 调用同款 try/catch，preventScroll 防页面跳顶（与移动端同款）
+      if (e.key === "Escape") { setOpen(false); try { btn.focus({ preventScroll: true }); } catch (e) {} return; }
       if (!opts.length) return;
       var current = panel.querySelector(".focused");
       var idx = -1;
