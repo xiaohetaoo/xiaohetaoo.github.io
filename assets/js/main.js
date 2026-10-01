@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261001b";
+  var DATA_VER = "20261001c";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1013,6 +1013,7 @@
     if (!root.classList.contains("intro-pending")) return;
     var onResize = null;
     var finish = function () {
+      clearTimeout(panicT); // panicT 在下方才赋值：提前退路径里是 undefined，clear 无害
       root.classList.remove("intro-pending");
       root.classList.remove("intro-reveal");
       if (onResize) window.removeEventListener("resize", onResize);
@@ -1021,7 +1022,13 @@
       try { document.body.inert = false; } catch (e) {}
       // 播完才写标记：中途刷新会重播一次，但保证「看过完整动画」才不再播
       try { sessionStorage.setItem("xht-intro-played", "1"); } catch (e) {}
+      // 广播给等待方（festival.js 弹窗等开场，20261001c）：事件比固定兜底计时器准——
+      // 弱网下计时器会把预算烧在「动画还没开播」上，回调抢在动画结束前执行
+      try { document.dispatchEvent(new Event("xht:intro-done")); } catch (e) {}
     };
+    /* 卡死自救：rAF 链万一断掉（frame 抛错等），8s 后强制走 finish 清场+广播，
+       页面绝不永久压暗锁死；正常播完 finish 先跑并清掉本计时器（20261001c） */
+    var panicT = setTimeout(finish, 8000);
     var btn = document.querySelector(".hero-cta .btn-primary");
     if (reducedMotion || staticMode || !btn) { finish(); return; }
     var rect = btn.getBoundingClientRect();

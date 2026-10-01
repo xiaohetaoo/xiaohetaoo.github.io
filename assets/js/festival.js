@@ -6,8 +6,10 @@
       预渲染副本里不得执行任何逻辑——尤其不能写「看过」标记，否则访客
       还没真进首页，当天的祝福就永远不弹了。与 9/10 节同款守卫。
    ② 等开场动画：首页开场动画期间 body.inert（main.js 6.7），此刻弹窗
-      点不到也关不掉、还会和动画叠在一起（实测复现过）。改为一秒十查，
-      等 intro-pending 摘掉且 inert 解除再弹，6 秒兜底。
+      点不到也关不掉、还会和动画叠在一起（实测复现过）。改为等 main.js
+      finish 广播的 xht:intro-done 再弹；原「一秒十查 + 6 秒兜底」在弱网下
+      会把 6 秒整个烧在「动画还没开播」上，弹窗插进星尘里——20261001c
+      实测复现后改事件驱动，12 秒死人开关只防 main.js 半路暴毙。
    ③ 焦点锁：弹窗开着时按口令弹窗同款给 main/nav/footer 挂 inert；
       关闭时同样按规矩还——main 要看搜索/口令弹窗是否开着（它们也可能
       正压着 main），不能无脑摘。
@@ -363,14 +365,24 @@
     if (!(location.search.match(/[?&]festival=/))) markShown(f.id);
   }
 
-  /* ---------- 5. 等开场动画播完（main.js 6.7 的 finish 会摘 intro-pending 并解除 inert） ---------- */
+  /* ---------- 5. 等开场动画播完（main.js 6.7 的 finish 会摘 intro-pending、解除 inert，
+     并广播 xht:intro-done）---------- */
   function waitIntroDone(fn) {
-    var tries = 0;
-    (function check() {
-      var busy = document.documentElement.classList.contains("intro-pending") || document.body.inert === true;
-      if (!busy || ++tries > 60) { fn(); return; } // 6 秒兜底：动画卡死也照弹，不让祝福失踪
-      setTimeout(check, 100);
-    })();
+    var busy = document.documentElement.classList.contains("intro-pending") || document.body.inert === true;
+    if (!busy) { fn(); return; }
+    /* 动画在播（或刚接管）：等 finish 的广播再弹。不再「一秒十查 + 6 秒兜底」——
+       弱网下 main.js 迟到时 6 秒会整个烧在「动画还没开播」上，回调抢在动画结束前
+       执行，弹窗正好插进星尘里（20261001c 实测复现后改事件驱动）。
+       12 秒死人开关只防 main.js 半路暴毙（广播永远不来），别让祝福失踪。 */
+    var fired = false;
+    var go = function () {
+      if (fired) return;
+      fired = true;
+      document.removeEventListener("xht:intro-done", go);
+      fn();
+    };
+    document.addEventListener("xht:intro-done", go, { once: true });
+    setTimeout(go, 12000);
   }
 
   /* ---------- 6. 入口 ---------- */

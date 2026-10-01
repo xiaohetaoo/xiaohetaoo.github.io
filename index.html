@@ -16,22 +16,30 @@
   <script>/* 首页入场动画（每会话一次，main.js 6.7）：在首次渲染前同步挂 intro-pending ——
      「自我介绍」按钮隐藏 + 整页压暗 + 锁交互。不放行的情况（本会话播过 / 减动效 /
      ?static=1 / 带 #hash 落点）什么都不挂，页面照常渲染。
-     看门狗：万一 main.js 的动画驱动没跑起来（脚本出错/被拦截），4s 后兜底解锁并写标记，
-     保证按钮绝不会永远消失、交互绝不会永久锁死。 */
+     看门狗只救「main.js 始终没接管」的死局：body.inert 是接管信号（main.js 6.7 开播
+     前才挂），没挂才解锁写标记，保证按钮绝不会永远消失、交互绝不会永久锁死；已接管
+     的清场（含 8s 卡死自救 panic）归 main.js。此前无差别 4s 强杀：弱网下 main.js
+     迟到 1.6~4s、动画播到一半被腰斩，intro-pending/inert 同时被清，节日弹窗的等待
+     落空、正好插进星尘里（20261001c 实测复现，机制见 festival.js 第 5 节）。 */
   try{
     var _ip=null;try{_ip=sessionStorage.getItem("xht-intro-played")}catch(e){}
     var _irm=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var _ist=/[?&]static(?:=1)?(?=&|$)/.test(window.location.search);
     if(!_ip&&!_irm&&!_ist&&!window.location.hash){
       document.documentElement.classList.add("intro-pending");
-      setTimeout(function(){
+      var _ikick=function(){
         var _h=document.documentElement;
         if(_h.classList.contains("intro-pending")||_h.classList.contains("intro-reveal")){
           _h.classList.remove("intro-pending");_h.classList.remove("intro-reveal");
+          var _cv=document.getElementById("intro-canvas");
+          if(_cv&&_cv.parentNode)_cv.parentNode.removeChild(_cv);
           try{document.body.inert=false}catch(e){}
           try{sessionStorage.setItem("xht-intro-played","1")}catch(e){}
         }
-      },4000);
+      };
+      setTimeout(function(){if(!(document.body&&document.body.inert))_ikick()},4000);
+      /* 最后底线：接管后半路暴毙（panic 也失效）也别永久压暗锁页；预渲染副本不抢 */
+      setTimeout(function(){if(document.visibilityState!=="prerender")_ikick()},10000);
     }
   }catch(e){try{document.documentElement.classList.remove("intro-pending")}catch(_e){}}</script>
   <noscript><style>[data-loading]{display:none}</style></noscript>
@@ -92,7 +100,7 @@
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20261001b" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20261001c" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -380,10 +388,10 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20261001b"></script>
+  <script src="assets/js/main.js?v=20261001c"></script>
   <!-- 节日祝福弹窗：文案与数据都在 festival.js 顶部（= 审核稿定稿），样式自包含不依赖 style.css；
        预览任一节日加 ?festival=<id>（如 ?festival=qixi），正式弹出门槛见文件头注释 -->
-  <script src="assets/js/festival.js?v=20261001b"></script>
+  <script src="assets/js/festival.js?v=20261001c"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
