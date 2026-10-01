@@ -21,30 +21,57 @@
   "use strict";
 
   /* ---------- 1. 文案数据（date 为核实过的公历日；lunar 只做展示，没有农历说法的留空）
-     覆盖到 2030-10-01（2026-09-27 用户拍板补齐三年）。已核实的坑：
+     覆盖到 2030-12-13（2026-09-27 补齐农历三年；2026-10-01 用户拍板再加纪念/爱国类 10 节日，
+   固定公历日逐年列全到 2030，无农历换算风险）。已核实的坑：
      2028 闰五月——端午按【前一个五月】算，落 5-28 而非闰五月的 6-24；
-     2025–2029 连续五年除夕都是腊月廿九（没有大年三十）；2030 除夕的农历标注不确定，留空走公历眉线。 ---------- */
+     2025–2029 连续五年除夕都是腊月廿九（没有大年三十）；2030 除夕的农历标注不确定，留空走公历眉线。
+     新增两字段：tone:"solemn"＝庄重变体（纪念/哀悼日：烛光、素色标题、纯淡入，样式见 3 节 solemn 覆写）；
+     eyebrow＝专用眉线字（如「国家公祭日」），缺省仍按农历/公历自动算。 ---------- */
   var FESTIVALS = [
     { id: "mid-autumn", name: "中秋节", lunar: "八月十五", date: "2026-09-25",
       text: "中秋快乐！愿你抬头有圆月，低头有月饼，身边有伊人。千里共婵娟，我们云端常相见。" },
     { id: "national-day", name: "国庆节", lunar: "", date: "2026-10-01",
       text: "国庆快乐！祝祖国生日快乐，也祝你假期愉快！" },
+    { id: "guangfu-2026", name: "台湾光复纪念日", lunar: "", eyebrow: "铭记十·二五", tone: "solemn", date: "2026-10-25",
+      text: "1945 年 10 月 25 日，台湾光复、重回祖国怀抱。两岸同根，共盼团圆。" },
+    { id: "gongji-2026", name: "国家公祭日", lunar: "", eyebrow: "国家公祭日", tone: "solemn", date: "2026-12-13",
+      text: "铭记 1937·12·13。缅怀南京大屠杀死难同胞，铭记历史、珍爱和平，吾辈自强。" },
     { id: "chuxi", name: "除夕", lunar: "腊月廿九", date: "2027-02-05",
       text: "除夕快乐！旧岁将尽，万事翻篇，我们来年再见！" },
     { id: "chunjie", name: "春节", lunar: "正月初一", date: "2027-02-06",
       text: "新年快乐，所愿皆成。心期不负，万事昌隆。" },
     { id: "yuanxiao", name: "元宵节", lunar: "正月十五", date: "2027-02-20",
       text: "元宵快乐！愿你像碗里的汤圆，日子甜甜糯糯，家人团团圆圆，心事都圆圆满满。" },
-    { id: "qingming", name: "清明节", lunar: "", date: "2027-04-05",
-      text: "清明安康。遥寄思念，愿故人安歇。" },
+    { id: "qingming", name: "清明节", lunar: "", eyebrow: "清明", tone: "solemn", date: "2027-04-05",
+      text: "慎终追远，缅怀先人与英烈。春和景明，亦是我们守护的人间。" },
+    { id: "wenchuan-2027", name: "全国防灾减灾日", lunar: "", eyebrow: "铭记五·一二", tone: "solemn", date: "2027-05-12",
+      text: "缅怀汶川大地震遇难同胞。逝者安息，生者奋发；防灾减灾，警钟长鸣。" },
+    { id: "party-2027", name: "建党节", lunar: "", eyebrow: "七·一", date: "2027-07-01",
+      text: "建党节快乐！1997 年的今天香港回归，双喜同贺。" },
+    { id: "qiqi-2027", name: "七七事变纪念日", lunar: "", eyebrow: "铭记七七", tone: "solemn", date: "2027-07-07",
+      text: "1937 年 7 月 7 日，卢沟桥的枪声划破夜空，全民族抗战由此开始。山河不屈，吾辈自强。" },
+    { id: "tangshan-2027", name: "唐山大地震纪念日", lunar: "", eyebrow: "缅怀七·二八", tone: "solemn", date: "2027-07-28",
+      text: "缅怀唐山大地震罹难同胞。灾难压不垮的，是重建家园的人们。" },
+    { id: "army-2027", name: "建军节", lunar: "", eyebrow: "八·一", date: "2027-08-01",
+      text: "建军节快乐！致敬最可爱的人，愿钢铁长城永固，山河无恙。" },
     { id: "duanwu", name: "端午节", lunar: "五月初五", date: "2027-06-09",
       text: "端午安康！愿粽叶包住烦恼，糯米粘住好运，日子「粽」是顺利。" },
     { id: "qixi", name: "七夕", lunar: "七月初七", date: "2027-08-08",
       text: "七夕快乐，有情人成。孤身跋涉，世予温情。" },
+    { id: "shengli-2027", name: "抗战胜利纪念日", lunar: "", eyebrow: "铭记九·三", tone: "solemn", date: "2027-09-03",
+      text: "1945 年 9 月 3 日，中国人民抗日战争迎来胜利。正义必胜，和平必胜，人民必胜。" },
     { id: "mid-autumn-2027", name: "中秋节", lunar: "八月十五", date: "2027-09-15",
       text: "中秋快乐！愿你抬头有圆月，低头有月饼，身边有伊人。千里共婵娟，我们云端常相见。" },
+    { id: "jiujiuba-2027", name: "九一八纪念日", lunar: "", eyebrow: "勿忘九一八", tone: "solemn", date: "2027-09-18",
+      text: "1931 年 9 月 18 日，柳条湖的爆炸声撕裂沈阳的夜。警钟长鸣，吾辈自强。" },
+    { id: "martyrs-2027", name: "烈士纪念日", lunar: "", eyebrow: "致敬英烈", tone: "solemn", date: "2027-09-30",
+      text: "山河已无恙，英魂照汗青。今日之和平，是他们用生命换来的黎明。" },
     { id: "national-day-2027", name: "国庆节", lunar: "", date: "2027-10-01",
       text: "国庆快乐！祝祖国生日快乐，也祝你假期愉快！" },
+    { id: "guangfu-2027", name: "台湾光复纪念日", lunar: "", eyebrow: "铭记十·二五", tone: "solemn", date: "2027-10-25",
+      text: "1945 年 10 月 25 日，台湾光复、重回祖国怀抱。两岸同根，共盼团圆。" },
+    { id: "gongji-2027", name: "国家公祭日", lunar: "", eyebrow: "国家公祭日", tone: "solemn", date: "2027-12-13",
+      text: "铭记 1937·12·13。缅怀南京大屠杀死难同胞，铭记历史、珍爱和平，吾辈自强。" },
 
     { id: "chuxi-2028", name: "除夕", lunar: "腊月廿九", date: "2028-01-25",
       text: "除夕快乐！旧岁将尽，万事翻篇，我们来年再见！" },
@@ -52,8 +79,8 @@
       text: "新年快乐，所愿皆成。心期不负，万事昌隆。" },
     { id: "yuanxiao-2028", name: "元宵节", lunar: "正月十五", date: "2028-02-09",
       text: "元宵快乐！愿你像碗里的汤圆，日子甜甜糯糯，家人团团圆圆，心事都圆圆满满。" },
-    { id: "qingming-2028", name: "清明节", lunar: "", date: "2028-04-04",
-      text: "清明安康。遥寄思念，愿故人安歇。" },
+    { id: "qingming-2028", name: "清明节", lunar: "", eyebrow: "清明", tone: "solemn", date: "2028-04-04",
+      text: "慎终追远，缅怀先人与英烈。春和景明，亦是我们守护的人间。" },
     { id: "duanwu-2028", name: "端午节", lunar: "五月初五", date: "2028-05-28",
       text: "端午安康！愿粽叶包住烦恼，糯米粘住好运，日子「粽」是顺利。" },
     { id: "qixi-2028", name: "七夕", lunar: "七月初七", date: "2028-08-26",
@@ -62,6 +89,26 @@
       text: "中秋快乐！愿你抬头有圆月，低头有月饼，身边有伊人。千里共婵娟，我们云端常相见。" },
     { id: "national-day-2028", name: "国庆节", lunar: "", date: "2028-10-01",
       text: "国庆快乐！祝祖国生日快乐，也祝你假期愉快！" },
+    { id: "wenchuan-2028", name: "全国防灾减灾日", lunar: "", eyebrow: "铭记五·一二", tone: "solemn", date: "2028-05-12",
+      text: "缅怀汶川大地震遇难同胞。逝者安息，生者奋发；防灾减灾，警钟长鸣。" },
+    { id: "party-2028", name: "建党节", lunar: "", eyebrow: "七·一", date: "2028-07-01",
+      text: "建党节快乐！1997 年的今天香港回归，双喜同贺。" },
+    { id: "qiqi-2028", name: "七七事变纪念日", lunar: "", eyebrow: "铭记七七", tone: "solemn", date: "2028-07-07",
+      text: "1937 年 7 月 7 日，卢沟桥的枪声划破夜空，全民族抗战由此开始。山河不屈，吾辈自强。" },
+    { id: "tangshan-2028", name: "唐山大地震纪念日", lunar: "", eyebrow: "缅怀七·二八", tone: "solemn", date: "2028-07-28",
+      text: "缅怀唐山大地震罹难同胞。灾难压不垮的，是重建家园的人们。" },
+    { id: "army-2028", name: "建军节", lunar: "", eyebrow: "八·一", date: "2028-08-01",
+      text: "建军节快乐！致敬最可爱的人，愿钢铁长城永固，山河无恙。" },
+    { id: "shengli-2028", name: "抗战胜利纪念日", lunar: "", eyebrow: "铭记九·三", tone: "solemn", date: "2028-09-03",
+      text: "1945 年 9 月 3 日，中国人民抗日战争迎来胜利。正义必胜，和平必胜，人民必胜。" },
+    { id: "jiujiuba-2028", name: "九一八纪念日", lunar: "", eyebrow: "勿忘九一八", tone: "solemn", date: "2028-09-18",
+      text: "1931 年 9 月 18 日，柳条湖的爆炸声撕裂沈阳的夜。警钟长鸣，吾辈自强。" },
+    { id: "martyrs-2028", name: "烈士纪念日", lunar: "", eyebrow: "致敬英烈", tone: "solemn", date: "2028-09-30",
+      text: "山河已无恙，英魂照汗青。今日之和平，是他们用生命换来的黎明。" },
+    { id: "guangfu-2028", name: "台湾光复纪念日", lunar: "", eyebrow: "铭记十·二五", tone: "solemn", date: "2028-10-25",
+      text: "1945 年 10 月 25 日，台湾光复、重回祖国怀抱。两岸同根，共盼团圆。" },
+    { id: "gongji-2028", name: "国家公祭日", lunar: "", eyebrow: "国家公祭日", tone: "solemn", date: "2028-12-13",
+      text: "铭记 1937·12·13。缅怀南京大屠杀死难同胞，铭记历史、珍爱和平，吾辈自强。" },
 
     { id: "chuxi-2029", name: "除夕", lunar: "腊月廿九", date: "2029-02-12",
       text: "除夕快乐！旧岁将尽，万事翻篇，我们来年再见！" },
@@ -69,8 +116,8 @@
       text: "新年快乐，所愿皆成。心期不负，万事昌隆。" },
     { id: "yuanxiao-2029", name: "元宵节", lunar: "正月十五", date: "2029-02-27",
       text: "元宵快乐！愿你像碗里的汤圆，日子甜甜糯糯，家人团团圆圆，心事都圆圆满满。" },
-    { id: "qingming-2029", name: "清明节", lunar: "", date: "2029-04-04",
-      text: "清明安康。遥寄思念，愿故人安歇。" },
+    { id: "qingming-2029", name: "清明节", lunar: "", eyebrow: "清明", tone: "solemn", date: "2029-04-04",
+      text: "慎终追远，缅怀先人与英烈。春和景明，亦是我们守护的人间。" },
     { id: "duanwu-2029", name: "端午节", lunar: "五月初五", date: "2029-06-16",
       text: "端午安康！愿粽叶包住烦恼，糯米粘住好运，日子「粽」是顺利。" },
     { id: "qixi-2029", name: "七夕", lunar: "七月初七", date: "2029-08-16",
@@ -79,6 +126,26 @@
       text: "中秋快乐！愿你抬头有圆月，低头有月饼，身边有伊人。千里共婵娟，我们云端常相见。" },
     { id: "national-day-2029", name: "国庆节", lunar: "", date: "2029-10-01",
       text: "国庆快乐！祝祖国生日快乐，也祝你假期愉快！" },
+    { id: "wenchuan-2029", name: "全国防灾减灾日", lunar: "", eyebrow: "铭记五·一二", tone: "solemn", date: "2029-05-12",
+      text: "缅怀汶川大地震遇难同胞。逝者安息，生者奋发；防灾减灾，警钟长鸣。" },
+    { id: "party-2029", name: "建党节", lunar: "", eyebrow: "七·一", date: "2029-07-01",
+      text: "建党节快乐！1997 年的今天香港回归，双喜同贺。" },
+    { id: "qiqi-2029", name: "七七事变纪念日", lunar: "", eyebrow: "铭记七七", tone: "solemn", date: "2029-07-07",
+      text: "1937 年 7 月 7 日，卢沟桥的枪声划破夜空，全民族抗战由此开始。山河不屈，吾辈自强。" },
+    { id: "tangshan-2029", name: "唐山大地震纪念日", lunar: "", eyebrow: "缅怀七·二八", tone: "solemn", date: "2029-07-28",
+      text: "缅怀唐山大地震罹难同胞。灾难压不垮的，是重建家园的人们。" },
+    { id: "army-2029", name: "建军节", lunar: "", eyebrow: "八·一", date: "2029-08-01",
+      text: "建军节快乐！致敬最可爱的人，愿钢铁长城永固，山河无恙。" },
+    { id: "shengli-2029", name: "抗战胜利纪念日", lunar: "", eyebrow: "铭记九·三", tone: "solemn", date: "2029-09-03",
+      text: "1945 年 9 月 3 日，中国人民抗日战争迎来胜利。正义必胜，和平必胜，人民必胜。" },
+    { id: "jiujiuba-2029", name: "九一八纪念日", lunar: "", eyebrow: "勿忘九一八", tone: "solemn", date: "2029-09-18",
+      text: "1931 年 9 月 18 日，柳条湖的爆炸声撕裂沈阳的夜。警钟长鸣，吾辈自强。" },
+    { id: "martyrs-2029", name: "烈士纪念日", lunar: "", eyebrow: "致敬英烈", tone: "solemn", date: "2029-09-30",
+      text: "山河已无恙，英魂照汗青。今日之和平，是他们用生命换来的黎明。" },
+    { id: "guangfu-2029", name: "台湾光复纪念日", lunar: "", eyebrow: "铭记十·二五", tone: "solemn", date: "2029-10-25",
+      text: "1945 年 10 月 25 日，台湾光复、重回祖国怀抱。两岸同根，共盼团圆。" },
+    { id: "gongji-2029", name: "国家公祭日", lunar: "", eyebrow: "国家公祭日", tone: "solemn", date: "2029-12-13",
+      text: "铭记 1937·12·13。缅怀南京大屠杀死难同胞，铭记历史、珍爱和平，吾辈自强。" },
 
     { id: "chuxi-2030", name: "除夕", lunar: "", date: "2030-02-02",
       text: "除夕快乐！旧岁将尽，万事翻篇，我们来年再见！" },
@@ -86,14 +153,34 @@
       text: "新年快乐，所愿皆成。心期不负，万事昌隆。" },
     { id: "yuanxiao-2030", name: "元宵节", lunar: "正月十五", date: "2030-02-17",
       text: "元宵快乐！愿你像碗里的汤圆，日子甜甜糯糯，家人团团圆圆，心事都圆圆满满。" },
-    { id: "qingming-2030", name: "清明节", lunar: "", date: "2030-04-05",
-      text: "清明安康。遥寄思念，愿故人安歇。" },
+    { id: "qingming-2030", name: "清明节", lunar: "", eyebrow: "清明", tone: "solemn", date: "2030-04-05",
+      text: "慎终追远，缅怀先人与英烈。春和景明，亦是我们守护的人间。" },
     { id: "duanwu-2030", name: "端午节", lunar: "五月初五", date: "2030-06-05",
       text: "端午安康！愿粽叶包住烦恼，糯米粘住好运，日子「粽」是顺利。" },
     { id: "qixi-2030", name: "七夕", lunar: "七月初七", date: "2030-08-05",
       text: "七夕快乐，有情人成。孤身跋涉，世予温情。" },
     { id: "mid-autumn-2030", name: "中秋节", lunar: "八月十五", date: "2030-09-12",
       text: "中秋快乐！愿你抬头有圆月，低头有月饼，身边有伊人。千里共婵娟，我们云端常相见。" },
+    { id: "wenchuan-2030", name: "全国防灾减灾日", lunar: "", eyebrow: "铭记五·一二", tone: "solemn", date: "2030-05-12",
+      text: "缅怀汶川大地震遇难同胞。逝者安息，生者奋发；防灾减灾，警钟长鸣。" },
+    { id: "party-2030", name: "建党节", lunar: "", eyebrow: "七·一", date: "2030-07-01",
+      text: "建党节快乐！1997 年的今天香港回归，双喜同贺。" },
+    { id: "qiqi-2030", name: "七七事变纪念日", lunar: "", eyebrow: "铭记七七", tone: "solemn", date: "2030-07-07",
+      text: "1937 年 7 月 7 日，卢沟桥的枪声划破夜空，全民族抗战由此开始。山河不屈，吾辈自强。" },
+    { id: "tangshan-2030", name: "唐山大地震纪念日", lunar: "", eyebrow: "缅怀七·二八", tone: "solemn", date: "2030-07-28",
+      text: "缅怀唐山大地震罹难同胞。灾难压不垮的，是重建家园的人们。" },
+    { id: "army-2030", name: "建军节", lunar: "", eyebrow: "八·一", date: "2030-08-01",
+      text: "建军节快乐！致敬最可爱的人，愿钢铁长城永固，山河无恙。" },
+    { id: "shengli-2030", name: "抗战胜利纪念日", lunar: "", eyebrow: "铭记九·三", tone: "solemn", date: "2030-09-03",
+      text: "1945 年 9 月 3 日，中国人民抗日战争迎来胜利。正义必胜，和平必胜，人民必胜。" },
+    { id: "jiujiuba-2030", name: "九一八纪念日", lunar: "", eyebrow: "勿忘九一八", tone: "solemn", date: "2030-09-18",
+      text: "1931 年 9 月 18 日，柳条湖的爆炸声撕裂沈阳的夜。警钟长鸣，吾辈自强。" },
+    { id: "martyrs-2030", name: "烈士纪念日", lunar: "", eyebrow: "致敬英烈", tone: "solemn", date: "2030-09-30",
+      text: "山河已无恙，英魂照汗青。今日之和平，是他们用生命换来的黎明。" },
+    { id: "guangfu-2030", name: "台湾光复纪念日", lunar: "", eyebrow: "铭记十·二五", tone: "solemn", date: "2030-10-25",
+      text: "1945 年 10 月 25 日，台湾光复、重回祖国怀抱。两岸同根，共盼团圆。" },
+    { id: "gongji-2030", name: "国家公祭日", lunar: "", eyebrow: "国家公祭日", tone: "solemn", date: "2030-12-13",
+      text: "铭记 1937·12·13。缅怀南京大屠杀死难同胞，铭记历史、珍爱和平，吾辈自强。" },
     { id: "national-day-2030", name: "国庆节", lunar: "", date: "2030-10-01",
       text: "国庆快乐！祝祖国生日快乐，也祝你假期愉快！" }
   ];
@@ -119,7 +206,7 @@
 
   function pickFestival() {
     /* 预览参数的 id 允许小写字母/数字/连字符（按年扩表后 id 带年份，如 mid-autumn-2030） */
-  var want = (location.search.match(/[?&]festival=([a-z0-9-]+)/) || [])[1];
+    var want = (location.search.match(/[?&]festival=([a-z0-9-]+)/) || [])[1];
     if (want) {
       for (var i = 0; i < FESTIVALS.length; i++) {
         if (FESTIVALS[i].id === want) return FESTIVALS[i];
@@ -175,6 +262,13 @@
     ".fst-rule{width:30px;height:2px;margin:16px auto 14px;border-radius:1px;" +
     "background:linear-gradient(90deg,var(--grad-start),var(--accent))}" +
     ".fst-text{margin:0;font-size:16px;line-height:2.05;color:var(--text-1)}" +
+    /* 庄重变体（tone:"solemn"，纪念/哀悼类）：撤金辉换烛光、标题去渐变改素色、
+       弹出改纯淡入、蒙层加深；机制（等开场/每访客每年一次/预览/关闭）与庆祝款全同。 */
+    ".fst-modal.solemn .fst-backdrop{background:rgba(0,0,0,.66)}" +
+    ".fst-modal.solemn .fst-panel{animation:fst-fade .34s var(--ease-out) both}" +
+    ".fst-modal.solemn .fst-halo{background:radial-gradient(closest-side,rgba(255,214,150,.22),transparent 70%)}" +
+    ".fst-modal.solemn .fst-title{background:none;-webkit-background-clip:border-box;background-clip:border-box;-webkit-text-fill-color:currentColor;color:var(--text-1)}" +
+    ".fst-modal.solemn .fst-rule{background:var(--border-strong)}" +
     "@keyframes fst-fade{from{opacity:0}to{opacity:1}}" +
     "@keyframes fst-pop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}" +
     "@media (max-width:510px){.fst-modal{padding:12px}.fst-panel{max-width:none;border-radius:var(--radius)}}" +
@@ -189,7 +283,8 @@
   /* ---------- 4. 弹窗 DOM 与行为 ---------- */
   function buildModal(f) {
     var root = document.createElement("div");
-    root.className = "fst-modal";
+    /* 庄重变体挂根节点：纪念/哀悼日（tone:"solemn"）灰调烛光，庆祝款不加类 */
+    root.className = "fst-modal" + (f.tone === "solemn" ? " solemn" : "");
     root.id = "fst-modal";
     root.setAttribute("role", "dialog");
     root.setAttribute("aria-modal", "true");
@@ -210,7 +305,7 @@
       '<p class="fst-text"></p>' +
       "</div>";
 
-    root.querySelector(".fst-eyebrow").textContent = eyebrowOf(f);
+    root.querySelector(".fst-eyebrow").textContent = f.eyebrow || eyebrowOf(f); // 纪念类专用眉线优先
     root.querySelector(".fst-title").textContent = f.name;
     root.querySelector(".fst-text").textContent = f.text;
     return root;
