@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261001c";
+  var DATA_VER = "20261001d";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1319,10 +1319,30 @@
     });
   }
 
-  function postCardHtml(p, i, root) {
+  /* 卡片标题级别跟随所在列表区块的区块标题（20261001d）：区块标题是 h1
+     （archive/projects 的「全部×」）→ 卡片用 h2；是 h2（index 各节）→ h3。
+     修屏幕阅读器大纲 h1→h3 跳级；向上找最近标题，导航浮层等无标题容器回落 h3。 */
+  function listHeadingLevel(container) {
+    var el = container;
+    while (el && el !== document.body) {
+      for (var sib = el.previousElementSibling; sib; sib = sib.previousElementSibling) {
+        // 区块标题可能裹在 .section-head 之类的壳里：先看兄弟本身，再翻兄弟内部
+        if (/^H[1-4]$/.test(sib.tagName)) return sib.tagName === "H1" ? "h2" : "h3";
+        var inner = sib.querySelector ? sib.querySelector("h1,h2,h3,h4") : null;
+        if (inner) return inner.tagName === "H1" ? "h2" : "h3";
+      }
+      el = el.parentElement;
+    }
+    return "h3";
+  }
+
+  function postCardHtml(p, i, root, lvl) {
     // 防线：root 只认字符串。若有人写成 .map(postCardHtml)，map 会把整个数组
     // 当第三个参数传进来，非字符串一律按 "" 处理，避免链接拼出垃圾导致 404
     if (typeof root !== "string") root = "";
+    // 标题级别白名单：只有 h2/h3 两档，其余一律按 h3——map 直传、导航搜索
+    // 浮层等旧调用点不受影响（h2 仅用于区块标题是 h1 的整页列表）
+    if (lvl !== "h2") lvl = "h3";
     var tags = (p.tags || [])
       .map(function (t, j) {
         return '<span class="tag' + (j > 0 ? " tag-gray" : "") + '">' + esc(t) + "</span>";
@@ -1333,7 +1353,7 @@
     return (
       '<a class="post-card reveal"' + delay + ' href="' + (root || "") + 'posts/' + esc(p.slug) + '.html">' +
         '<span class="date">' + esc(p.date) + pin + "</span>" +
-        "<div><h3>" + esc(p.title) + '</h3><p class="excerpt">' + esc(p.excerpt) + "</p></div>" +
+        "<div><" + lvl + ">" + esc(p.title) + "</" + lvl + '><p class="excerpt">' + esc(p.excerpt) + "</p></div>" +
         '<div class="meta-col"><span class="tags">' + tags + '</span><span class="arrow" aria-hidden="true">-&gt;</span></div>' +
       "</a>"
     );
@@ -1360,7 +1380,7 @@
           html += '<p class="search-hint">找到 <b>' + shown.length + "</b> 篇与「" + esc(query.trim()) + "」相关的文章</p>";
         }
         html += shown.length
-          ? shown.map(function (p, i) { return postCardHtml(p, i, ""); }).join("")
+          ? shown.map(function (p, i) { return postCardHtml(p, i, "", listHeadingLevel(container)); }).join("")
           : '<p class="search-empty">没有找到相关文章，换个关键词试试？</p>';
         unwatchReveal(container);
         container.innerHTML = html;
@@ -1596,7 +1616,9 @@
     compass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>'
   };
 
-  function projectCardHtml(p, i) {
+  function projectCardHtml(p, i, lvl) {
+    // 级别白名单同 postCardHtml：map 直传数组等非 "h2" 一律按 h3 兜底
+    if (lvl !== "h2") lvl = "h3";
     var tags = (p.tags || [])
       .map(function (t) {
         return '<span class="tag tag-gray">' + esc(t) + "</span>";
@@ -1607,7 +1629,7 @@
     var icon = PROJECT_ICONS[p.icon] || PROJECT_ICONS.cube;
     var inner =
       '<div class="p-icon" aria-hidden="true">' + icon + "</div>" +
-      "<h3>" + esc(p.title) + '<span class="p-date">' + esc(p.date) + pin + "</span></h3>" +
+      "<" + lvl + ">" + esc(p.title) + '<span class="p-date">' + esc(p.date) + pin + "</" + lvl + ">" +
       '<p class="p-desc">' + esc(p.desc) + "</p>" +
       '<div class="p-foot"><span class="tags">' + tags + '</span><span class="p-link mono">' + esc(p.linkText) + "</span></div>";
     if (p.href) {
@@ -1692,7 +1714,7 @@
           }
         }
         unwatchReveal(container);
-        container.innerHTML = shown.map(projectCardHtml).join("");
+        container.innerHTML = shown.map(function (p, i) { return projectCardHtml(p, i, listHeadingLevel(container)); }).join("");
         if (q) {
           // 打字过程中的连续重渲染，跳过渐显动画避免闪烁
           container.querySelectorAll(".reveal").forEach(function (el) { markRevealed(el); });
@@ -2264,7 +2286,7 @@
           html +=
             '<a class="related-card reveal" href="' + root + "/posts/" + esc(p.slug) + '.html" style="--d:' + (i * 0.05) + 's">' +
               '<span class="date">' + esc(p.date) + "</span>" +
-              "<h3>" + esc(p.title) + "</h3>" +
+              "<h2>" + esc(p.title) + "</h2>" +
               (tags ? '<div class="tag-row">' + tags + "</div>" : "") +
             "</a>";
         });
@@ -2886,6 +2908,8 @@
       if (labelEl) labelEl.textContent = m === "name" ? "怎么称呼你？" : "输入口令";
       if (submit) submit.setAttribute("aria-label", m === "name" ? "继续" : "提交口令");
       input.placeholder = m === "name" ? "输入你的称呼" : "请输入口令";
+      // 可访问名随两态同步：placeholder 只给视觉，朗读名不能跟实际用途脱节（20261001d）
+      input.setAttribute("aria-label", m === "name" ? "输入称呼" : "输入口令");
       input.maxLength = m === "name" ? 16 : 60;
     }
     // 回到初始态并清空：关弹窗、以及打开弹窗时兜底调用
