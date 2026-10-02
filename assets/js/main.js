@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261001d";
+  var DATA_VER = "20261002a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -2534,6 +2534,10 @@
       // 1) ARIA 状态
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       input.setAttribute("aria-expanded", open ? "true" : "false");
+      // 移动输入框副本的 aria-expanded 同步：副本随面板建/毁，关闭动画期间还挂在 DOM，
+      // 屏读器要读到 false（此前只切桌面 input，20261002a 补齐）
+      var mobileInputNow = panel.querySelector(".nav-search-mobile-input");
+      if (mobileInputNow) mobileInputNow.setAttribute("aria-expanded", open ? "true" : "false");
       // 2) 主内容 inert 锁。关闭时若口令弹窗或节日弹窗还开着，main 的 inert 归它们管，
       //    不能顺手摘（与桌面分支同一坑，20260925a）
       var main = document.querySelector("main");
@@ -2562,9 +2566,10 @@
           // placeholder 跟 nav 里的 input 保持一致（nav input 的 placeholder 已被 syncPlaceholder 切过）
           mobileInput.placeholder = input.placeholder;
           mobileInput.autocomplete = "off";
-          mobileInput.setAttribute("aria-label", "搜索");
+          mobileInput.setAttribute("aria-label", "搜索文章与项目"); // 与桌面 .nav-search-input 同名（20261002a 前是「搜索」，屏读器两个框念两个名）
           // ARIA combobox：与桌面端 nav input 一致，屏读器能识别"输入框 + 列表"模式
           mobileInput.setAttribute("role", "combobox");
+          mobileInput.setAttribute("aria-expanded", open ? "true" : "false"); // 副本也要有 combobox 展开态（20261002a，与桌面 input 对齐）
           mobileInput.setAttribute("aria-autocomplete", "list");
           mobileInput.setAttribute("aria-controls", panel.id || "nav-search-results");
           mobileInput.addEventListener("input", function () {

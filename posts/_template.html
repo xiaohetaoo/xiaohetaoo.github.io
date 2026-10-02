@@ -15,24 +15,35 @@
     else if(/\/(?:teacher-[a-z]+|birthday|huiyan-shisi)\.html(?:[?#]|$)/.test(document.referrer||"")){
       document.documentElement.classList.add("nav-back");}}catch(e){}</script>
   <!-- 加新文章共两步：
-       1) 复制本文件，搜索「TODO」逐个替换
+       1) 复制本文件，把下方所有 __SLUG__ / TODO / __DATE__ 占位逐个替换（缺一个都会上线脏数据）
        2) 在 posts.json 里加一条记录（标题/日期/摘要/标签，要置顶就加 "pinned": true） -->
-  <!-- ▼▼ 每篇文章只需要改下面 3 行 ▼▼ -->
+  <!-- ▼▼ 复制后必须替换下列全部字段（历史教训：只改 3 行会留下指向 games-i-played 的重复 canonical）▼▼
+       必改清单：
+       · <title> 与 canonical 的 __SLUG__（文件名同步改！）
+       · og:title / og:description / og:url
+       · twitter:title / twitter:description
+       · article:published_time / article:modified_time 的 __DATE__
+       · <meta name="date"> 的 __DATE__
+       · JSON-LD Article：headline / description / datePublished / dateModified /
+         mainEntityOfPage.@id / keywords
+       · JSON-LD BreadcrumbList：第 3 项 name 与 item
+       不需要动的：og:image / og:image:alt / twitter:image（全站共用）、og:site_name / locale、
+       author/publisher（都是小核桃） -->
   <title>文章标题占位 · 小核桃的个人博客</title>
-  <link rel="canonical" href="https://xiaohetaoo.github.io/posts/games-i-played.html" />
-  <meta property="og:title" content="我玩过的游戏（双语）" />
-  <meta property="og:description" content="想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。" />
+  <link rel="canonical" href="https://xiaohetaoo.github.io/posts/__SLUG__.html" />
+  <meta property="og:title" content="TODO：文章标题" />
+  <meta property="og:description" content="TODO：文章摘要" />
   <meta property="og:type" content="article" />
-  <meta property="og:url" content="https://xiaohetaoo.github.io/posts/games-i-played.html" />
+  <meta property="og:url" content="https://xiaohetaoo.github.io/posts/__SLUG__.html" />
   <meta property="og:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
   <meta property="og:site_name" content="小核桃的个人博客" />
   <meta property="og:locale" content="zh_CN" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="我玩过的游戏（双语）" />
-  <meta name="twitter:description" content="想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。" />
+  <meta name="twitter:title" content="TODO：文章标题" />
+  <meta name="twitter:description" content="TODO：文章摘要" />
   <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
-  <meta property="article:published_time" content="2026-08-29T00:00:00+08:00" />
-  <meta property="article:modified_time" content="2026-08-29T00:00:00+08:00" />
+  <meta property="article:published_time" content="__DATE__T00:00:00+08:00" />
+  <meta property="article:modified_time" content="__DATE__T00:00:00+08:00" />
   <meta property="article:author" content="小核桃" />
   <meta property="og:image:alt" content="小核桃的个人博客" />
 
@@ -40,10 +51,10 @@
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "我玩过的游戏（双语）",
-  "description": "想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。",
-  "datePublished": "2026-08-29",
-  "dateModified": "2026-08-29",
+  "headline": "TODO：文章标题",
+  "description": "TODO：文章摘要",
+  "datePublished": "__DATE__",
+  "dateModified": "__DATE__",
   "author": {
     "@type": "Person",
     "name": "小核桃",
@@ -59,10 +70,10 @@
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://xiaohetaoo.github.io/posts/games-i-played.html"
+    "@id": "https://xiaohetaoo.github.io/posts/__SLUG__.html"
   },
   "image": "https://xiaohetaoo.github.io/assets/img/og-image-square.png",
-  "keywords": "游戏, 了解我"
+  "keywords": "TODO：标签, 逗号分隔"
 }
   </script>
   <script type="application/ld+json">
@@ -85,22 +96,22 @@
     {
       "@type": "ListItem",
       "position": 3,
-      "name": "我玩过的游戏（双语）",
-      "item": "https://xiaohetaoo.github.io/posts/games-i-played.html"
+      "name": "TODO：文章标题",
+      "item": "https://xiaohetaoo.github.io/posts/__SLUG__.html"
     }
   ]
 }
   </script>
 
 <meta name="description" content="一句话摘要，会显示在搜索结果和分享卡片上。" />
-  <meta name="date" content="2026-08-29" />
-  <!-- ▲▲ 改完标题后，全文搜索「TODO」逐个替换即可 ▲▲ -->
+  <meta name="date" content="__DATE__" />
+  <!-- ▲▲ 改完标题后，全文搜索「TODO」「__SLUG__」「__DATE__」逐个替换即可 ▲▲ -->
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="../assets/img/favicon-64.png" />
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261001d" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261002a" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -245,7 +256,7 @@ console.log("hello xiaohetao");</code></pre>
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20261001d"></script>
+  <script src="../assets/js/main.js?v=20261002a"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
