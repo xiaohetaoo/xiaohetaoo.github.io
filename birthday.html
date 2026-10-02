@@ -371,6 +371,9 @@
       .burst { display: none; } /* 喷彩带整段停掉（锥体留着当静态装饰） */
       .bday-title, .cake-in { opacity: 1; transform: none; }
       .bday-hint { opacity: 0.88; transform: translateY(var(--drop, 0px)); }
+      /* 蛋糕的正常位置 = cakeFloat 关键帧里的 translateY(var(--drop))：动画被关掉后
+         要把这段位移补回来，否则蛋糕比提示行高出 --drop，两者相对错位（20261002e） */
+      .cake-wrap { transform: translateY(var(--drop, 0px)); }
       /* 静态模式吹灭也要真的灭：动画被上面的 !important 关了，改用直接置 0 的透明度 */
       .flame-btn.out .flame, .flame-btn.out .glow { opacity: 0; animation: none !important; }
       .flame-btn.out .smoke { display: none; }
@@ -613,7 +616,9 @@
                || /[#&]name=([^&]*)/.exec(window.location.hash);
           if (!m) return;   // 直接打开本页（无参数）就保留 HTML 里的兜底名字
           var name;
-          try { name = decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { name = m[1]; }
+          // 非法百分号编码（%FF%FE 这类损坏输入）不作兜底填充：decode 失败就保持
+          // HTML 里的默认称呼，别把「%FF%FE」原样顶上标题（20261002e）
+          try { name = decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { name = ""; }
           name = String(name).replace(/[\u0000-\u001f\u007f]/g, "").replace(/\s+/g, " ").trim();
           if (!name) return;
           // 与口令弹窗同一口径：半角（字母/数字）算 0.5、其余算 1，上限 5；手改 URL 超长就截断

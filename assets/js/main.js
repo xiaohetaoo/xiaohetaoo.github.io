@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261002d";
+  var DATA_VER = "20261002e";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1476,7 +1476,7 @@
       return out;
     }
 
-    var shown = [], active = -1, flashTimer = null, inputTimer = null;
+    var shown = [], active = -1, flashTimer = null, inputTimer = null, lastFlash = null;
 
     function close() {
       panel.hidden = true;
@@ -1525,6 +1525,11 @@
       if (rows[i].scrollIntoView) rows[i].scrollIntoView({ block: "nearest" });
     }
     function flash(el) {
+      // 2.6s 内连续跳转两个条目时，上一个目标的回收定时器会被下面 clearTimeout 作废、
+      // 它的 .game-flash 类就没人摘了（reduced-motion 下降级底色会一直挂着）——
+      // 换目标前先把旧目标的类摘掉（20261002e）
+      if (lastFlash && lastFlash !== el) lastFlash.classList.remove("game-flash");
+      lastFlash = el;
       el.classList.remove("game-flash");
       void el.offsetWidth; // 重排一次让动画能重播（只在用户跳转时走一次，不在逐帧路径上）
       el.classList.add("game-flash");
@@ -1734,6 +1739,9 @@
       .catch(function () {
         unwatchReveal(container);
         container.innerHTML = '<p class="sub">项目列表加载失败，请刷新重试。</p>';
+        // 失败时把上一次搜索留下的「找到 N 个」提示一并收掉，别和失败文案同屏（20261002e）
+        var hint = document.querySelector("[data-project-hint]");
+        if (hint) { hint.hidden = true; hint.innerHTML = ""; }
       });
   }
 
@@ -2225,7 +2233,7 @@
     var updateToc = function () {
       ticking = false;
       if (!headings.length) return;
-      // 阈值：h2/h3 离视口顶 0 最近即为当前；这里把"0"放宽到 NAV 下方一点点（64px），
+      // 阈值：h2/h3 离视口顶 0 最近即为当前；这里把"0"放宽到 NAV 下方一点点（80px），
       // 避免"h 正好贴着 0 但还在 reveal 动画 translateY 偏移"导致短暂选错。
       var THRESHOLD = 80;
       var chosen = headings[0].id; // 默认第一个（页面顶端）
@@ -3067,6 +3075,9 @@
         if (main) main.setAttribute("inert", "");
         if (nav) nav.setAttribute("inert", "");
         if (footer) footer.setAttribute("inert", "");
+        // skip-link 在 body 直下（header 之外），不锁的话 Tab 会绕出弹窗（20261002e）
+        var skipLink = document.querySelector(".skip-link");
+        if (skipLink) skipLink.setAttribute("inert", "");
         btn.setAttribute("aria-expanded", "true");
         // 下一帧聚焦，等动画跑一拍
         requestAnimationFrame(function () {
@@ -3084,6 +3095,10 @@
         if (main && !searchOpen && !fstOpen) main.removeAttribute("inert");
         if (nav && !fstOpen) nav.removeAttribute("inert");
         if (footer && !fstOpen) footer.removeAttribute("inert");
+        // skip-link 的 inert 由「最后一个还开着的弹窗」持有：节日弹窗还开着时它仍压着
+        // skip-link，这里不摘（festival close 会按 keyOpen 归还，20261002e）
+        var skipLink = document.querySelector(".skip-link");
+        if (skipLink && !fstOpen) skipLink.removeAttribute("inert");
         btn.setAttribute("aria-expanded", "false");
         // 清空状态（含称呼流程），避免下次打开残留旧结果
         resetFlow();

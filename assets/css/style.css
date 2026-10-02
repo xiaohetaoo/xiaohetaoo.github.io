@@ -543,6 +543,16 @@ button {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent);
 }
 
+/* 顶部那层白纱是暗底提亮用的：浅色两主题换各自的深色低透明度（同八·31 口径），
+   不覆写的话冷白叠在暖米/冷白底上等于没有（20261002e 补漏） */
+:root[data-theme="light"] .concept {
+  background: linear-gradient(180deg, rgba(16, 24, 40, 0.02), transparent);
+}
+
+:root[data-theme="cn-red"] .concept {
+  background: linear-gradient(180deg, rgba(90, 30, 20, 0.02), transparent);
+}
+
 .concept-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3789,9 +3799,12 @@ html.intro-pending .reveal {
 }
 
 /* ---------- 打印样式：正文优先，去装饰去交互 ----------
-   颜色直接覆写变量（暗色是 :root 默认），装饰层/导航/评论整体隐藏 */
+   颜色直接覆写变量（暗色是 :root 默认），装饰层/导航/评论整体隐藏。
+   选择器必须把 :root[data-theme="light"|"cn-red"] 一并写上：它们是 (0,2,0)、
+   恒胜裸 :root 的 (0,1,0)——否则浅色两主题下这里重写的 token 全部落空，
+   实际生效的还是主题自己的值（20261002e 修） */
 @media print {
-  :root {
+  :root, :root[data-theme="light"], :root[data-theme="cn-red"] {
     --bg: #ffffff;
     --bg-panel: #ffffff;
     --bg-panel-2: #f7f7f8;
@@ -3828,8 +3841,9 @@ html.intro-pending .reveal {
   .js .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
   h1, h2, h3 { color: var(--text-strong); page-break-after: avoid; }
   /* 渐变标题靠背景裁切 + 透明填充色实现，而打印默认不输出背景图形 → 会打出空白；
-     这里回退成实色，保证纸上「小核桃」三个字还在 */
-  .hero h1 .grad,
+     这里回退成实色，保证纸上「小核桃」三个字还在。
+     只列 about：hero 在上面的隐藏列表里整体 display:none（打印只出正文是有意的），
+     给 .hero h1 .grad 写回退是死规则（20261002e 清理） */
   .about-profile h1 .grad {
     background: none;
     -webkit-text-fill-color: var(--text-strong);

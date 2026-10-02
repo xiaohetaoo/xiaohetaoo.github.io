@@ -81,10 +81,13 @@
     }
     .staff-line.soft { opacity: 0.5; }
 
-    /* 音符默认不画：浏览器不支持 motion path 时，否则会全叠在原点 */
+    /* 音符默认不画：浏览器不支持 motion path 时，否则会全叠在原点。
+       offset-anchor 也要一并探测（Chrome <116 等支持 offset-path 但不支持
+       offset-anchor）：缺了锚点修正音符会整体沉到谱线下方——比没有音符更难看，
+       一并退回不渲染，静态帧仍成立（20261002e） */
     .note-flow { display: none; }
 
-    @supports (offset-path: path("M0 0")) {
+    @supports (offset-path: path("M0 0")) and (offset-anchor: auto) {
       .note-flow {
         display: inline;
         /* 百分比要相对音符自己的盒子算，否则 offset-anchor 会按整个 viewBox 解析 */

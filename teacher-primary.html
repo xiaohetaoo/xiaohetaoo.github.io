@@ -87,13 +87,16 @@
       opacity: 0.5;
       animation: twinkle 8s ease-in-out infinite;
     }
-    .star:nth-of-type(1) { left: 12%; top: 16%; animation-delay: -1.5s; }
-    .star:nth-of-type(2) { left: 24%; top: 7%;  animation-delay: -4.2s; }
-    .star:nth-of-type(3) { left: 38%; top: 20%; animation-delay: -6.1s; }
-    .star:nth-of-type(4) { left: 52%; top: 8%;  animation-delay: -2.6s; }
-    .star:nth-of-type(5) { left: 81%; top: 24%; animation-delay: -5.4s; }
-    .star:nth-of-type(6) { left: 92%; top: 11%; animation-delay: -3.3s; }
-    .star:nth-of-type(7) { left: 44%; top: 33%; animation-delay: -7.2s; }
+    /* :nth-of-type 按标签（div）计数：main 里星星前面还有 4 朵云 + 月亮 + 薄云共 6 个 div，
+       星星占第 7~13 号位 —— 规则号必须写 (7)~(13)，写 (1)~(7) 会让 6 条命中云月（死规则）、
+       后 6 颗星没有定位全部叠到容器静态位置（20261002e 修复） */
+    .star:nth-of-type(7)  { left: 12%; top: 16%; animation-delay: -1.5s; }
+    .star:nth-of-type(8)  { left: 24%; top: 7%;  animation-delay: -4.2s; }
+    .star:nth-of-type(9)  { left: 38%; top: 20%; animation-delay: -6.1s; }
+    .star:nth-of-type(10) { left: 52%; top: 8%;  animation-delay: -2.6s; }
+    .star:nth-of-type(11) { left: 81%; top: 24%; animation-delay: -5.4s; }
+    .star:nth-of-type(12) { left: 92%; top: 11%; animation-delay: -3.3s; }
+    .star:nth-of-type(13) { left: 44%; top: 33%; animation-delay: -7.2s; }
     @keyframes twinkle {
       0%, 100% { opacity: 0.16; }
       50%      { opacity: 0.72; }
@@ -150,13 +153,14 @@
       background-size: 160px 160px;
     }
 
-    /* 远山：横向铺满整幅（拉宽对远山是自然的），给主峰垫一层 */
+    /* 远山：横向铺满整幅（拉宽对远山是自然的），给主峰垫一层。
+       宽度比视口多出左右各 1%：ridge-drift 是元素级 translateX(±0.9%)，
+       贴边 100% 宽时左/右移会在屏幕边缘露出一条无山缝（20261002e 修复） */
     .ridge-far {
       position: absolute;
-      left: 0;
-      right: 0;
+      left: -1%;
+      width: 102%;
       bottom: 0;
-      width: 100%;
       height: 30%;
       display: block;
       animation: ridge-drift 74s ease-in-out infinite alternate;

@@ -14,6 +14,9 @@
       关闭时同样按规矩还——main 要看搜索/口令弹窗是否开着（它们也可能
       正压着 main），不能无脑摘。
    规则：只在节日当天弹一次；看过就不再弹（localStorage 记 id）。
+   id 命名：统一为「名字-年份」后缀（20261002e 用户拍板；mid-autumn-2026 / chuxi-2027 式），
+   2031+ 扩表照此命名防撞名。改 id 的代价：旧「看过」标记失配（同节日会再弹一次）、
+   旧 ?festival= 预览链接失效——用户已知晓接受。
    预览：?festival=<id> 无视日期和「看过」标记强制弹出，不写标记。
    ?static=1 是全站静态渲染约定（入场动画同款），弹窗一并让路。
    样式自包含（注入 <style>），不改 style.css；配色全部走全站 CSS 变量，
@@ -30,25 +33,25 @@
      新增两字段：tone:"solemn"＝庄重变体（纪念/哀悼日：烛光、素色标题、纯淡入，样式见 3 节 solemn 覆写）；
      eyebrow＝专用眉线字（如「国家公祭日」），缺省仍按农历/公历自动算。 ---------- */
   var FESTIVALS = [
-    { id: "mid-autumn", name: "中秋节", lunar: "八月十五", date: "2026-09-25",
+    { id: "mid-autumn-2026", name: "中秋节", lunar: "八月十五", date: "2026-09-25",
       text: "中秋快乐！愿你抬头有圆月，低头有月饼，身边有伊人。千里共婵娟，我们云端常相见。" },
-    { id: "national-day", name: "国庆节", lunar: "", date: "2026-10-01",
+    { id: "national-day-2026", name: "国庆节", lunar: "", date: "2026-10-01",
       text: "国庆快乐！祝祖国生日快乐，也祝你假期愉快！" },
     { id: "guangfu-2026", name: "台湾光复纪念日", lunar: "", eyebrow: "铭记十·二五", tone: "solemn", date: "2026-10-25",
       text: "1945 年 10 月 25 日，台湾光复、重回祖国怀抱。两岸同根，共盼团圆。" },
     { id: "gongji-2026", name: "国家公祭日", lunar: "", eyebrow: "国家公祭日", tone: "solemn", date: "2026-12-13",
       text: "铭记 1937·12·13。缅怀南京大屠杀死难同胞，铭记历史、珍爱和平，吾辈自强。" },
-    { id: "chuxi", name: "除夕", lunar: "腊月廿九", date: "2027-02-05",
+    { id: "chuxi-2027", name: "除夕", lunar: "腊月廿九", date: "2027-02-05",
       text: "除夕快乐！旧岁将尽，万事翻篇，我们来年再见！" },
-    { id: "chunjie", name: "春节", lunar: "正月初一", date: "2027-02-06",
+    { id: "chunjie-2027", name: "春节", lunar: "正月初一", date: "2027-02-06",
       text: "新年快乐，所愿皆成。心期不负，万事昌隆。" },
-    { id: "yuanxiao", name: "元宵节", lunar: "正月十五", date: "2027-02-20",
+    { id: "yuanxiao-2027", name: "元宵节", lunar: "正月十五", date: "2027-02-20",
       text: "元宵快乐！愿你像碗里的汤圆，日子甜甜糯糯，家人团团圆圆，心事都圆圆满满。" },
-    { id: "qingming", name: "清明节", lunar: "", eyebrow: "清明", tone: "solemn", date: "2027-04-05",
+    { id: "qingming-2027", name: "清明节", lunar: "", eyebrow: "清明", tone: "solemn", date: "2027-04-05",
       text: "慎终追远，缅怀先人与英烈。春和景明，亦是我们守护的人间。" },
     { id: "wenchuan-2027", name: "全国防灾减灾日", lunar: "", eyebrow: "铭记五·一二", tone: "solemn", date: "2027-05-12",
       text: "缅怀汶川大地震遇难同胞。逝者安息，生者奋发；防灾减灾，警钟长鸣。" },
-    { id: "duanwu", name: "端午节", lunar: "五月初五", date: "2027-06-09",
+    { id: "duanwu-2027", name: "端午节", lunar: "五月初五", date: "2027-06-09",
       text: "端午安康！愿粽叶包住烦恼，糯米粘住好运，日子「粽」是顺利。" },
     { id: "party-2027", name: "建党节", lunar: "", eyebrow: "七·一", date: "2027-07-01",
       text: "建党节快乐！1997 年的今天香港回归，双喜同贺。" },
@@ -58,7 +61,7 @@
       text: "缅怀唐山大地震罹难同胞。灾难压不垮的，是重建家园的人们。" },
     { id: "army-2027", name: "建军节", lunar: "", eyebrow: "八·一", date: "2027-08-01",
       text: "建军节快乐！致敬最可爱的人，愿钢铁长城永固，山河无恙。" },
-    { id: "qixi", name: "七夕", lunar: "七月初七", date: "2027-08-08",
+    { id: "qixi-2027", name: "七夕", lunar: "七月初七", date: "2027-08-08",
       text: "七夕快乐，有情人成。孤身跋涉，世予温情。" },
     { id: "shengli-2027", name: "抗战胜利纪念日", lunar: "", eyebrow: "铭记九·三", tone: "solemn", date: "2027-09-03",
       text: "1945 年 9 月 3 日，中国人民抗日战争迎来胜利。正义必胜，和平必胜，人民必胜。" },
@@ -205,7 +208,7 @@
   }
 
   function pickFestival() {
-    /* 预览参数的 id 允许小写字母/数字/连字符（按年扩表后 id 带年份，如 mid-autumn-2030） */
+    /* 预览参数的 id 允许小写字母/数字/连字符；id 统一带年份后缀（见文件头命名口径） */
     var want = (location.search.match(/[?&]festival=([a-z0-9-]+)/) || [])[1];
     if (want) {
       for (var i = 0; i < FESTIVALS.length; i++) {
@@ -215,6 +218,18 @@
     var today = todayStr();
     for (var j = 0; j < FESTIVALS.length; j++) {
       if (FESTIVALS[j].date === today) return FESTIVALS[j];
+    }
+    return null;
+  }
+
+  /* 预览请求给出的 id：只有「参数里写了一个真实存在的节日 id」才算预览。
+     ?festival=（空值）或 ?festival=typo（写错 id）返回 null——否则当天的节日
+     会被当成「每次访问都重弹、永不写看过」的强制预览（20261002e）。 */
+  function previewId() {
+    var want = (location.search.match(/[?&]festival=([a-z0-9-]+)/) || [])[1];
+    if (!want) return null;
+    for (var i = 0; i < FESTIVALS.length; i++) {
+      if (FESTIVALS[i].id === want) return want;
     }
     return null;
   }
@@ -235,6 +250,8 @@
     ".fst-modal{position:fixed;inset:0;z-index:var(--z-modal);display:flex;align-items:center;" +
     "justify-content:center;padding:16px}" +
     ".fst-modal[hidden]{display:none}" +
+    /* 蒙层三主题恒为深黑（浅色/cn-red 也不变浅）：节日祝福是全屏仪式感弹窗，深蒙层
+       更聚焦，庄重款还特意加深——有意与 key-modal 的浅底蒙层口径不同（20261002e 拍板保留） */
     ".fst-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55);" +
     "backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;" +
     "animation:fst-fade .2s var(--ease-out) both}" +
@@ -321,13 +338,17 @@
     document.body.appendChild(root);
 
     /* 焦点锁（对齐 key-modal）：main/nav/footer 全部锁住，键盘焦点出不去；
-       弹窗自身在 body 直下、不在被锁子树里，close 按钮照常可聚焦可点。 */
+       弹窗自身在 body 直下、不在被锁子树里，close 按钮照常可聚焦可点。
+       skip-link 也是 body 直下的可聚焦元素（在 header 之外），不一起锁的话
+       Tab 会从弹窗绕到「跳到主要内容」上逃出对话框（20261002e 补）。 */
     var mainEl = document.querySelector("main");
     var navEl = document.querySelector("header.nav");
     var footerEl = document.querySelector("footer.footer");
+    var skipLink = document.querySelector(".skip-link");
     if (mainEl) mainEl.setAttribute("inert", "");
     if (navEl) navEl.setAttribute("inert", "");
     if (footerEl) footerEl.setAttribute("inert", "");
+    if (skipLink) skipLink.setAttribute("inert", "");
 
     var prevFocus = document.activeElement;
     var closeBtn = root.querySelector(".fst-close");
@@ -346,6 +367,9 @@
       if (mainEl && !searchOpen && !keyOpen) mainEl.removeAttribute("inert");
       if (navEl && !keyOpen) navEl.removeAttribute("inert");
       if (footerEl && !keyOpen) footerEl.removeAttribute("inert");
+      /* skip-link 的 inert 由「最后一个还开着的弹窗」持有：口令弹窗还开着时它
+         仍压着 skip-link，这里不摘（key-modal 关闭时会按 fstOpen 归还，20261002e） */
+      if (skipLink && !keyOpen) skipLink.removeAttribute("inert");
       if (prevFocus && prevFocus.focus) prevFocus.focus();
     }
     function onKey(e) {
@@ -361,8 +385,9 @@
     document.addEventListener("keydown", onKey);
 
     /* 预览模式不写「看过」标记：刷新还能再弹，方便逐个节日过一遍。
+       判定用 previewId()（参数给的是真实存在的 id），脏参数回落的当天节日照常写。
        此刻开场动画已结束、弹窗真实可见可关，「打开即算看过」成立。 */
-    if (!(location.search.match(/[?&]festival=/))) markShown(f.id);
+    if (previewId() !== f.id) markShown(f.id);
   }
 
   /* ---------- 5. 等开场动画播完（main.js 6.7 的 finish 会摘 intro-pending、解除 inert，
@@ -382,7 +407,14 @@
       fn();
     };
     document.addEventListener("xht:intro-done", go, { once: true });
-    setTimeout(go, 12000);
+    /* 12s 超时路径是「广播永远不来」的死人开关：此时 intro 大概率卡在 body.inert
+       （main.js 6.7 挂的、暴毙后没人摘），直接 open 会得到一只自身被 inert 波及、
+       看得见点不动的弹窗——先把 inert 摘掉再弹。动画若还活着，xht:intro-done 早在
+       8s panic 前触发 go（fired 幂等），这段超时代码不会跑（20261002e 补）。 */
+    setTimeout(function () {
+      try { if (document.body.inert === true) document.body.inert = false; } catch (e) {}
+      go();
+    }, 12000);
   }
 
   /* ---------- 6. 入口 ---------- */
@@ -390,7 +422,7 @@
     if (/[?&]static(?:=1)?(?=&|$)/.test(location.search)) return; // 静态渲染约定：不弹
     var f = pickFestival();
     if (!f) return;
-    var preview = !!location.search.match(/[?&]festival=/);
+    var preview = previewId() === f.id; // 脏参数（空值/写错 id）不算预览，见 previewId 注释
     if (!preview && alreadyShown(f.id)) return;
     waitIntroDone(function () { open(f); });
   }

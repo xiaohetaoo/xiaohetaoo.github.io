@@ -41,9 +41,19 @@
           try{document.dispatchEvent(new Event("xht:intro-done"))}catch(e){}
         }
       };
-      setTimeout(function(){if(!(document.body&&document.body.inert))_ikick()},4000);
-      /* 最后底线：接管后半路暴毙（panic 也失效）也别永久压暗锁页；预渲染副本不抢 */
-      setTimeout(function(){if(document.visibilityState!=="prerender")_ikick()},10000);
+      // 两个兜底都要豁免预渲染副本（20261002e 前 4s 没豁免、10s 有，不对称）：
+      // 副本里 HTML 解析若超过 4s（body 还没出现 = main.js 必然未接管），旧判据会在
+      // 隐藏副本里提前收场并把「已播」写进同 tab 共享的 sessionStorage，真访客本次
+      // 会话就看不到开场了。4s 仍只救「main.js 未接管」，10s 仍是接管后暴毙的底线。
+      var _iarm=function(){
+        setTimeout(function(){if(document.visibilityState!=="prerender"&&!(document.body&&document.body.inert))_ikick()},4000);
+        setTimeout(function(){if(document.visibilityState!=="prerender")_ikick()},10000);
+      };
+      _iarm();
+      // 副本期里这两个定时器会被豁免烧掉：真被点开（prerenderingchange）时从激活点
+      // 重新武装，否则「main.js 接管后暴毙」的底线在预渲染路径上落空。非预渲染路径
+      // 该事件永不触发，行为与从前完全一致。
+      try{document.addEventListener("prerenderingchange",_iarm,{once:true})}catch(e){}
     }
   }catch(e){try{document.documentElement.classList.remove("intro-pending")}catch(_e){}}</script>
   <noscript><style>[data-loading]{display:none}</style></noscript>
@@ -104,7 +114,7 @@
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20261002d" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20261002e" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -392,10 +402,10 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20261002d"></script>
+  <script src="assets/js/main.js?v=20261002e"></script>
   <!-- 节日祝福弹窗：文案与数据都在 festival.js 顶部（= 审核稿定稿），样式自包含不依赖 style.css；
        预览任一节日加 ?festival=<id>（如 ?festival=qixi），正式弹出门槛见文件头注释 -->
-  <script src="assets/js/festival.js?v=20261002d"></script>
+  <script src="assets/js/festival.js?v=20261002e"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
