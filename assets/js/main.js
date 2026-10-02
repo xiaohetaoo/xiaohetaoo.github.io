@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261002c";
+  var DATA_VER = "20261002d";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1488,6 +1488,10 @@
     function render(q) {
       var t = String(q || "").trim();
       if (!t) { close(); return; }
+      // 与 setActive/close 配套：走到这里就要整体重渲染，而两条分支都把 active 置 -1（无任何聚焦项），
+      // 先清掉 input 上过期的 aria-activedescendant——否则键盘 ↓ 选中后再改关键词，该属性指向
+      // 已删除/已变义的 game-search-opt-N（悬空/错位；同 nav 搜索 20261002c 的修法）
+      input.removeAttribute("aria-activedescendant");
       var all = match(t);
       if (!all.length) {
         panel.innerHTML = '<p class="search-empty">没找到这款游戏，换个关键词试试？<br>中文名、英文名、档位（如「精通」「S 档」）都行。</p>';
@@ -2694,6 +2698,11 @@
         if (!isMobile) {
           panel.hidden = true; // 空查询不显示空面板（移动端面板开合由 setMobileOpen 管）
           input.removeAttribute("aria-activedescendant");
+        } else {
+          // 与有结果路径的移动清理（20261002c）同源：清空查询时 option 已随 innerHTML 删除，
+          // 移动输入副本残留的 aria-activedescendant 会指向已不存在的 id（悬空引用）
+          var mi = panel.querySelector(".nav-search-mobile-input");
+          if (mi) mi.removeAttribute("aria-activedescendant");
         }
         return;
       }
