@@ -19,7 +19,8 @@
        2) 在 posts.json 里加一条记录（标题/日期/摘要/标签，要置顶就加 "pinned": true） -->
   <!-- ▼▼ 复制后必须替换下列全部字段（历史教训：只改 3 行会留下指向 games-i-played 的重复 canonical）▼▼
        必改清单：
-       · <title> 与 canonical 的 __SLUG__（文件名同步改！）
+       · <title>（TODO 占位）与 canonical 的 __SLUG__（文件名同步改！）
+       · <meta name="description">（搜索结果主描述，TODO 占位）
        · og:title / og:description / og:url
        · twitter:title / twitter:description
        · article:published_time / article:modified_time 的 __DATE__
@@ -29,7 +30,7 @@
        · JSON-LD BreadcrumbList：第 3 项 name 与 item
        不需要动的：og:image / og:image:alt / twitter:image（全站共用）、og:site_name / locale、
        author/publisher（都是小核桃） -->
-  <title>文章标题占位 · 小核桃的个人博客</title>
+  <title>TODO：文章标题 · 小核桃的个人博客</title>
   <link rel="canonical" href="https://xiaohetaoo.github.io/posts/__SLUG__.html" />
   <meta property="og:title" content="TODO：文章标题" />
   <meta property="og:description" content="TODO：文章摘要" />
@@ -103,7 +104,7 @@
 }
   </script>
 
-<meta name="description" content="一句话摘要，会显示在搜索结果和分享卡片上。" />
+<meta name="description" content="TODO：文章摘要" />
   <meta name="date" content="__DATE__" />
   <!-- ▲▲ 改完标题后，全文搜索「TODO」「__SLUG__」「__DATE__」逐个替换即可 ▲▲ -->
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png" />
@@ -111,7 +112,7 @@
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261002a" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261002b" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -256,7 +257,7 @@ console.log("hello xiaohetao");</code></pre>
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20261002a"></script>
+  <script src="../assets/js/main.js?v=20261002b"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

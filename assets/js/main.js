@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261002a";
+  var DATA_VER = "20261002b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -2473,6 +2473,10 @@
       // 1) ARIA 状态
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       input.setAttribute("aria-expanded", open ? "true" : "false");
+      // 恢复 panel 的 listbox 角色（幂等）：移动端会摘走换到 .nav-search-mobile-list 上
+      // （见 getMobileList），桌面打开必须还原，否则桌面下拉失去 listbox 语义（20261002b）
+      panel.setAttribute("role", "listbox");
+      panel.setAttribute("aria-label", "搜索结果");
       // 2) 主内容 inert 锁（免费 focus trap）。关闭时若口令弹窗或节日弹窗还开着，main 的
       //    inert 归它们管（它们的焦点锁也压着 main），不能顺手一起摘——「开着搜索点钥匙
       //    按钮」会让这次点击走外部点击路径把搜索关掉，摘了 inert 弹窗的焦点锁就破（20260925a）
@@ -2519,11 +2523,17 @@
     // 移动端（≤640）下拉式：点放大镜 → 浮层从 nav 下方下拉，含 input 副本 + 实时结果。
     // 原 nav 里的 44px 按钮始终保持，input 仍在 nav 里但被下拉面板覆盖视觉。
     function getMobileList() {
-      // results 内容放在 panel 内一个固定的子 div 里，mobile input 永远不删
+      // results 内容放在 panel 内一个固定的子 div 里，mobile input 永远不删。
+      // listbox 角色落在这个子 div 上（20261002b）：panel 若仍是 listbox，combobox
+      // 副本就成了自己 aria-controls 的那个 listbox 的子节点（结构不合规）——
+      // panel 在移动端降为普通容器，与 list 成为兄弟，option 卡是 list 直接子元素
       var list = panel.querySelector(".nav-search-mobile-list");
       if (!list) {
         list = document.createElement("div");
         list.className = "nav-search-mobile-list";
+        list.id = "nav-search-mobile-list";
+        list.setAttribute("role", "listbox");
+        list.setAttribute("aria-label", "搜索结果");
         panel.appendChild(list);
       }
       return list;
@@ -2538,6 +2548,10 @@
       // 屏读器要读到 false（此前只切桌面 input，20261002a 补齐）
       var mobileInputNow = panel.querySelector(".nav-search-mobile-input");
       if (mobileInputNow) mobileInputNow.setAttribute("aria-expanded", open ? "true" : "false");
+      // panel 在移动端降为普通容器（listbox 角色已移到 .nav-search-mobile-list 上，
+      // 见 getMobileList；桌面 open 分支会幂等恢复，20261002b）
+      panel.removeAttribute("role");
+      panel.removeAttribute("aria-label");
       // 2) 主内容 inert 锁。关闭时若口令弹窗或节日弹窗还开着，main 的 inert 归它们管，
       //    不能顺手摘（与桌面分支同一坑，20260925a）
       var main = document.querySelector("main");
@@ -2571,7 +2585,7 @@
           mobileInput.setAttribute("role", "combobox");
           mobileInput.setAttribute("aria-expanded", open ? "true" : "false"); // 副本也要有 combobox 展开态（20261002a，与桌面 input 对齐）
           mobileInput.setAttribute("aria-autocomplete", "list");
-          mobileInput.setAttribute("aria-controls", panel.id || "nav-search-results");
+          mobileInput.setAttribute("aria-controls", "nav-search-mobile-list"); // 指向真正的 listbox（20261002b 前误指 panel 自身）
           mobileInput.addEventListener("input", function () {
             // 防抖：避免每个键击都 fetch + filter
             clearTimeout(mobileDebounce);
