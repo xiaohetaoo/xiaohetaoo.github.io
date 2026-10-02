@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261002b";
+  var DATA_VER = "20261002c";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -2732,6 +2732,15 @@
             setActive(null);
           }
           bindOptions();
+          if (isMobile) {
+            // 重渲染后 option id 按索引复用（nav-search-opt-N），移动输入副本上残留的
+            // aria-activedescendant 会指向一张并未聚焦的卡片，屏读器播报错位——桌面分支
+            // 有 setActive(null) 兜底，移动分支此前缺（20261002c 补齐）。新 option 已由
+            // bindOptions 全设 aria-selected=false，这里只需再摘掉任何残留 .focused 类
+            var mi = panel.querySelector(".nav-search-mobile-input");
+            if (mi) mi.removeAttribute("aria-activedescendant");
+            target.querySelectorAll(".focused").forEach(function (o) { o.classList.remove("focused"); });
+          }
         })
         .catch(function () {});
     }
