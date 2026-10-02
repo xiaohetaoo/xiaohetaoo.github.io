@@ -35,6 +35,10 @@
           if(_cv&&_cv.parentNode)_cv.parentNode.removeChild(_cv);
           try{document.body.inert=false}catch(e){}
           try{sessionStorage.setItem("xht-intro-played","1")}catch(e){}
+          // 告诉等待方（festival.js）开场已结束，别等满 12s 死人开关（20261001e）：
+          // 无论谁收场（4s 看门狗兜底 / 10s 底线 / panic / main.js 正常 finish），
+          // 「开场已结束」这个事实都该广播；festival 的 go() 有 fired 幂等 + once 监听，重复广播无副作用
+          try{document.dispatchEvent(new Event("xht:intro-done"))}catch(e){}
         }
       };
       setTimeout(function(){if(!(document.body&&document.body.inert))_ikick()},4000);
