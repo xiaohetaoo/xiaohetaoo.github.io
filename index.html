@@ -45,9 +45,13 @@
       // 副本里 HTML 解析若超过 4s（body 还没出现 = main.js 必然未接管），旧判据会在
       // 隐藏副本里提前收场并把「已播」写进同 tab 共享的 sessionStorage，真访客本次
       // 会话就看不到开场了。4s 仍只救「main.js 未接管」，10s 仍是接管后暴毙的底线。
+      // 判据必须用 document.prerendering（20261002e 修正，与全站其它预渲染守卫同口径）：
+      // Speculation-Rules 规范里预渲染期 visibilityState 是 "hidden" 而非旧枚举 "prerender"，
+      // 用 visibilityState!=="prerender" 判会在副本里恒为真、豁免整个失效，
+      // 10s 底线就会在悬停未激活的副本里摘 intro-pending + 写「已播」标记。
       var _iarm=function(){
-        setTimeout(function(){if(document.visibilityState!=="prerender"&&!(document.body&&document.body.inert))_ikick()},4000);
-        setTimeout(function(){if(document.visibilityState!=="prerender")_ikick()},10000);
+        setTimeout(function(){if(!document.prerendering&&!(document.body&&document.body.inert))_ikick()},4000);
+        setTimeout(function(){if(!document.prerendering)_ikick()},10000);
       };
       _iarm();
       // 副本期里这两个定时器会被豁免烧掉：真被点开（prerenderingchange）时从激活点
