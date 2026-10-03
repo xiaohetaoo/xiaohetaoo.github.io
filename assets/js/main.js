@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261002e";
+  var DATA_VER = "20261003k";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1609,6 +1609,108 @@
     window.addEventListener("resize", onScrollStuck, { passive: true });
     // 等一帧再按 hash 落点：字体/侧栏/目录落定后量位置才准
     requestAnimationFrame(function () { fromHash(true); updateStuck(); });
+  })();
+
+  /* ---------- 5.6 升学路线能量包（仅 about.html，20261003h）
+     一根发光能量条沿「1 号站 → 5 号站」的虚线滑行、循环播放（随路线转向）。不走 SVG dash——
+     拉伸 SVG + non-scaling-stroke 下 dash 按屏幕像素算，宽度一变就错位重复；
+     这里每帧按 live 圆心坐标（.edu-dot 相对 .edu-path）逐段三次贝塞尔插值
+     （控制点在段中线，与虚线丝同构），视口多宽、圆点怎么飘，能量都精确贴合路线。
+     能量条 z 在圆点与虚线丝之上，与虚线逐点重合地滑完全程，无分段交接。
+     prefers-reduced-motion 不播；路线滚出视口只停更新不销毁（IntersectionObserver） ---------- */
+  (function () {
+    var pathBox = document.querySelector(".edu-path");
+    var energy = document.querySelector(".edu-energy");
+    if (!pathBox || !energy) return;
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    var CROSS_MS = 4200;   // 全程滑行时长：4.2s 一圈，速度从容（2.6s 用户嫌快）
+    var centers = null;    // 五站圆心（相对 .edu-path 内容盒）
+    var visible = false;
+
+    function measure() {
+      var pr = pathBox.getBoundingClientRect();
+      centers = [];
+      pathBox.querySelectorAll(".edu-dot").forEach(function (d) {
+        var r = d.getBoundingClientRect();
+        centers.push({ x: r.left - pr.left + r.width / 2, y: r.top - pr.top + r.height / 2 });
+      });
+      // 虚线丝跟着 live 圆心逐帧重绘（归一化到丝盒 0..100）：圆点飘、窗口变，虚线/能量/圆点
+      // 三者永远重合；无 JS 时回落到 HTML 里的静态 d（两端比例漂移 ≤5px，可接受）
+      var road = document.querySelector(".edu-road-wire");
+      if (!road) return;
+      var rb = road.getBoundingClientRect();
+      if (!rb.width || !rb.height) return;
+      // centers 是相对 .edu-path 的本地坐标——road 的原点也要换算成本地（都减 pr 原点），
+      // 否则视口坐标混本地坐标，虚线会整体偏移一个容器内边距
+      var rbLeft = rb.left - pr.left, rbTop = rb.top - pr.top;
+      var prev = null, d = "";
+      for (var k = 0; k < centers.length; k++) {
+        var nx = (centers[k].x - rbLeft) / rb.width * 100;
+        var ny = (centers[k].y - rbTop) / rb.height * 100;
+        if (prev) {
+          var pdx = nx - prev.nx;
+          d += " C" + (prev.nx + pdx / 3).toFixed(2) + " " + prev.ny.toFixed(2) +
+               ", " + (prev.nx + pdx * 2 / 3).toFixed(2) + " " + ny.toFixed(2) +
+               ", " + nx.toFixed(2) + " " + ny.toFixed(2);
+        } else {
+          d = "M" + nx.toFixed(2) + " " + ny.toFixed(2);
+        }
+        prev = { nx: nx, ny: ny };
+      }
+      var wd = document.querySelector(".edu-wire-desk");
+      var wm = document.querySelector(".edu-wire-mob");
+      if (wd) wd.setAttribute("d", d);
+      if (wm) wm.setAttribute("d", d);
+    }
+
+    // 全程进度 t ∈ [0,1] → 屏幕点 + 切向角。控制点口径必须与虚线丝完全一致
+    // （P1=(1/3 处,本站 y)、P2=(2/3 处,下站 y)），仿射映射下两条三次贝塞尔才逐点重合
+    function pointAt(t) {
+      var seg = Math.min(Math.floor(t * (centers.length - 1)), centers.length - 2);
+      var u = t * (centers.length - 1) - seg;
+      var A = centers[seg], B = centers[seg + 1];
+      var dx = B.x - A.x;
+      var c1x = A.x + dx / 3, c1y = A.y;
+      var c2x = A.x + dx * 2 / 3, c2y = B.y;
+      var w0 = (1 - u) * (1 - u) * (1 - u);
+      var w1 = 3 * (1 - u) * (1 - u) * u;
+      var w2 = 3 * (1 - u) * u * u;
+      var w3 = u * u * u;
+      // 一阶导 = 能量条朝向（沿虚线方向）
+      var vx = 3 * (1 - u) * (1 - u) * (c1x - A.x) + 6 * (1 - u) * u * (c2x - c1x) + 3 * u * u * (B.x - c2x);
+      var vy = 3 * (1 - u) * (1 - u) * (c1y - A.y) + 6 * (1 - u) * u * (c2y - c1y) + 3 * u * u * (B.y - c2y);
+      return { x: w0 * A.x + w1 * c1x + w2 * c2x + w3 * B.x,
+               y: w0 * A.y + w1 * c1y + w2 * c2y + w3 * B.y,
+               ang: Math.atan2(vy, vx) };
+    }
+
+    var t0 = null;
+    function frame(now) {
+      if (t0 === null) t0 = now;
+      if (visible) {
+        measure();   // 圆点带 ±5px 飘动，能量每帧跟着活圆心走才贴合
+        var t = ((now - t0) % CROSS_MS) / CROSS_MS;
+        var p = pointAt(t);
+        energy.style.transform = "translate(" + p.x.toFixed(1) + "px, " + p.y.toFixed(1) + "px) translate(-50%, -50%) rotate(" + p.ang.toFixed(4) + "rad)";
+        // 探针/调试用：当前进度与坐标/朝向（免得探针去解析 transform 字符串）
+        energy.dataset.t = t.toFixed(4);
+        energy.dataset.x = p.x.toFixed(1);
+        energy.dataset.y = p.y.toFixed(1);
+        energy.dataset.ang = p.ang.toFixed(4);
+        // 循环两端淡入淡出（1 号/5 号球心处），路上全程不透明
+        var edge = Math.min(t / 0.08, (1 - t) / 0.08, 1);
+        energy.style.opacity = edge;
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { visible = en.isIntersecting; });
+    }, { threshold: 0.05 }).observe(pathBox);
+
+    window.addEventListener("resize", measure);
   })();
 
   /* ---------- 8. 项目列表（projects.json 驱动）

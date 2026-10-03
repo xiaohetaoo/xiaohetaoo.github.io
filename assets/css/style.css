@@ -1479,6 +1479,366 @@ button {
   text-decoration: none;
 }
 
+/* ---------- 升学路线（20261003a 新增，b 加互动，g 重构连通丝，i/j 能量条定稿） ----------
+   桌面横排：五站圆点上下交错成波峰波谷，站间一根连通虚线丝（SVG path，
+   main.js 每帧按 live 圆心重绘 d，圆点飘/窗口变虚线都跟着走）。
+   标签挂在背离连线的一侧（高点标在上、低点标在下），互不打架。
+   交互：悬浮/聚焦站点时圆点放大、弹出学校简介气泡（edu-tip）；
+   能量条（.edu-energy）由 main.js 5.6 按贝塞尔轨迹逐帧定位，从第 1 站滑向第 5 站循环播放。
+   圆点/虚线/文字全走 token，三主题（深/浅/中国红）自动适配 */
+.edu-path {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;   /* 五站均匀分布：圆心横向落位 2.8/26.4/50/73.6/97.2%，与连通丝坐标一致 */
+  position: relative;               /* 连通虚线丝与能量条的定位基准 */
+  margin-top: 30px;
+  /* 上下留标签带：高点标签上探约 36px，第五站多一枚「目前就读」徽标所以上带更宽。
+     若调这两个值，.edu-road 的 top/bottom 内缩要同步改（它们按内容区高 92px 标定） */
+  padding: 66px 0 50px;
+}
+
+.edu-stop {
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  z-index: 1;   /* 圆点恒压在连线上：能量包滑到站点时从球底穿过，交接被球盖住才不闪现 */
+}
+
+/* 悬浮/聚焦的站点抬到最上层：气泡才能压过相邻站点与连线（同层后者恒胜，须手动提级） */
+.edu-stop:hover,
+.edu-stop:focus { z-index: 6; }
+
+.edu-stop:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 4px;
+  border-radius: var(--radius-xs);
+}
+
+/* 圆点交错：奇数站（1/3/5）抬升成波峰，偶数站（2/4）下沉成波谷（连通丝重构后
+   站点就是前五个子元素，直接用 odd/even；连通丝 SVG 是 absolute，不占 flex 序） */
+.edu-stop:nth-child(odd) { transform: translateY(-18px); }
+.edu-stop:nth-child(even) { transform: translateY(18px); }
+
+.edu-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(150deg, var(--accent-bright), var(--accent));
+  box-shadow: 0 8px 22px var(--accent-dim);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  /* 沿用站点按钮同款对比决策：深色主题浅蓝底配深字、浅色主题饱和底配白字 */
+  color: var(--btn-on-primary);
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+  /* 小幅飘动（20261003d，用户要求「更灵动」）：±5px 缓浮。走独立的 translate 属性，
+     与 hover 的 transform: scale 各自独立合成、互不覆盖 */
+  animation: edu-float 3.6s ease-in-out infinite;
+}
+
+/* 五站各给不同负延迟：开场即错相位，不会齐刷刷同步起伏 */
+.edu-stop:nth-child(2) .edu-dot { animation-delay: -0.9s; }
+.edu-stop:nth-child(3) .edu-dot { animation-delay: -1.8s; }
+.edu-stop:nth-child(4) .edu-dot { animation-delay: -0.6s; }
+.edu-stop:nth-child(5) .edu-dot { animation-delay: -1.5s; }
+
+@keyframes edu-float {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -5px; }
+}
+
+/* 鼠标互动：悬浮/聚焦站点的圆点轻微放大并泛开一圈光晕 */
+.edu-stop:hover .edu-dot,
+.edu-stop:focus .edu-dot {
+  transform: scale(1.12);
+  box-shadow: 0 10px 26px var(--accent-dim), 0 0 0 6px var(--accent-dim);
+}
+
+.edu-name {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;   /* 校名加粗（用户要求） */
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+/* 高点标签放圆点上方、低点放下方，让开连线走廊 */
+.edu-stop:nth-child(odd) .edu-name { bottom: calc(100% + 14px); }
+.edu-stop:nth-child(even) .edu-name { top: calc(100% + 14px); }
+
+/* 第五站的「目前就读」小徽标：与名片卡上的同款配色 */
+.edu-now {
+  display: block;
+  width: max-content;
+  margin: 6px auto 0;
+  padding: 2px 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  background: var(--accent-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--accent-bright);
+}
+
+/* 学校简介气泡：悬浮/聚焦/触屏轻点站点时出现。高点气泡往下弹、低点往上弹，与标签各占一侧；
+   --tip-x 控制水平锚定（默认居中，首末站/移动端贴边时归零），窄屏不探出视口 */
+.edu-tip {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 12px);
+  --tip-x: -50%;
+  transform: translateX(var(--tip-x)) translateY(6px);
+  width: max-content;
+  max-width: 250px;
+  padding: 10px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s var(--ease-out), transform 0.22s var(--ease-out);
+  z-index: 6;
+}
+
+.edu-tip-fact {
+  display: block;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-3);
+}
+
+.edu-tip-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.edu-stop:hover .edu-tip,
+.edu-stop:focus .edu-tip {
+  opacity: 1;
+  transform: translateX(var(--tip-x)) translateY(0);
+}
+
+/* 低点（2/4）名字在下方 → 气泡改往上方弹 */
+.edu-stop:nth-child(even) .edu-tip {
+  top: auto;
+  bottom: calc(100% + 12px);
+}
+
+/* 首末站贴边：气泡锚着容器内侧展开，再宽也不探出视口 */
+.edu-stop:first-of-type .edu-tip { left: -8px; --tip-x: 0; }
+.edu-stop:last-of-type .edu-tip { left: auto; right: -8px; --tip-x: 0; }
+
+/* 浅底两主题换冷灰/暖褐投影（同 game-search-results 的覆写口径，别并进一个选择器共用一份颜色） */
+:root[data-theme="light"] .edu-tip { box-shadow: 0 12px 28px rgba(16, 24, 40, 0.16); }
+:root[data-theme="cn-red"] .edu-tip { box-shadow: 0 12px 28px rgba(90, 30, 20, 0.18); }
+
+/* 连通虚线丝（20261003g 重构）：整条路线一根拉满内容区的 SVG path，替代分段连线——
+   能量不再分段接力，能量条由 main.js 驱动沿同一条轨迹从全路头滑到尾
+   （20261003j 起压在球底，滑到站点被圆球盖住再钻出），物理上不存在交接点，绝不瞬移。
+   内缩值与 .edu-path 的 padding 配对：桌面 top 66 / 高度减 116（内容区高 92px，波峰 y=30.4%、
+   波谷 y=69.6%）；移动端 top/left 26 + 宽高各减 52（正好咬住左右圆心的 x 与首尾圆心的 y）。
+   注意 svg 是带固有比例的替换元素，四边 inset 拉伸对它无效——必须显式算宽高 */
+.edu-road {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;   /* 连线只当背景画，别挡站点的悬浮/聚焦 */
+}
+
+.edu-road-wire {
+  top: 66px;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 116px);
+  z-index: 0;   /* 虚线丝压在球底 */
+}
+
+.edu-road path {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.edu-road .edu-wire-mob { display: none; }   /* 移动蛇形弯只在 ≤879px 显示（带 .edu-road 前缀压过 .edu-road path 的 display:block） */
+
+/* 常驻虚线 */
+.edu-wire {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 2;
+  stroke-dasharray: 1 9;
+  stroke-linecap: round;
+}
+
+/* 能量条（JS 5.6 每帧定位 + 随路线转向）：36×4 纯色蓝胶囊（用户定稿：不要渐变），
+   与虚线逐点重合地滑完全程；z 压到圆球之下（0 < 球 1）、DOM 顺序在虚线丝之后所以仍浮在丝上，
+   滑到站点时从球底钻过；两端渐隐 + 蓝色辉光 = 「一段能量在导线上流动」观感 */
+.edu-energy {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 6px var(--accent-bright), 0 0 16px var(--accent), 0 0 30px var(--accent-dim);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;               /* JS 每帧接管透明度；初始隐藏防闪 */
+  will-change: transform, opacity;
+}
+
+/* ---- 移动端（≤879px）：左右排开走蛇形 ----
+   奇数站靠左、偶数站靠右（row-reverse 把圆点翻到右缘，文字朝内对齐）；
+   连线复用桌面 S 弧横跨整行，上下各探 26px（= 圆点半径）正好咬住两侧圆心；
+   支持 CSS d 的内核把路径覆盖成「出点竖直下、入点竖直上」的蛇形弯（不支持的回落桌面弧线），
+   偶数段水平翻转，能量才顺着 1→5 的路线走 */
+@media (max-width: 879px) {
+  .edu-path {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 0 0;
+  }
+
+  .edu-stop {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: auto;
+    height: auto;
+    transform: none;
+    z-index: 1;
+  }
+
+  .edu-stop:nth-child(odd),
+  .edu-stop:nth-child(even) { transform: none; }
+
+  .edu-stop:nth-child(odd) { align-self: flex-start; }
+  .edu-stop:nth-child(even) { align-self: flex-end; flex-direction: row-reverse; }
+
+  .edu-dot {
+    width: 52px;
+    height: 52px;
+    flex: none;
+  }
+
+  .edu-name {
+    position: static;
+    transform: none;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .edu-stop:nth-child(even) .edu-name { text-align: right; }
+
+  .edu-now { margin: 6px 0 0; }
+  .edu-stop:nth-child(even) .edu-now { margin-left: auto; }
+
+  /* 移动端气泡一律往上方弹、贴圆点一侧展开（圆点在视口边缘，居中锚定必出界） */
+  .edu-tip,
+  .edu-stop:nth-child(odd) .edu-tip {
+    left: -8px;
+    --tip-x: 0;
+    top: auto;
+    bottom: calc(100% + 12px);
+    max-width: min(250px, calc(100vw - 72px));
+  }
+
+  .edu-stop:nth-child(even) .edu-tip {
+    left: auto;
+    right: -8px;
+  }
+
+  /* 竖排行距：52px 间隙让相邻圆心恰好相距 104px，连通丝按 0/25/50/75/100 五圆心标定 */
+  .edu-path { gap: 52px; }
+
+  /* 连通丝内缩：top 36px = 本块 padding-top 10px + 圆点半径 26px（咬住 1 号球心），
+     left/right 26px 正好抵到左/右列圆心的 x（宽度无关），bottom 26px 咬住 5 号球心；
+     高度 = 4 个 104px 球心距。显示蛇形弯 path（圆心落位 0/25/50/75/100），藏桌面波 */
+  .edu-road {
+    top: 36px;
+    left: 26px;
+    width: calc(100% - 52px);
+    height: calc(100% - 62px);
+  }
+
+  .edu-road .edu-wire-desk { display: none; }
+  .edu-road .edu-wire-mob { display: block; }
+}
+
+/* 打印静态化：能量条与气泡不进纸面，飘动归零避免打印瞬间圆点悬空 */
+@media print {
+  .edu-energy,
+  .edu-tip { display: none; }
+  .edu-dot { animation: none; }
+}
+
+/* 减弱动效：飘动停掉（能量条由 JS 5.6 驱动，脚本在 reduced-motion 下直接不启动，
+   页面只剩常驻虚线） */
+@media (prefers-reduced-motion: reduce) {
+  .edu-dot { animation: none; }
+}
+
+/* ---------- 固定说明行（移动端专用，20261003c） ----------
+   触屏上悬浮气泡会盖住附近文字（用户报告），改为：轻点圆点后简介显示在
+   路线图下方这行常驻留白里（.edu-path:has(:focus) 纯 CSS 切换，零 JS）。
+   桌面端整行不渲染（悬浮气泡已覆盖该场景）；触屏端气泡整体 display:none */
+.edu-detail {
+  display: none;
+  min-height: 24px;
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.edu-detail-hint {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.edu-detail-item { display: none; }
+
+/* 复用气泡的两级文案类，但在说明行里改行内排布：定位句弱色 · 校训句正文色 */
+.edu-detail-item .edu-tip-fact,
+.edu-detail-item .edu-tip-note { display: inline; font-size: 14px; }
+.edu-detail-item .edu-tip-fact { color: var(--text-3); }
+.edu-detail-item .edu-tip-note { color: var(--text-2); }
+.edu-detail-item .edu-tip-note::before {
+  content: " · ";
+  color: var(--text-3);
+}
+
+@media (max-width: 879px) {
+  .edu-detail { display: block; }
+
+  .edu-tip { display: none; }
+
+  /* :has 探测哪一站聚焦，就换哪一站的简介进说明行（连通丝重构后站点=第 1-5 个子元素） */
+  .edu-path:has(.edu-stop:nth-child(1):focus) ~ .edu-detail #edu-detail-1,
+  .edu-path:has(.edu-stop:nth-child(2):focus) ~ .edu-detail #edu-detail-2,
+  .edu-path:has(.edu-stop:nth-child(3):focus) ~ .edu-detail #edu-detail-3,
+  .edu-path:has(.edu-stop:nth-child(4):focus) ~ .edu-detail #edu-detail-4,
+  .edu-path:has(.edu-stop:nth-child(5):focus) ~ .edu-detail #edu-detail-5 { display: block; }
+
+  .edu-path:has(.edu-stop:focus) ~ .edu-detail .edu-detail-hint { display: none; }
+}
+
 /* ---------- 兴趣 ---------- */
 .interest-grid {
   list-style: none;

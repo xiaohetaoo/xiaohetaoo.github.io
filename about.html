@@ -33,7 +33,7 @@
 {
   "@context": "https://schema.org",
   "@type": "ProfilePage",
-  "dateModified": "2026-09-10",
+  "dateModified": "2026-10-03",
   "inLanguage": "zh-CN",
   "mainEntity": {
     "@type": "Person",
@@ -79,7 +79,7 @@
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20261002e" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20261003k" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -208,6 +208,86 @@ var _hmt = _hmt || [];
         </blockquote>
       </section>
 
+      <!-- ============ 升学路线 ============ -->
+      <section class="about-block" aria-labelledby="about-path-title">
+        <span class="kicker reveal">$ cat ~/path</span>
+        <h2 id="about-path-title" class="reveal" style="--d: 0.06s">升学路线</h2>
+        <p class="about-block-sub reveal" style="--d: 0.1s">从幼儿园到大学，现在走到第五站。</p>
+
+        <!-- 五站路线图：桌面端横排波浪（圆点上下交错），移动端左右排开走蛇形。
+             整条路线是两根连通丝（各自一根 SVG path 拉满全宽）：
+               edu-wire 常驻虚线丝压在球底、edu-energy 发光小球浮在球面（main.js 5.6 每帧定位）——
+               一颗能量沿全路从头滑到尾，途经圆球从球面上掠过，全程可见、无分段交接、不闪现。
+             悬浮/聚焦站点弹出学校简介——文案用户 2026-10-03 定稿：第一句客观定位
+             （平阳中学 1938 年刘绍宽创办经公网查证），第二句为各校校训（幼儿园无校训只留定位句）；
+             移动端简介走路线图下方的固定说明行（不遮挡文字），桌面端走悬浮气泡 -->
+        <div class="edu-path reveal" style="--d: 0.14s" role="list" aria-label="升学路线：从幼儿园到大学共五站">
+          <div class="edu-stop" role="listitem" tabindex="0" aria-describedby="edu-tip-1">
+            <span class="edu-dot" aria-hidden="true">1</span>
+            <span class="edu-name">万全中心幼儿园</span>
+            <span class="edu-tip" id="edu-tip-1">
+              <span class="edu-tip-fact">公办幼儿园</span>
+            </span>
+          </div>
+          <div class="edu-stop" role="listitem" tabindex="0" aria-describedby="edu-tip-2">
+            <span class="edu-dot" aria-hidden="true">2</span>
+            <span class="edu-name">昆阳二小</span>
+            <span class="edu-tip" id="edu-tip-2">
+              <span class="edu-tip-fact">昆阳镇公办小学</span>
+              <span class="edu-tip-note">上善若水，流向我远方</span>
+            </span>
+          </div>
+          <div class="edu-stop" role="listitem" tabindex="0" aria-describedby="edu-tip-3">
+            <span class="edu-dot" aria-hidden="true">3</span>
+            <span class="edu-name">昆阳二中</span>
+            <span class="edu-tip" id="edu-tip-3">
+              <span class="edu-tip-fact">昆阳镇公办初中</span>
+              <span class="edu-tip-note">励志、勤奋、求实、创新</span>
+            </span>
+          </div>
+          <div class="edu-stop" role="listitem" tabindex="0" aria-describedby="edu-tip-4">
+            <span class="edu-dot" aria-hidden="true">4</span>
+            <span class="edu-name">平阳中学</span>
+            <span class="edu-tip" id="edu-tip-4">
+              <span class="edu-tip-fact">1938 年由教育家刘绍宽等创办</span>
+              <span class="edu-tip-note">尊师重道，敬业乐群</span>
+            </span>
+          </div>
+          <div class="edu-stop" role="listitem" tabindex="0" aria-describedby="edu-tip-5">
+            <span class="edu-dot" aria-hidden="true">5</span>
+            <span class="edu-name">杭州电子科技大学<span class="edu-now">目前就读</span></span>
+            <span class="edu-tip" id="edu-tip-5">
+              <span class="edu-tip-fact">省部共建高校</span>
+              <span class="edu-tip-note">笃学力行，守正求新</span>
+            </span>
+          </div>
+
+          <!-- 归一化 viewBox 0 0 100 100 + preserveAspectRatio=none：两端坐标写成百分比，
+               桌面波峰 30.4/波谷 69.6（内容区 92px 里 ±18px），移动端在媒体查询里用 CSS d
+               整体换成蛇形弯（0/25/50/75/100 五个圆心位），旧内核回落桌面波浪 -->
+          <!-- 桌面波/移动蛇各一条属性 d 的 path，媒体查询切 display：CSS d 覆盖会让
+               pathLength 归一化失效（能量样式按原始长度重复出两条亮纹），属性 d 没这个问题 -->
+          <svg class="edu-road edu-road-wire" viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false" aria-hidden="true">
+            <path class="edu-wire edu-wire-desk" d="M2.8 30.4 C 10.7 30.4, 18.5 69.6, 26.4 69.6 C 34.3 69.6, 42.1 30.4, 50 30.4 C 57.9 30.4, 65.7 69.6, 73.6 69.6 C 81.5 69.6, 89.3 30.4, 97.2 30.4" vector-effect="non-scaling-stroke"/>
+            <path class="edu-wire edu-wire-mob" d="M0 0 C 33.3 0, 66.7 25, 100 25 C 66.7 25, 33.3 50, 0 50 C 33.3 50, 66.7 75, 100 75 C 66.7 75, 33.3 100, 0 100" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <!-- 能量小球：main.js 5.6 每帧按 live 圆心定位（贝塞尔插值），替代 dash 动画 -->
+          <span class="edu-energy" aria-hidden="true"></span>
+        </div>
+
+        <!-- 移动端固定说明行：轻点圆点后简介显示在这里（.edu-path:has(:focus) 纯 CSS 切换），
+             文档流内常驻预留高度、绝不遮挡其他文字；桌面端整行隐藏（悬浮气泡已够用）。
+             文案与气泡同源，改文案两处同步 -->
+        <p class="edu-detail" aria-live="polite">
+          <span class="edu-detail-hint">轻点圆点，查看学校简介</span>
+          <span class="edu-detail-item" id="edu-detail-1"><span class="edu-tip-fact">公办幼儿园</span></span>
+          <span class="edu-detail-item" id="edu-detail-2"><span class="edu-tip-fact">昆阳镇公办小学</span><span class="edu-tip-note">上善若水，流向我远方</span></span>
+          <span class="edu-detail-item" id="edu-detail-3"><span class="edu-tip-fact">昆阳镇公办初中</span><span class="edu-tip-note">励志、勤奋、求实、创新</span></span>
+          <span class="edu-detail-item" id="edu-detail-4"><span class="edu-tip-fact">1938 年由教育家刘绍宽等创办</span><span class="edu-tip-note">尊师重道，敬业乐群</span></span>
+          <span class="edu-detail-item" id="edu-detail-5"><span class="edu-tip-fact">省部共建高校</span><span class="edu-tip-note">笃学力行，守正求新</span></span>
+        </p>
+      </section>
+
       <!-- ============ 我的恩师 ============ -->
       <section class="about-block" id="teachers" aria-labelledby="about-teachers-title">
         <span class="kicker reveal">$ ls ~/teachers</span>
@@ -264,7 +344,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20261002e"></script>
+  <script src="assets/js/main.js?v=20261003k"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
