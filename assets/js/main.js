@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261004b";
+  var DATA_VER = "20261004e";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -179,7 +179,10 @@
     var a = el ? el.closest("a[href]") : null;
     var toPost = false;
     if (a && a.getAttribute("href").charAt(0) !== "#") {
-      toPost = a.pathname.indexOf("/posts/") !== -1 && a.pathname !== window.location.pathname;
+      // 外链的 pathname 是对方站点的路径——限定同源才参与方向判定，防止外链恰好
+      // 含 /posts/ 时把 side 标记写进 sessionStorage、污染下一次站内导航的方向
+      toPost = a.origin === location.origin &&
+               a.pathname.indexOf("/posts/") !== -1 && a.pathname !== window.location.pathname;
     }
     if (deep) markNavDir("deep");
     else if (backLink) markNavDir("back");
@@ -1637,7 +1640,8 @@
         centers.push({ x: r.left - pr.left + r.width / 2, y: r.top - pr.top + r.height / 2 });
       });
       // 虚线丝跟着 live 圆心逐帧重绘（归一化到丝盒 0..100）：圆点飘、窗口变，虚线/能量/圆点
-      // 三者永远重合；无 JS 时回落到 HTML 里的静态 d（两端比例漂移 ≤5px，可接受）
+      // 三者永远重合；无 JS / reduced-motion 时回落到 HTML 里的静态 d（y 已按 56px 内容区
+      // 精确标定，x 锚点按 ~1000px 宽估算随宽度有小漂移）
       var road = document.querySelector(".edu-road-wire");
       if (!road) return;
       var rb = road.getBoundingClientRect();
@@ -3007,8 +3011,10 @@
       { k: "cxk",            v: "小黑子！" },
       { k: "平阳中学",        v: "尊师重道，敬业乐群" },
       { k: "平中",           v: "凤山之麓，弦溪之东，抗战时期诞生我平中~" },
-      // 特殊口令：不直接出文案，先问称呼，校验通过就带 ?name= 进生日页
+      // 特殊口令：不直接出文案，先问称呼，校验通过就带 #name= 进生日页
       { k: "7436474582453",   v: "生日快乐！", a: "birthday" },
+      // 「小核桃的礼物」是生日流程的第二个入口口令（母表 2026-10-04 新增），与上面同一条流程
+      { k: "小核桃的礼物",     v: "生日快乐！", a: "birthday" },
       { k: "7755",            v: "生日快乐！" },
       { k: "小核桃",          v: "找我什么事呀awa" },
       { k: "小核桃哦",        v: "哦？找我什么事呀awa" },

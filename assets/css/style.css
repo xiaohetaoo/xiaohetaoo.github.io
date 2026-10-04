@@ -1491,9 +1491,10 @@ button {
   align-items: center;
   justify-content: space-between;   /* 五站均匀分布：圆心横向落位 2.8/26.4/50/73.6/97.2%，与连通丝坐标一致 */
   position: relative;               /* 连通虚线丝与能量条的定位基准 */
+  isolation: isolate;               /* 收拢本块内部的 0/1/6 层叠（能量条<圆点<悬浮提级），不与页外裸 z-index 混算 */
   margin-top: 30px;
   /* 上下留标签带：高点标签上探约 36px，第五站多一枚「目前就读」徽标所以上带更宽。
-     若调这两个值，.edu-road 的 top/bottom 内缩要同步改（它们按内容区高 92px 标定） */
+     若调这两个值，.edu-road 的 top/bottom 内缩要同步改（它们按内容区高 56px 标定） */
   padding: 66px 0 50px;
 }
 
@@ -1780,10 +1781,13 @@ button {
   .edu-road .edu-wire-mob { display: block; }
 }
 
-/* 打印静态化：能量条与气泡不进纸面，飘动归零避免打印瞬间圆点悬空 */
+/* 打印静态化：能量条与气泡不进纸面，飘动归零避免打印瞬间圆点悬空；
+   说明行也不进——打印页盒（A4/Letter 竖版 ≤879px）会命中移动块把它显示出来，
+   「轻点圆点」在纸面上是无法执行的触屏提示 */
 @media print {
   .edu-energy,
-  .edu-tip { display: none; }
+  .edu-tip,
+  .edu-detail { display: none; }
   .edu-dot { animation: none; }
 }
 
@@ -1793,10 +1797,10 @@ button {
   .edu-dot { animation: none; }
 }
 
-/* ---------- 固定说明行（移动端专用，20261003c） ----------
+/* ---------- 固定说明行（移动端 + 触屏设备专用，20261003c；20261004e 扩到宽屏触屏） ----------
    触屏上悬浮气泡会盖住附近文字（用户报告），改为：轻点圆点后简介显示在
    路线图下方这行常驻留白里（.edu-path:has(:focus) 纯 CSS 切换，零 JS）。
-   桌面端整行不渲染（悬浮气泡已覆盖该场景）；触屏端气泡整体 display:none */
+   纯鼠标桌面整行不渲染（悬浮气泡已覆盖该场景）；触屏端气泡整体 display:none */
 .edu-detail {
   display: none;
   min-height: 24px;
@@ -1824,7 +1828,10 @@ button {
   color: var(--text-3);
 }
 
-@media (max-width: 879px) {
+/* 说明行的显隐按「宽度 或 触屏」二选一命中：≤879px 收窄走说明行；宽屏触屏
+   （iPad 横屏等，(hover:none) + pointer:coarse）20261003c 的「气泡盖字」问题
+   同样存在，也走说明行——纯鼠标桌面两段都不命中，仍用悬浮气泡 */
+@media (max-width: 879px), (hover: none) and (pointer: coarse) {
   .edu-detail { display: block; }
 
   .edu-tip { display: none; }
@@ -2661,12 +2668,10 @@ html.theme-anim::view-transition-new(root) {
   border-color: var(--accent-border);
   background: rgba(255, 255, 255, 0.06);
 }
-/* 收起与展开对称：盒子 0.22s clip 收回 + 0.18s 淡出（不透明度不参与的话整个输入框
-   一帧消失，收回过渡全程播在透明元素上等于没播）。文字不闪由两条保证：
-   value 由 JS 在关闭瞬间清空；placeholder 在收起态直接置透明，不会在淡出中闪现 */
-.nav-search:not(.open) .nav-search-input {
-  transition: clip-path 0.22s var(--ease-out), opacity 0.18s var(--ease-out), border-color 0.2s, background 0.2s;
-}
+/* 收起与展开共用基础规则里的同一组 transition（盒子 0.22s clip 收回 + 0.18s 淡出）——
+   不透明度不参与的话整个输入框一帧消失，收回过渡全程播在透明元素上等于没播。
+   文字不闪由两条保证：value 由 JS 在关闭瞬间清空；placeholder 在收起态直接置透明，
+   不会在淡出中闪现 */
 .nav-search:not(.open) .nav-search-input::placeholder {
   color: transparent;
 }
@@ -4180,6 +4185,7 @@ html.intro-pending .reveal {
     --accent-border: #94b4f0;
     --text-strong: #000000;
     --code-text: #1f2328;
+    --btn-on-primary: #ffffff;   /* 深色默认是深字，落在打印 accent 上对比度只有 2.9:1——打印一律归一白字 */
   }
   @page { margin: 1.8cm 1.6cm; }
   html, body { background: #fff !important; }
@@ -4283,10 +4289,10 @@ html.intro-pending .reveal {
 
 .upd-badge {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent);
   color: var(--btn-on-primary);
-  font-family: var(--font-sans, inherit);
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -4323,9 +4329,4 @@ html.intro-pending .reveal {
   .upd-timeline::before { left: 6px; }
   .upd-item::before { left: -27px; }
   .upd-list li { font-size: 14px; }
-}
-
-/* 打印：进场动画没跑完的条目也要上纸面（压过 .js .reveal 的初始隐藏） */
-@media print {
-  .js .upd-item { opacity: 1; transform: none; filter: none; }
 }

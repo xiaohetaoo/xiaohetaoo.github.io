@@ -13,7 +13,6 @@
       document.documentElement.classList.add(_d==="deep"?"nav-deep":_d==="side"?"nav-side":"nav-back");}
     else if(/\/(?:teacher-[a-z]+|birthday|huiyan-shisi)\.html(?:[?#]|$)/.test(document.referrer||"")){
       document.documentElement.classList.add("nav-back");}}catch(e){}</script>
-  <noscript><style>[data-loading]{display:none}</style></noscript>
   <title>更新历史 · 小核桃的个人博客</title>
   <link rel="canonical" href="https://xiaohetaoo.github.io/updates.html" />
   <meta name="description" content="小核桃的个人博客的更新历史：功能上新与修复记录，新的在上。" />
@@ -35,7 +34,7 @@
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20261004b" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20261004e" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -96,13 +95,16 @@ var _hmt = _hmt || [];
         <p class="sub">网站的功能上新与修复记录，新的在上。</p>
       </div>
 
-      <!-- 时间轴：新条目加在最上面；每次网站改动随版本三件套在这里补一条（20261004a 起） -->
+      <!-- 时间轴：新条目加在最上面；每次网站改动都要在这里补一条（20261004a 起，2026-10-04 用户明确强化）；
+           同一天的多次更新合并写进同一条日期里，不要另开重复日期 -->
       <ol class="upd-timeline">
         <li class="upd-item reveal">
           <h2 class="upd-date">2026-10-04 <span class="upd-badge">最新</span></h2>
           <ul class="upd-list">
             <li>《存在错误》全文修订至第八版</li>
             <li>设定集新增「距离的假象」、三档时间流速与完整伏笔对照表</li>
+            <li>口令弹窗新增「小核桃的礼物」，一样能进生日祝福页</li>
+            <li>全站体检：修复宽屏触屏气泡盖字、打印样式与 404 页更新历史入口等 12 处细节</li>
           </ul>
         </li>
         <li class="upd-item reveal">
@@ -252,7 +254,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20261004b"></script>
+  <script src="assets/js/main.js?v=20261004e"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

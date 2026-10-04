@@ -79,7 +79,7 @@
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20261004b" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20261004e" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -116,7 +116,7 @@ var _hmt = _hmt || [];
         <a href="index.html#posts">文章</a>
         <a href="index.html#projects">项目</a>
         <a href="index.html#contact">联系</a>
-          <a href="updates.html">更新历史</a>
+        <a href="updates.html">更新历史</a>
         <div class="nav-search" id="nav-search">
           <button class="nav-search-btn" type="button" aria-label="搜索（Ctrl+K）" aria-expanded="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -269,7 +269,9 @@ var _hmt = _hmt || [];
           <!-- 桌面波/移动蛇各一条属性 d 的 path，媒体查询切 display：CSS d 覆盖会让
                pathLength 归一化失效（能量样式按原始长度重复出两条亮纹），属性 d 没这个问题 -->
           <svg class="edu-road edu-road-wire" viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false" aria-hidden="true">
-            <path class="edu-wire edu-wire-desk" d="M2.8 30.4 C 10.7 30.4, 18.5 69.6, 26.4 69.6 C 34.3 69.6, 42.1 30.4, 50 30.4 C 57.9 30.4, 65.7 69.6, 73.6 69.6 C 81.5 69.6, 89.3 30.4, 97.2 30.4" vector-effect="non-scaling-stroke"/>
+            <!-- 静态回落 d：y 按 56px 内容区标定（圆心 10/46px → 17.86/82.14%）；x 锚点按 ~1000px 宽估算。
+                 JS 正常时 main.js 5.6 每帧按 live 圆心重绘，此值只在无 JS / reduced-motion 下可见 -->
+            <path class="edu-wire edu-wire-desk" d="M2.8 17.86 C 10.7 17.86, 18.5 82.14, 26.4 82.14 C 34.3 82.14, 42.1 17.86, 50 17.86 C 57.9 17.86, 65.7 82.14, 73.6 82.14 C 81.5 82.14, 89.3 17.86, 97.2 17.86" vector-effect="non-scaling-stroke"/>
             <path class="edu-wire edu-wire-mob" d="M0 0 C 33.3 0, 66.7 25, 100 25 C 66.7 25, 33.3 50, 0 50 C 33.3 50, 66.7 75, 100 75 C 66.7 75, 33.3 100, 0 100" vector-effect="non-scaling-stroke"/>
           </svg>
           <!-- 能量小球：main.js 5.6 每帧按 live 圆心定位（贝塞尔插值），替代 dash 动画 -->
@@ -346,7 +348,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20261004b"></script>
+  <script src="assets/js/main.js?v=20261004e"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
