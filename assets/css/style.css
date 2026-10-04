@@ -4221,3 +4221,111 @@ html.intro-pending .reveal {
   .prose blockquote, .prose table, .prose th, .prose td { border-color: var(--border) !important; }
   .prose img, .prose pre { page-break-inside: avoid; }
 }
+
+/* ---------- 更新历史页（updates.html，20261004a 新增） ----------
+   竖向时间轴：左侧一条渐隐主线 + 每条记录一枚节点圆点，日期走 mono 强调色，
+   正文行用小圆点引导。全程 token，三主题自动适配；无 JS 时 .reveal 兜底可见 */
+.upd-timeline {
+  list-style: none;
+  margin: 34px 0 0;
+  padding: 4px 0 0 34px;
+  position: relative;
+}
+
+/* 主线：从首节点一路渐隐到列表尾部 */
+.upd-timeline::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 10px;
+  bottom: 46px;
+  width: 2px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, var(--accent-border), var(--border) 22%, var(--border) 72%, transparent);
+}
+
+.upd-item {
+  position: relative;
+  padding: 0 0 36px;
+}
+.upd-item:last-child { padding-bottom: 8px; }
+
+/* 节点圆点：落在主线上（左偏移 = 线中心 9px − 圆点半径 6px − 列表左缩进 34px） */
+.upd-item::before {
+  content: "";
+  position: absolute;
+  left: -31px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-dim);
+}
+/* 末节点改空心：历史到这里为止，也和「最新」的实心亮节点形成首尾呼应 */
+.upd-item:last-child::before {
+  background: var(--bg);
+  border: 2px solid var(--border-strong);
+  box-shadow: none;
+}
+
+.upd-date {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+.upd-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--btn-on-primary);
+  font-family: var(--font-sans, inherit);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.upd-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.upd-list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-2);
+}
+.upd-list li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 11px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-border);
+}
+
+/* 移动端：整体左移收窄（节点左偏移同步改：线中心 7px − 半径 6px − 缩进 28px） */
+@media (max-width: 879px) {
+  .upd-timeline { padding-left: 28px; }
+  .upd-timeline::before { left: 6px; }
+  .upd-item::before { left: -27px; }
+  .upd-list li { font-size: 14px; }
+}
+
+/* 打印：进场动画没跑完的条目也要上纸面（压过 .js .reveal 的初始隐藏） */
+@media print {
+  .js .upd-item { opacity: 1; transform: none; filter: none; }
+}
