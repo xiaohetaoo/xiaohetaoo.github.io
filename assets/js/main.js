@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261004f";
+  var DATA_VER = "20261004g";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -812,6 +812,7 @@
     var dw = 0, dh = 0, dust = [];
     var dMouse = { x: -9999, y: -9999 };
     var dLastScroll = window.scrollY;
+    var dScrollTarget = 0, dScrollOff = 0; // 反向视差：目标偏移（原始累计）/ 已应用偏移（阻尼追赶）
     var dLast = null;
     var dustPending = false;
 
@@ -891,16 +892,19 @@
     }
 
     function dustDraw(t, dt) {
-      // 滚动反向视差（20261004f）：星辰跟滚轮反向移动——往下滚整体向上漂、往上滚向下漂，
-      // 位移 = 滚动增量 × 0.8（比界面慢一点，2026-10-04 用户拍板），逐帧直接加到每颗
-      // 粒子上（配合下面的边缘环绕，长页面无缝循环）。
-      // 单帧位移钳到一屏以内：锚点跳转瞬间 dsy 可能上千，超出环绕步长（dh+24）会把粒子
-      // 永远甩在界外再也包不回来；钳住后单次环绕必能收回（见环绕不等式的推导）。
+      // 滚动反向视差：星辰跟滚轮反向移动——往下滚整体向上漂、往上滚向下漂，总位移 =
+      // 滚动增量 × 0.8（比界面慢一点）。位移不一帧砸上去（快速滚动时整层刚性平移 =
+      // 瞬移感，用户反馈），走目标偏移 + 指数阻尼追赶（τ≈200ms）：停手后星辰滑行
+      // 零点几秒才稳住；追赶未收敛期间 dustFrame 升回 60fps，滑行不卡顿。
+      // 单帧实际位移仍钳到一屏内：锚点跳转瞬间目标差距可能上千，超出环绕步长（dh+24）
+      // 会把粒子甩到单次环绕收不回的深度；钳住后每帧必能收回（不变量有单元仿真背书）。
       var sy = window.scrollY;
       var dsy = sy - dLastScroll;
       dLastScroll = sy;
-      var dScrollDy = -dsy * 0.8;
+      dScrollTarget -= dsy * 0.8;
+      var dScrollDy = (dScrollTarget - dScrollOff) * (1 - Math.exp(-dt * 5));
       if (dScrollDy > dh) dScrollDy = dh; else if (dScrollDy < -dh) dScrollDy = -dh;
+      dScrollOff += dScrollDy;
 
       syncDustPalette();
       dctx.clearRect(0, 0, dw, dh);
@@ -945,7 +949,8 @@
     // （见手册八·49）。跳过的帧不推进 dLast，dt 会累加到下一次真正重绘，运动速度与 60fps 时一致。
     var DUST_INTERVAL = 1000 / 30;
     function dustFrame(ts) {
-      if (dLast !== null && ts - dLast < DUST_INTERVAL - 1) {
+      // 阻尼追赶没收敛时跳过 30fps 节流、升回 60fps（平时仍 30fps 省预算），滑行才不一顿一顿
+      if (Math.abs(dScrollTarget - dScrollOff) <= 2 && dLast !== null && ts - dLast < DUST_INTERVAL - 1) {
         scheduleDust();
         return;
       }
