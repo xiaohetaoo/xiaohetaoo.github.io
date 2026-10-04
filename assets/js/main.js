@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261004a";
+  var DATA_VER = "20261004b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1616,7 +1616,8 @@
      拉伸 SVG + non-scaling-stroke 下 dash 按屏幕像素算，宽度一变就错位重复；
      这里每帧按 live 圆心坐标（.edu-dot 相对 .edu-path）逐段三次贝塞尔插值
      （控制点在段中线，与虚线丝同构），视口多宽、圆点怎么飘，能量都精确贴合路线。
-     能量条 z 在圆点与虚线丝之上，与虚线逐点重合地滑完全程，无分段交接。
+     能量条压在圆点之下、浮于虚线丝之上（.edu-energy z 0 < .edu-stop z 1，CSS 为准）：滑到站点时
+     从球底穿过、交接被球盖住不闪现；与虚线逐点重合地滑完全程，无分段交接。
      prefers-reduced-motion 不播；路线滚出视口只停更新不销毁（IntersectionObserver） ---------- */
   (function () {
     var pathBox = document.querySelector(".edu-path");
