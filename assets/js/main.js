@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261004e";
+  var DATA_VER = "20261004f";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -801,7 +801,7 @@
     });
   })();
 
-  /* ---------- 6. 星尘粒子层（全站固定背景，鼠标推开 + 滚动微加速） ---------- */
+  /* ---------- 6. 星尘粒子层（全站固定背景，鼠标推开 + 滚动反向视差） ---------- */
   if (!reducedMotion) {
     var dustCanvas = document.createElement("canvas");
     dustCanvas.id = "dust-canvas";
@@ -812,7 +812,6 @@
     var dw = 0, dh = 0, dust = [];
     var dMouse = { x: -9999, y: -9999 };
     var dLastScroll = window.scrollY;
-    var dScrollBoost = 0;
     var dLast = null;
     var dustPending = false;
 
@@ -892,10 +891,16 @@
     }
 
     function dustDraw(t, dt) {
-      // 滚动时整体微微加速（随滚动速度衰减）
+      // 滚动反向视差（20261004f）：星辰跟滚轮反向移动——往下滚整体向上漂、往上滚向下漂，
+      // 位移 = 滚动增量 × 0.8（比界面慢一点，2026-10-04 用户拍板），逐帧直接加到每颗
+      // 粒子上（配合下面的边缘环绕，长页面无缝循环）。
+      // 单帧位移钳到一屏以内：锚点跳转瞬间 dsy 可能上千，超出环绕步长（dh+24）会把粒子
+      // 永远甩在界外再也包不回来；钳住后单次环绕必能收回（见环绕不等式的推导）。
       var sy = window.scrollY;
-      dScrollBoost = dScrollBoost * 0.88 + (sy - dLastScroll) * 0.10;
+      var dsy = sy - dLastScroll;
       dLastScroll = sy;
+      var dScrollDy = -dsy * 0.8;
+      if (dScrollDy > dh) dScrollDy = dh; else if (dScrollDy < -dh) dScrollDy = -dh;
 
       syncDustPalette();
       dctx.clearRect(0, 0, dw, dh);
@@ -903,7 +908,7 @@
       for (var i = 0; i < dust.length; i++) {
         var p = dust[i];
         p.x += p.vx * dt;
-        p.y += (p.vy + dScrollBoost * 8) * dt;
+        p.y += p.vy * dt + dScrollDy;
 
         // 鼠标推开：半径 110px 内的微粒被轻轻推开
         var mdx = p.x - dMouse.x, mdy = p.y - dMouse.y;
