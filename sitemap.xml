@@ -47,12 +47,14 @@
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/posts/games-i-played.html</loc>
-    <lastmod>2026-09-06</lastmod>
+    <!-- 修订日同步 lastmod（20261005a 起：有 updated 的文章 lastmod 跟修订日，无修订仍发布日） -->
+    <lastmod>2026-10-03</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/posts/exist-error.html</loc>
-    <lastmod>2026-08-29</lastmod>
+    <!-- 修订日同步 lastmod（posts.json 的 updated 2026-10-04，第八版全文修订） -->
+    <lastmod>2026-10-04</lastmod>
     <priority>0.6</priority>
   </url>
   <url>

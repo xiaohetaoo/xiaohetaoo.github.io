@@ -33,6 +33,9 @@
        · 修订旧文时（新建不用）：posts.json 该条加 "updated" 修订日 + 可见 meta 日期后加
          「最近更新：日期」行 + article:modified_time / dateModified 同步（排序键就是 updated，
          文章会按修订日上浮；显示日期仍是发布日）
+       · 修订旧文还需同步两个数据文件：feed.xml 该条 <updated> 改修订日（若上浮进前两位，
+         把整块 <entry> 换到对应位置）与 sitemap.xml 该条 <lastmod> 改修订日——
+         check-site 只查 feed 条目数不查顺序、只查 lastmod 格式不查数值，拦不住漂移（20261005a）
        不需要动的：og:image / og:image:alt / twitter:image（全站共用）、og:site_name / locale、
        author/publisher（都是小核桃） -->
   <title>TODO：文章标题 · 小核桃的个人博客</title>

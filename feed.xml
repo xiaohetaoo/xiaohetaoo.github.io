@@ -5,7 +5,9 @@
   <link href="https://xiaohetaoo.github.io/"/>
   <link rel="self" href="https://xiaohetaoo.github.io/feed.xml"/>
   <id>https://xiaohetaoo.github.io/</id>
-  <updated>2026-09-06T00:00:00+08:00</updated>
+  <!-- feed 级时间戳 = 源内最新一条的 <updated>：20261005a 起文章排序键换最后修订日，
+       「存在错误」修订于 2026-10-04 成为源内最新，这里随之从 2026-09-06 改为 2026-10-04 -->
+  <updated>2026-10-04T00:00:00+08:00</updated>
   <author>
     <name>小核桃</name>
     <uri>https://xiaohetaoo.github.io/</uri>
@@ -13,23 +15,27 @@
   <generator uri="https://xiaohetaoo.github.io/">小核桃的个人博客静态站</generator>
   <rights>© 2026 小核桃的个人博客</rights>
 
-  <entry>
-    <title>我玩过的游戏（双语）</title>
-    <link href="https://xiaohetaoo.github.io/posts/games-i-played.html"/>
-    <id>https://xiaohetaoo.github.io/posts/games-i-played.html</id>
-    <updated>2026-09-06T00:00:00+08:00</updated>
-    <summary>想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。</summary>
-    <category term="游戏"/>
-    <category term="了解我"/>
-  </entry>
+  <!-- 20261005a 起文章排序键 = 最后修订日（posts.json 的 updated 字段）：
+       前两条 entry 整体换位——「存在错误」（修订 2026-10-04）上浮第一、「我玩过的游戏」（修订
+       2026-10-03）第二，其余 14 篇无修订、回落发布日后相对序不变。两条的 <updated> 同步改为
+       修订日（Atom 语义 = 内容最后修改时间）；以后修订文章记得同步这里，见 _template 必改清单 -->
   <entry>
     <title>存在错误</title>
     <link href="https://xiaohetaoo.github.io/posts/exist-error.html"/>
     <id>https://xiaohetaoo.github.io/posts/exist-error.html</id>
-    <updated>2026-08-29T00:00:00+08:00</updated>
+    <updated>2026-10-04T00:00:00+08:00</updated>
     <summary>初高中构思四年写的中长篇科幻小说，感谢领路人刘慈欣老师。</summary>
     <category term="科幻"/>
     <category term="小说"/>
+  </entry>
+  <entry>
+    <title>我玩过的游戏（双语）</title>
+    <link href="https://xiaohetaoo.github.io/posts/games-i-played.html"/>
+    <id>https://xiaohetaoo.github.io/posts/games-i-played.html</id>
+    <updated>2026-10-03T00:00:00+08:00</updated>
+    <summary>想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。</summary>
+    <category term="游戏"/>
+    <category term="了解我"/>
   </entry>
   <entry>
     <title>lemonge（柠檬鸡）</title>
