@@ -1,9 +1,9 @@
 /* ============================================================
-   小核桃的个人博客 · 交互脚本
-   1) Hero 原子轨道动画（呼应工作室 logo：原子环绕立方体）
-   2) 滚动进场（位移 + 模糊，对齐 harness 的 --enter-y/--enter-blur）
-   3) 导航滚动高亮
-   5) 文章列表渲染（posts.json：置顶优先，其余按日期倒序）
+   小核桃的个人博客 · 交互脚本（全站唯一外部 JS，零依赖、ES5 风格）
+   覆盖：主题切换 / Hero 原子轨道 / 滚动进场与倾斜 / 列表渲染与搜索 /
+   导航全局搜索 / 口令弹窗 / 智能预取 / 星尘背景与迸发 / 开场动画 / 跨页过渡等。
+   功能不再逐条编号罗列（列表易过期）：定位用各节「---------- N. ×× ----------」
+   注释的节名搜索；节号不连续属历史沿革，以节名为准。
    ============================================================ */
 
 (function () {
@@ -20,9 +20,19 @@
     document.documentElement.classList.add("js");
   }
 
+  // 全站共用的小口径（每次现求值、不缓存——跨屏拖窗/插拔显示器时结果会变）：
+  // fineHover：高精度指针判定（倾斜跟随、意图预热只在鼠标环境下启用）
+  // cappedDpr：画布位图 DPR 上限 2（再高只是费显存，肉眼无差）
+  function fineHover() {
+    return window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  }
+  function cappedDpr() {
+    return Math.min(window.devicePixelRatio || 1, 2);
+  }
+
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261005a";
+  var DATA_VER = "20261005b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -288,7 +298,7 @@
     var W = 0, H = 0, DPR = 1;
 
     function resize() {
-      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      DPR = cappedDpr();
       var rect = canvas.getBoundingClientRect();
       W = rect.width;
       H = rect.height;
@@ -411,6 +421,11 @@
 
     var heroRect = null;
     function updateHeroRect() { heroRect = canvas.getBoundingClientRect(); }
+    // 滚动只标脏、下一帧绘制前再量：scroll 事件比帧密，一帧内可能连发多次，
+    // 每次都同步量属于白读（前一次的结果立刻被下一次覆盖）。heroRect 只有
+    // drawCube 的鼠标偏转一个消费者，统一挪到消费点取，滚动路径零布局读
+    var heroRectDirty = false;
+    function markHeroRectDirty() { heroRectDirty = true; }
 
     // 拖拽旋转状态：baseYaw = 自转累计角（拖拽时暂停累加），dragYaw/Pitch = 用户拖拽姿态（保留不回正），
     // spinVel = 松手惯性角速度（指数衰减，衰减完无级交还自转）
@@ -431,6 +446,7 @@
       var tiltX = -0.42 + dragPitch;
       var rotY = baseYaw + dragYaw;
       // 鼠标偏转：立方体朝光标方向轻微倾斜（最大约 0.3 弧度）；拖拽期间归零，避免和拖拽打架
+      if (heroRectDirty) { updateHeroRect(); heroRectDirty = false; }
       var lx = 0, ly = 0;
       if (!dragging && heroMouse.active && heroRect) {
         lx = Math.max(-1, Math.min(1, (heroMouse.x - (heroRect.left + heroRect.width / 2)) / (heroRect.width / 2)));
@@ -530,7 +546,10 @@
       }, 120);
     });
 
-    window.addEventListener("scroll", updateHeroRect, { passive: true });
+    // 静态/减动效模式下 heroRect 无任何消费者（mousemove 监听也没挂），滚动监听整个免掉
+    if (!reducedMotion && !staticMode) {
+      window.addEventListener("scroll", markHeroRectDirty, { passive: true });
+    }
 
     // 拖拽旋转立方体：命中区收窄到立方体本体附近（中心半径 16% 画布宽），不是整块画布；
     // 横拖偏航、竖拖俯仰，松手带惯性，衰减完无级回到自转。
@@ -635,7 +654,7 @@
     });
 
     // ---- 3D 倾斜跟随光标（精确指针 + 动效可用才启用） ----
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (!fineHover()) return;
     if (reducedMotion || staticMode) return;
 
     var MAX = 10; // 最大倾斜角（度），双向各 10°
@@ -692,7 +711,7 @@
   // 卡片什么时候出现都不用管；同一时刻只有一张卡在跟手，状态共享一份即可。
   // 跟随期间只掐 transform 的过渡，背景/边框/阴影的悬停渐变照常保留。
   (function () {
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (!fineHover()) return;
     if (reducedMotion || staticMode) return;
 
     var MAX = 5; // 最大倾斜角（度），双向各 5°
@@ -847,7 +866,7 @@
     buildGlowSprite();
 
     function dustResize() {
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var dpr = cappedDpr();
       dw = window.innerWidth;
       dh = window.innerHeight;
       dustCanvas.width = dw * dpr;
@@ -1065,7 +1084,7 @@
     try { document.body.inert = true; } catch (e) {}
 
     var W = window.innerWidth, H = window.innerHeight;
-    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var dpr = cappedDpr(); // 上限 2 的口径与全站画布一致
     var cv = document.createElement("canvas");
     cv.id = "intro-canvas";
     cv.setAttribute("aria-hidden", "true");
@@ -1288,15 +1307,15 @@
   }
   document.querySelectorAll(".reveal").forEach(watchReveal);
 
-  /* ---------- 5. 文章列表（posts.json 驱动：置顶优先，其余按日期倒序）
+  /* ---------- 5. 文章列表（posts.json 驱动：置顶优先，其余按最后更新倒序）
          #post-list     首页，只显示最新 5 篇
          #archive-list  归档页，显示全部
          #sidebar-posts 文章页侧栏导航，当前篇高亮 ---------- */
-  /* HTML 转义：posts.json / projects.json 的所有字段进 innerHTML 前必经 */
+  /* HTML 转义：posts.json / projects.json 的所有字段进 innerHTML 前必经。
+     映射表提为常量：esc 在列表渲染/搜索的热路径上逐字符调用，别每次命中都新建映射对象 */
+  var ESC_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
   var esc = function (s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
+    return String(s).replace(/[&<>"']/g, function (c) { return ESC_MAP[c]; });
   };
 
   // 站点根前缀：文章页在 /posts/ 子目录要回上一级；404 页会被服务在任意深度的
@@ -1309,6 +1328,15 @@
   function siteRoot(forHref) {
     if (window.XHT_AT_404) return forHref ? "/" : "";
     return window.location.pathname.indexOf("/posts/") !== -1 ? (forHref ? "../" : "..") : (forHref ? "" : ".");
+  }
+
+  // 文章页链接统一拼接：root 兼容两种形态——siteRoot(true) 的 ""/"../"/"/"（已带尾斜杠）
+  // 与侧栏/推荐阅读的 "../"/"."（裸根，这里补尾斜杠）；slug 统一 esc，
+  // 杜绝个别调用点漏转义的口径分叉（2026-10-05 审查发现 post-nav 回填处漏了 esc）
+  function postHref(root, slug) {
+    var base = root || "";
+    if (base && base.charAt(base.length - 1) !== "/") base += "/";
+    return base + "posts/" + esc(slug) + ".html";
   }
 
   // 同一页面多处列表共用一次请求；文章页在 /posts/ 子目录，要回到站点根再取。
@@ -1325,7 +1353,7 @@
   }
 
   /* 站内显示序 = 置顶优先 → 最后更新倒序（列表 / 侧栏 / post-nav 回填 / feed 全部同源此序）：
-     排序键 = posts.json 的 updated（最后修订日），无修订回落发布 date，20261005a 起。
+     排序键 = posts.json 的 updated（最后修订日），无修订回落发布 date（2026-10-05 起）。
      修订过的文章按修订日上浮，但**显示**的日期仍是发布日（首页/归档卡片不变），
      文章页 meta 里另有「最近更新」行。pinned 仍置顶，置顶内部也按同键排。 */
   function sortPosts(posts) {
@@ -1368,7 +1396,7 @@
     var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
     var delay = ' style="--d:' + Math.min(i * 0.05, 0.3).toFixed(2) + 's"';
     return (
-      '<a class="post-card reveal"' + delay + ' href="' + (root || "") + 'posts/' + esc(p.slug) + '.html">' +
+      '<a class="post-card reveal"' + delay + ' href="' + postHref(root, p.slug) + '">' +
         '<span class="date">' + esc(p.date) + pin + "</span>" +
         "<div><" + lvl + ">" + esc(p.title) + "</" + lvl + '><p class="excerpt">' + esc(p.excerpt) + "</p></div>" +
         '<div class="meta-col"><span class="tags">' + tags + '</span><span class="arrow" aria-hidden="true">-&gt;</span></div>' +
@@ -1396,8 +1424,11 @@
         if (q) {
           html += '<p class="search-hint">找到 <b>' + shown.length + "</b> 篇与「" + esc(query.trim()) + "」相关的文章</p>";
         }
+        // 标题级别整列表只算一次：listHeadingLevel 要向上翻祖先链找标题，
+        // 逐卡重算会把一次查询放大成几十次 DOM 查询（搜索连打的重渲染热路径最疼）
+        var lvl = listHeadingLevel(container);
         html += shown.length
-          ? shown.map(function (p, i) { return postCardHtml(p, i, "", listHeadingLevel(container)); }).join("")
+          ? shown.map(function (p, i) { return postCardHtml(p, i, "", lvl); }).join("")
           : '<p class="search-empty">没有找到相关文章，换个关键词试试？</p>';
         unwatchReveal(container);
         container.innerHTML = html;
@@ -1420,7 +1451,6 @@
   var homeList = document.getElementById("post-list");
   var archiveList = document.getElementById("archive-list");
   var searchInput = document.getElementById("post-search");
-  var searchTimer = null;
 
   function rerenderLists() {
     var q = searchInput ? searchInput.value : "";
@@ -1428,23 +1458,32 @@
     if (archiveList) renderPostCards(archiveList, 0, q);
   }
 
+  // 文章/项目搜索输入共用的绑定：URL 只增删 q（可分享直达），120ms 防抖后重渲染。
+  // syncUrl=false（首页项目搜索）只本地过滤——首页 ?q= 已被文章搜索占用
+  function bindSearchInput(input, rerender, syncUrl) {
+    var timer = null;
+    input.addEventListener("input", function () {
+      if (syncUrl) {
+        var q = input.value.trim();
+        try {
+          // 以当前 search 为底只增删 q，保留 theme/festival 等其它参数；全空时不留裸 "?"
+          var usp = new URLSearchParams(window.location.search);
+          if (q) usp.set("q", q); else usp.delete("q");
+          var qs = usp.toString();
+          window.history.replaceState(null, "",
+            window.location.pathname + (qs ? "?" + qs : "") + window.location.hash);
+        } catch (e) {}
+      }
+      clearTimeout(timer);
+      timer = setTimeout(rerender, 120);
+    });
+  }
+
   if (searchInput) {
     // 支持 archive.html?q=关键词 直接带词搜索，链接可分享
     var initialQ = new URLSearchParams(window.location.search).get("q") || "";
     if (initialQ) searchInput.value = initialQ;
-    searchInput.addEventListener("input", function () {
-      var q = searchInput.value.trim();
-      try {
-        // 以当前 search 为底只增删 q，保留 theme/festival 等其它参数；全空时不留裸 "?"
-        var usp = new URLSearchParams(window.location.search);
-        if (q) usp.set("q", q); else usp.delete("q");
-        var qs = usp.toString();
-        window.history.replaceState(null, "",
-          window.location.pathname + (qs ? "?" + qs : "") + window.location.hash);
-      } catch (e) {}
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(rerenderLists, 120);
-    });
+    bindSearchInput(searchInput, rerenderLists, true);
   }
 
   rerenderLists();
@@ -1645,18 +1684,26 @@
     var CROSS_MS = 4200;   // 全程滑行时长：4.2s 一圈，速度从容（2.6s 用户嫌快）
     var centers = null;    // 五站圆心（相对 .edu-path 内容盒）
     var visible = false;
+    var rafId = 0;         // 在播的 rAF 句柄；滚出视口归零停跑，滚回来由 IO 重新拉起
+
+    // 元素集合全程静态，提到帧循环外只查一次；每帧变的只有位置（getBoundingClientRect 现量）
+    var dots = pathBox.querySelectorAll(".edu-dot");
+    var road = document.querySelector(".edu-road-wire");
+    var wd = document.querySelector(".edu-wire-desk");
+    var wm = document.querySelector(".edu-wire-mob");
+    // 探针/调试开关：URL 带 ?edu-debug 才把进度/坐标写到 data-* 上（平时每帧省 4 次属性写）
+    var EDU_DEBUG = /[?&]edu-debug(?:=1)?(?=&|$)/.test(window.location.search);
 
     function measure() {
       var pr = pathBox.getBoundingClientRect();
       centers = [];
-      pathBox.querySelectorAll(".edu-dot").forEach(function (d) {
+      dots.forEach(function (d) {
         var r = d.getBoundingClientRect();
         centers.push({ x: r.left - pr.left + r.width / 2, y: r.top - pr.top + r.height / 2 });
       });
       // 虚线丝跟着 live 圆心逐帧重绘（归一化到丝盒 0..100）：圆点飘、窗口变，虚线/能量/圆点
       // 三者永远重合；无 JS / reduced-motion 时回落到 HTML 里的静态 d（y 已按 56px 内容区
       // 精确标定，x 锚点按 ~1000px 宽估算随宽度有小漂移）
-      var road = document.querySelector(".edu-road-wire");
       if (!road) return;
       var rb = road.getBoundingClientRect();
       if (!rb.width || !rb.height) return;
@@ -1677,8 +1724,6 @@
         }
         prev = { nx: nx, ny: ny };
       }
-      var wd = document.querySelector(".edu-wire-desk");
-      var wm = document.querySelector(".edu-wire-mob");
       if (wd) wd.setAttribute("d", d);
       if (wm) wm.setAttribute("d", d);
     }
@@ -1707,26 +1752,34 @@
     var t0 = null;
     function frame(now) {
       if (t0 === null) t0 = now;
+      rafId = 0;
       if (visible) {
         measure();   // 圆点带 ±5px 飘动，能量每帧跟着活圆心走才贴合
         var t = ((now - t0) % CROSS_MS) / CROSS_MS;
         var p = pointAt(t);
         energy.style.transform = "translate(" + p.x.toFixed(1) + "px, " + p.y.toFixed(1) + "px) translate(-50%, -50%) rotate(" + p.ang.toFixed(4) + "rad)";
-        // 探针/调试用：当前进度与坐标/朝向（免得探针去解析 transform 字符串）
-        energy.dataset.t = t.toFixed(4);
-        energy.dataset.x = p.x.toFixed(1);
-        energy.dataset.y = p.y.toFixed(1);
-        energy.dataset.ang = p.ang.toFixed(4);
+        // 探针/调试用（URL 带 ?edu-debug 才写）：当前进度与坐标/朝向
+        if (EDU_DEBUG) {
+          energy.dataset.t = t.toFixed(4);
+          energy.dataset.x = p.x.toFixed(1);
+          energy.dataset.y = p.y.toFixed(1);
+          energy.dataset.ang = p.ang.toFixed(4);
+        }
         // 循环两端淡入淡出（1 号/5 号球心处），路上全程不透明
         var edge = Math.min(t / 0.08, (1 - t) / 0.08, 1);
         energy.style.opacity = edge;
+        rafId = requestAnimationFrame(frame);
       }
-      requestAnimationFrame(frame);
+      // 滚出视口不再排队下一帧：原来空转排队只是省了绘制，循环本身仍在跑；
+      // visible 翻回 true 时由 IO 重新拉起，t0 保留——相位无缝接续。
+      // 不再开机即跑：首屏时路线多半在视口外，启动交给 IO 的首次回调
     }
-    requestAnimationFrame(frame);
 
     new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) { visible = en.isIntersecting; });
+      entries.forEach(function (en) {
+        visible = en.isIntersecting;
+        if (visible && !rafId) rafId = requestAnimationFrame(frame);
+      });
     }, { threshold: 0.05 }).observe(pathBox);
 
     window.addEventListener("resize", measure);
@@ -1844,7 +1897,9 @@
           }
         }
         unwatchReveal(container);
-        container.innerHTML = shown.map(function (p, i) { return projectCardHtml(p, i, listHeadingLevel(container)); }).join("");
+        // 标题级别整列表只算一次（同文章列表：listHeadingLevel 要翻祖先链）
+        var lvl = listHeadingLevel(container);
+        container.innerHTML = shown.map(function (p, i) { return projectCardHtml(p, i, lvl); }).join("");
         if (q) {
           // 打字过程中的连续重渲染，跳过渐显动画避免闪烁
           container.querySelectorAll(".reveal").forEach(function (el) { markRevealed(el); });
@@ -1869,7 +1924,6 @@
   var projectList = document.getElementById("project-list");
   var projectAllList = document.getElementById("project-all-list");
   var projectSearchInput = document.getElementById("project-search");
-  var projectSearchTimer = null;
 
   function rerenderProjectLists() {
     var q = projectSearchInput ? projectSearchInput.value : "";
@@ -1882,21 +1936,8 @@
     var isProjectsPage = !!projectAllList;
     var initialProjectQ = isProjectsPage ? (new URLSearchParams(window.location.search).get("q") || "") : "";
     if (initialProjectQ) projectSearchInput.value = initialProjectQ;
-    projectSearchInput.addEventListener("input", function () {
-      if (isProjectsPage) {
-        var q = projectSearchInput.value.trim();
-        try {
-          // 同文章搜索：以当前 search 为底只增删 q，保留其它参数；全空时不留裸 "?"
-          var usp2 = new URLSearchParams(window.location.search);
-          if (q) usp2.set("q", q); else usp2.delete("q");
-          var qs2 = usp2.toString();
-          window.history.replaceState(null, "",
-            window.location.pathname + (qs2 ? "?" + qs2 : "") + window.location.hash);
-        } catch (e) {}
-      }
-      clearTimeout(projectSearchTimer);
-      projectSearchTimer = setTimeout(rerenderProjectLists, 120);
-    });
+    // 防抖/URL 同步规则与文章搜索共用 bindSearchInput（见 5 节），只有 syncUrl 开关不同
+    bindSearchInput(projectSearchInput, rerenderProjectLists, isProjectsPage);
   }
 
   rerenderProjectLists();
@@ -2038,13 +2079,13 @@
      四档触发，都不打断当前页：
      ① 空闲预热：首屏稳定后，在 requestIdleCallback 里按「最可能点的下一跳」逐个预热
         （文章页 = 推荐阅读 → 上/下篇；首页/归档 = 文章卡；侧栏 / hero CTA / 导航兜底），
-        一次一个，上限 idleLeft（快网 8、慢网 2）
+        一次一个，上限 idleLeft（快网 8、慢网 3）
      ② 意图预热：鼠标在站内链接上停 120ms、或触屏按下（pointerdown）就立刻预热目标页
      ③ 滚动停止 1.2s 后再补一轮——用户停手的那一刻正是「马上要点」的时刻
      ④ 投机规则（Chromium 121+）：悬停即 prerender、按下即 prefetch，交给浏览器自己管。
         预渲染会真跑目标页的 JS，点开时是「已经在跑」而不是「刚开始加载」，是最彻底的一档
-     守卫：省流量（saveData）/ 2g·slow-2g / ?static=1 / 非 http(s) 一律不做；3g 或
-     downlink ≤ 1.5Mbps 算慢网——只预取不预渲染、空闲上限收到 2；同页锚点、外链、
+     守卫：省流量（saveData）/ 2g·slow-2g / ?static=1 / 非 http(s) 一律不做；3g
+     算慢网——只预取不预渲染、空闲上限收到 3；同页锚点、外链、
      带 ?q= 的搜索页跳过；同一文档（忽略 #锚点）只预热一次。
      用 <link rel="prefetch"> 而不是 fetch：浏览器按最低优先级排队，不抢当前页带宽，
      失败静默，也不占内存（fetch 会把响应留在内存里直到用完）。
@@ -2152,7 +2193,7 @@
       //    ④ 已经用「悬停即预渲染」覆盖了同一批链接，两条腿一起跑只会互相抢带宽）
       if (!addSpeculation()) {
         var hoverTimer = null, hovered = null;
-        if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+        if (fineHover()) {
           document.addEventListener("pointerover", function (e) {
             var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
             if (a === hovered) return;
@@ -2219,11 +2260,13 @@
       .then(function (posts) {
         var path = window.location.pathname;
         var root = path.indexOf("/posts/") !== -1 ? ".." : ".";
-        sideList.innerHTML = sortPosts(posts)
+        // 侧栏与 post-nav 回填共用同一份排序（原来上下各排一次，纯冗余）
+        var sorted = sortPosts(posts);
+        sideList.innerHTML = sorted
           .map(function (p) {
             var current = path.indexOf("/" + p.slug + ".html") !== -1;
             return (
-              '<a class="side-item' + (current ? " current" : "") + '" href="' + root + "/posts/" + esc(p.slug) + '.html"' +
+              '<a class="side-item' + (current ? " current" : "") + '" href="' + postHref(root, p.slug) + '"' +
                 (current ? ' aria-current="page"' : "") + ">" +
                 '<span class="d">' + esc(p.date) + "</span>" +
                 '<span class="t">' + esc(p.title) + "</span>" +
@@ -2241,7 +2284,6 @@
         // 邻居回填（无上/下篇回填 ghost 态），保证 post-nav 和侧栏永远一个顺序
         var nav = document.querySelector(".post-nav");
         if (nav) {
-          var sorted = sortPosts(posts);
           var cur = -1;
           sorted.forEach(function (p, i) {
             if (path.indexOf("/" + p.slug + ".html") !== -1) cur = i;
@@ -2251,7 +2293,7 @@
             if (target) {
               a.className = isNext ? "next" : "";
               a.removeAttribute("aria-hidden");
-              a.setAttribute("href", root + "/posts/" + target.slug + ".html");
+              a.setAttribute("href", postHref(root, target.slug));
               a.querySelector(".t").textContent = target.title;
             } else {
               a.className = isNext ? "next ghost" : "ghost";
@@ -2417,7 +2459,7 @@
           var p = entry.p;
           var tags = (p.tags || []).slice(0, 2).map(function (t) { return '<span class="t">' + esc(t) + "</span>"; }).join("");
           html +=
-            '<a class="related-card reveal" href="' + root + "/posts/" + esc(p.slug) + '.html" style="--d:' + (i * 0.05) + 's">' +
+            '<a class="related-card reveal" href="' + postHref(root, p.slug) + '" style="--d:' + (i * 0.05) + 's">' +
               '<span class="date">' + esc(p.date) + "</span>" +
               "<h2>" + esc(p.title) + "</h2>" +
               (tags ? '<div class="tag-row">' + tags + "</div>" : "") +
@@ -2465,7 +2507,7 @@
     sections.forEach(function (s) { spy.observe(s); });
   }
 
-  /* ---------- 9. 导航栏全局搜索（放大镜 → 搜索框，下拉浮层：文章在前、项目在后） ---------- */
+  /* ---------- 11. 导航栏全局搜索（放大镜 → 搜索框，下拉浮层：文章在前、项目在后） ---------- */
   // 数据走 loadPosts() / loadProjects()，匹配复用 postMatches() / projectMatches()。
   // 触发：点放大镜按钮 / Ctrl+K / Cmd+K；关闭：点外部 / Esc / 点击任意链接。
   (function () {
@@ -2476,21 +2518,20 @@
     var panel = wrap.querySelector(".nav-search-results");
     if (!btn || !input || !panel) return;
 
-    // placeholder 按视口切：≤640 短版（屏窄放不下长文案），>640 保留长版
+    // placeholder 按视口切：≤640 短版（屏窄放不下长文案），>640 保留长版。
+    // 断点 MQL 全 IIFE 只建这一份（viewportMq），change 监听也只有一个：
+    // 先切 placeholder，再做跨断点清理——原两套 MQL/两套监听合并后状态不会分叉
     var longPH = input.placeholder;  // HTML 默认长版
     var shortPH = "搜索";
+    var viewportMq = window.matchMedia("(max-width: 640px)");
     function syncPlaceholder() {
-      var isMobile = window.matchMedia("(max-width: 640px)").matches;
+      var isMobile = viewportMq.matches;
       input.placeholder = isMobile ? shortPH : longPH;
       // 同步移动端下拉面板里 mobile input 的 placeholder（旋转屏幕时跟随）
       var mi = panel.querySelector(".nav-search-mobile-input");
       if (mi) mi.placeholder = isMobile ? shortPH : longPH;
     }
     syncPlaceholder();
-    // resize 监听（手机旋转/PC 拖窗时跟随）
-    var mq = window.matchMedia("(max-width: 640px)");
-    if (mq.addEventListener) mq.addEventListener("change", syncPlaceholder);
-    else if (mq.addListener) mq.addListener(syncPlaceholder);  // 老 Safari 兼容
 
     // 文章页在 /posts/ 子目录，卡片和项目页 href 要加 ../；404 页用绝对根（见 siteRoot）
     var root = siteRoot(true);
@@ -2519,14 +2560,14 @@
       panel.style.width = "";
       panel.style.right = "";
     }
-    var viewportMq = window.matchMedia("(max-width: 640px)");
     // 跨断点切换：< → > 时清 inline style 让桌面 positionPanel 接管；> → < 时清
     // inline style 让 mobile CSS 接管。避免残留。
     var lastIsMobile = viewportMq.matches;
-    // 旧 Safari（<14）的 MediaQueryList 只有 addListener（与上面 syncPlaceholder 同款兜底），
+    // 旧 Safari（<14）的 MediaQueryList 只有 addListener（老 Safari 兼容兜底），
     // 缺了它这里抛 TypeError 会中断整个搜索 IIFE（按钮/快捷键全失效）
     var onMqChange = function () {
       var isMobile = viewportMq.matches;
+      syncPlaceholder(); // placeholder 跟断点走的监听并进这一个（原来单独一套 mq 监听）
       if (isMobile !== lastIsMobile) {
         lastIsMobile = isMobile;
         clearPanelInline();
@@ -2567,6 +2608,16 @@
       );
     }
 
+    // 主内容 inert 锁（免费 focus trap）：开 = 锁 main；关 = 仅当口令弹窗或节日弹窗
+    // 都没压着 main 时才摘——它们的焦点锁也压着 main，「开着搜索点钥匙按钮」时
+    // 摘了 inert 会破弹窗的焦点锁（20260925a）。桌面/移动两条开合路径共用一份规则
+    function syncMainInert() {
+      var main = document.querySelector("main");
+      var keyModalNow = document.getElementById("key-modal");
+      var festivalOpen = !!document.getElementById("fst-modal");
+      if (main && (open || ((!keyModalNow || keyModalNow.hidden) && !festivalOpen))) main.toggleAttribute("inert", open);
+    }
+
     function bindOptions() {
       var opts = panel.querySelectorAll(".post-card, .nav-project");
       opts.forEach(function (el, i) {
@@ -2596,7 +2647,7 @@
 
     function setOpen(next) {
       open = !!next;
-      var isMobile = window.matchMedia("(max-width: 640px)").matches;
+      var isMobile = viewportMq.matches;
       // 移动端（≤640）走下拉式：跳到独立分支，不污染桌面端
       if (isMobile) {
         setMobileOpen(next);
@@ -2610,13 +2661,8 @@
       // （见 getMobileList），桌面打开必须还原，否则桌面下拉失去 listbox 语义（20261002b）
       panel.setAttribute("role", "listbox");
       panel.setAttribute("aria-label", "搜索结果");
-      // 2) 主内容 inert 锁（免费 focus trap）。关闭时若口令弹窗或节日弹窗还开着，main 的
-      //    inert 归它们管（它们的焦点锁也压着 main），不能顺手一起摘——「开着搜索点钥匙
-      //    按钮」会让这次点击走外部点击路径把搜索关掉，摘了 inert 弹窗的焦点锁就破（20260925a）
-      var main = document.querySelector("main");
-      var keyModalNow = document.getElementById("key-modal");
-      var festivalOpen = !!document.getElementById("fst-modal");
-      if (main && (open || ((!keyModalNow || keyModalNow.hidden) && !festivalOpen))) main.toggleAttribute("inert", open);
+      // 2) 主内容 inert 锁（共享规则单点维护，见 syncMainInert）
+      syncMainInert();
       // 3) nav 让位元素 class（≤640 媒体查询让它们 display:none）
       var nav = wrap.closest("nav");
       if (nav) nav.classList.toggle("nav-search-open", open);
@@ -2685,12 +2731,8 @@
       // 见 getMobileList；桌面 open 分支会幂等恢复，20261002b）
       panel.removeAttribute("role");
       panel.removeAttribute("aria-label");
-      // 2) 主内容 inert 锁。关闭时若口令弹窗或节日弹窗还开着，main 的 inert 归它们管，
-      //    不能顺手摘（与桌面分支同一坑，20260925a）
-      var main = document.querySelector("main");
-      var keyModalNow = document.getElementById("key-modal");
-      var festivalOpen = !!document.getElementById("fst-modal");
-      if (main && (open || ((!keyModalNow || keyModalNow.hidden) && !festivalOpen))) main.toggleAttribute("inert", open);
+      // 2) 主内容 inert 锁（与桌面分支同一坑，共享 syncMainInert）
+      syncMainInert();
       // 3) nav 让位元素 class
       var nav = wrap.closest("nav");
       if (nav) nav.classList.toggle("nav-search-open", open);

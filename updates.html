@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
-  <script>try{var m=location.search.match(/theme=(light|dark|cn-red)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":t==="cn-red"?"#faf4f0":"#000000"}}catch(e){}</script>
+  <script>try{var m=location.search.match(/[?&]theme=(light|dark|cn-red)(?:&|$)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":t==="cn-red"?"#faf4f0":"#000000"}}catch(e){}</script>
   <script>/* 方向性滑动：nav-deep / nav-back / nav-side 必须在新页第一次渲染前挂到 <html> 上。
      pagereveal 有时早于 body 末尾脚本执行，那时才挂类会让过渡从默认淡入突变成横滑（看着像"淡入后瞬移"），
      所以方向标记的消费放在 head 里同步做，和上面的主题预置脚本同思路。 */
@@ -15,8 +15,7 @@
       document.documentElement.classList.add("nav-back");}}catch(e){}</script>
   <title>更新历史 · 小核桃的个人博客</title>
   <link rel="canonical" href="https://xiaohetaoo.github.io/updates.html" />
-  <meta name="description" content="小核桃的个人博客的更新历史：功能上新与修复记录，新的在上。" />
-  <meta property="og:title" content="更新历史" />
+  <meta property="og:title" content="更新历史 · 小核桃的个人博客" />
   <meta property="og:description" content="小核桃的个人博客的更新历史：功能上新与修复记录。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://xiaohetaoo.github.io/updates.html" />
@@ -24,17 +23,39 @@
   <meta property="og:site_name" content="小核桃的个人博客" />
   <meta property="og:locale" content="zh_CN" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="更新历史" />
+  <meta name="twitter:title" content="更新历史 · 小核桃的个人博客" />
   <meta name="twitter:description" content="小核桃的个人博客的更新历史：功能上新与修复记录。" />
   <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
 
-  <meta name="date" content="2026-10-04" />
+  <!-- BreadcrumbList 与 archive/projects 同构（此前只有本页缺 JSON-LD，属模板漂移） -->
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "首页",
+      "item": "https://xiaohetaoo.github.io/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "更新历史",
+      "item": "https://xiaohetaoo.github.io/updates.html"
+    }
+  ]
+}
+  </script>
+  <meta name="description" content="小核桃的个人博客的更新历史：功能上新与修复记录，新的在上。" />
+  <meta name="date" content="2026-10-05" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20261005a" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20261005b" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -105,6 +126,7 @@ var _hmt = _hmt || [];
             <li>文章页在日期与标签之间新增「最近更新」标注（目前《存在错误》和我玩过的游戏有修订记录）</li>
             <li>项目置顶顺序调整：神秘礼物第一、支持我第二（其后依次是终觉之战、视频创作）</li>
             <li>「全部文章」「全部项目」页底部新增「已经到底啦~」收尾小字</li>
+            <li>全站代码体检：脚本与样式瘦身提速（搜索、列表、动画更省），《游戏第九艺术》补上缺失的「游戏」标签</li>
           </ul>
         </li>
         <li class="upd-item reveal">
@@ -264,7 +286,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20261005a"></script>
+  <script src="assets/js/main.js?v=20261005b"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

@@ -142,7 +142,7 @@ button {
 /* 键盘 / 屏读用户跳过 nav 直达主内容 */
 .skip-link {
   position: absolute;
-  top: -100px;
+  top: 16px;
   left: 16px;
   z-index: var(--z-overlay);
   padding: 10px 16px;
@@ -153,11 +153,13 @@ button {
   font-weight: 600;
   text-decoration: none;
   border-radius: var(--radius);
-  transition: top 0.2s var(--ease-out);
+  /* 藏/现走 transform：top 从 -100px 改成固定 16px + 位移 -116px，过渡不再驱动布局属性 */
+  transform: translateY(-116px);
+  transition: transform 0.2s var(--ease-out);
 }
 .skip-link:focus,
 .skip-link:focus-visible {
-  top: 16px;
+  transform: none;
   outline: 2px solid var(--text-1);
   outline-offset: 2px;
 }
@@ -592,7 +594,6 @@ button {
   gap: 14px;
 }
 
-/* noscript 兜底列表（JS 被禁用时显示） */
 /* 列表 noscript 降级形态：JS 被禁用时各页 <noscript> 里的纯文本/链接列表用这组样式 */
 .fallback-list {
   padding-left: 22px;
@@ -637,24 +638,35 @@ button {
   border-left: 1px solid var(--border);
   /* 独立滚动：滚到头不带动整页，滚动条只在列表高过可用高度时出现 */
   overscroll-behavior: contain;
+}
+
+/* 组件滚动条统一收口：侧栏文章导航 / 游戏搜索浮层 / 导航搜索浮层三处同款
+   （5px 宽 / 圆角 3 / thumb var(--border-strong)，hover 提亮到 --text-3），
+   调色只动这一处；.side-toc 更细（4px/2px），单独写在 .side-toc 规则旁 */
+.side-list,
+.game-search-results,
+.nav-search-results {
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
-
-.side-list::-webkit-scrollbar {
+.side-list::-webkit-scrollbar,
+.game-search-results::-webkit-scrollbar,
+.nav-search-results::-webkit-scrollbar {
   width: 5px;
 }
-
-.side-list::-webkit-scrollbar-track {
+.side-list::-webkit-scrollbar-track,
+.game-search-results::-webkit-scrollbar-track,
+.nav-search-results::-webkit-scrollbar-track {
   background: transparent;
 }
-
-.side-list::-webkit-scrollbar-thumb {
+.side-list::-webkit-scrollbar-thumb,
+.game-search-results::-webkit-scrollbar-thumb,
+.nav-search-results::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: 3px;
 }
-
-.side-list::-webkit-scrollbar-thumb:hover {
+.side-list::-webkit-scrollbar-thumb:hover,
+.nav-search-results::-webkit-scrollbar-thumb:hover {
   background: var(--text-3);
 }
 
@@ -1797,7 +1809,7 @@ button {
   .edu-dot { animation: none; }
 }
 
-/* ---------- 固定说明行（移动端 + 触屏设备专用，20261003c；20261005a 扩到宽屏触屏） ----------
+/* ---------- 固定说明行（移动端 + 触屏设备专用，20261003c；2026-10-05 扩到宽屏触屏） ----------
    触屏上悬浮气泡会盖住附近文字（用户报告），改为：轻点圆点后简介显示在
    路线图下方这行常驻留白里（.edu-path:has(:focus) 纯 CSS 切换，零 JS）。
    纯鼠标桌面整行不渲染（悬浮气泡已覆盖该场景）；触屏端气泡整体 display:none */
@@ -1918,12 +1930,10 @@ button {
   opacity: 1;
   transform: scale(1) rotate(0deg);
 }
-@media (max-width: 640px) {
-  .interest-ico { width: 26px; height: 26px; right: 10px; margin-top: -13px; }
-}
 @media print {
   .interest-ico { display: none; }
 }
+/* ≤640 的 .interest-ico 缩放挪进下方 about 页的 640 断点块（同属 about.html，断点归位） */
 
 /* ---------- 我的恩师（三张主题卡 → 三幅独立画页） ---------- */
 .teacher-grid {
@@ -2114,6 +2124,8 @@ button {
     width: 96px;
     height: 96px;
   }
+
+  .interest-ico { width: 26px; height: 26px; right: 10px; margin-top: -13px; }
 }
 
 /* ---------- 正文排版 ---------- */
@@ -2412,14 +2424,9 @@ button {
   max-height: min(52vh, 420px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
   animation: nav-search-pop 0.18s var(--ease-out) both; /* 与 nav 搜索浮层共用 keyframes */
 }
 
-.game-search-results::-webkit-scrollbar { width: 5px; }
-.game-search-results::-webkit-scrollbar-track { background: transparent; }
-.game-search-results::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 .game-search-results .search-hint { margin-bottom: 8px; }
 
 .game-hit {
@@ -2622,7 +2629,8 @@ html.theme-anim::view-transition-new(root) {
 }
 /* 打开时按钮让位给输入框（圆框淡出，输入框从右滑入）。
    input 用 position: absolute 从 nav 流里浮出，避免参与 nav 内布局；
-   展开/收起走 clip-path：不变形文字、不重复触发 reflow（width 一次性切到 600）。 */
+   input 本体从右往左 clip-path 展开（不变形文字）；外层 .nav-search 的 width
+   同步做 0.22s 过渡让位（宽度过渡会逐帧 reflow，仅展开的 0.22s 内发生，量级可接受） */
 .nav-search-input {
   position: absolute;
   top: 0;
@@ -2692,27 +2700,12 @@ html.theme-anim::view-transition-new(root) {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
   padding: 14px;
   z-index: var(--z-search);
-  /* 文章 + 项目两组结果可能较长，浮层自己滚（细主题滚动条，同侧栏） */
+  /* 文章 + 项目两组结果可能较长，浮层自己滚（细主题滚动条，统一收口在侧栏那组） */
   max-height: min(60vh, 540px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
   /* 出现/消失用 opacity 微动画，不动布局 */
   animation: nav-search-pop 0.18s var(--ease-out) both;
-}
-.nav-search-results::-webkit-scrollbar {
-  width: 5px;
-}
-.nav-search-results::-webkit-scrollbar-track {
-  background: transparent;
-}
-.nav-search-results::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 3px;
-}
-.nav-search-results::-webkit-scrollbar-thumb:hover {
-  background: var(--text-3);
 }
 @keyframes nav-search-pop {
   from { opacity: 0; transform: translateY(-6px); }
@@ -2736,7 +2729,7 @@ html.theme-anim::view-transition-new(root) {
   padding: 12px 14px;
 }
 /* 面板里没有 .post-list 容器提供 gap，文章卡间距自己兜（桌面面板 / 移动端 mobile-list 都在此选择器范围内） */
-/* 下拉结果里的文章卡是压缩版：纵向间距与标题字号收窄、摘要截一行，面板要一屏放得下多条 */
+/* 下拉结果里的文章卡是压缩版：纵向间距与标题字号收窄、摘要仍截两行，面板要一屏放得下多条 */
 .nav-search-results .post-card + .post-card {
   margin-top: 10px;
 }
@@ -2744,8 +2737,7 @@ html.theme-anim::view-transition-new(root) {
   font-size: 14.5px;
 }
 .nav-search-results .post-card .excerpt {
-  font-size: 12.5px;
-  -webkit-line-clamp: 2;
+  font-size: 12.5px;  /* 截两行继承基础 .post-card .excerpt 的规则，不重复声明 */
 }
 /* 键盘选中态：accent 描边 */
 .nav-search-results .post-card.focused {
@@ -2981,14 +2973,14 @@ html.theme-anim::view-transition-new(root) {
    specificity 与 hover 打平（同为 0,4,0），靠顺序压过 hover 阴影，悬停时环不丢 */
 :root[data-theme="light"] .project-card.highlight {
   border-color: var(--accent);
+  background: rgba(47, 108, 235, 0.12);
   box-shadow: 0 0 0 3px var(--accent-border), 0 18px 44px rgba(16, 24, 40, 0.14);
 }
 :root[data-theme="cn-red"] .project-card.highlight {
   border-color: var(--accent);
+  background: rgba(222, 41, 16, 0.10);
   box-shadow: 0 0 0 3px var(--accent-border), 0 18px 44px rgba(90, 30, 20, 0.18);
 }
-:root[data-theme="light"] .project-card.highlight { background: rgba(47, 108, 235, 0.12); }
-:root[data-theme="cn-red"] .project-card.highlight { background: rgba(222, 41, 16, 0.10); }
 :root[data-theme="light"] .prose code { background: rgba(16, 24, 40, 0.06); }
 :root[data-theme="cn-red"] .prose code { background: rgba(90, 30, 20, 0.08); }
 /* pipe-table 偶数行斑马纹：暗色的白 2% 在亮色基底上不可见，各换各的深色低透明度 */
@@ -3683,8 +3675,8 @@ html.theme-anim::view-transition-new(root) {
   navigation: auto;
 }
 
-/* 页面整体：旧页下沉淡出，新页上浮淡入（html.theme-anim 期间让位给主题圆形扩散） */
-/* 跨文档页面过渡：普通导航旧页滑出/新页滑入（nav-deep/nav-back/nav-side 的方向规则在下方，类由各页 head 内联脚本挂、main.js 0.6 标记） */
+/* 页面整体：普通导航旧页下沉淡出/新页上浮淡入（html.theme-anim 期间让位给主题圆形扩散；
+   nav-deep/nav-back/nav-side 的方向规则在下方，类由各页 head 内联脚本挂、main.js 0.6 标记） */
 html:not(.theme-anim)::view-transition-old(root) {
   animation: vt-page-out 0.18s ease-in both;
 }
@@ -4034,8 +4026,6 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   }
 }
 
-/* ≤640：弹窗贴边但不顶满 —— 已合并到「响应式」≤640 主媒体查询末尾的 .key-modal 规则 */
-
 /* ---------- 点击星尘迸发（main.js 6.5）----------
    每次点击在光标处迸出 6~8 颗小星尘：向外散开、微坠、0.6~0.8s 淡尽。
    容器全屏 fixed、pointer-events:none 不挡任何交互；粒子只动 transform/opacity，
@@ -4331,7 +4321,7 @@ html.intro-pending .reveal {
   .upd-list li { font-size: 14px; }
 }
 
-/* 文章页 / 项目页内容收尾标记（20261005a）：居中一句轻声「到底啦」，弱色不抢戏 */
+/* 文章页 / 项目页内容收尾标记（2026-10-05 加）：居中一句轻声「到底啦」，弱色不抢戏 */
 .end-mark {
   margin-top: 56px;
   text-align: center;

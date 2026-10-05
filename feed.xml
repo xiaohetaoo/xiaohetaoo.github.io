@@ -5,7 +5,7 @@
   <link href="https://xiaohetaoo.github.io/"/>
   <link rel="self" href="https://xiaohetaoo.github.io/feed.xml"/>
   <id>https://xiaohetaoo.github.io/</id>
-  <!-- feed 级时间戳 = 源内最新一条的 <updated>：20261005a 起文章排序键换最后修订日，
+  <!-- feed 级时间戳 = 源内最新一条的 <updated>：2026-10-05 起文章排序键换最后修订日，
        「存在错误」修订于 2026-10-04 成为源内最新，这里随之从 2026-09-06 改为 2026-10-04 -->
   <updated>2026-10-04T00:00:00+08:00</updated>
   <author>
@@ -15,7 +15,7 @@
   <generator uri="https://xiaohetaoo.github.io/">小核桃的个人博客静态站</generator>
   <rights>© 2026 小核桃的个人博客</rights>
 
-  <!-- 20261005a 起文章排序键 = 最后修订日（posts.json 的 updated 字段）：
+  <!-- 2026-10-05 起文章排序键 = 最后修订日（posts.json 的 updated 字段）：
        前两条 entry 整体换位——「存在错误」（修订 2026-10-04）上浮第一、「我玩过的游戏」（修订
        2026-10-03）第二，其余 14 篇无修订、回落发布日后相对序不变。两条的 <updated> 同步改为
        修订日（Atom 语义 = 内容最后修改时间）；以后修订文章记得同步这里，见 _template 必改清单 -->
@@ -68,7 +68,7 @@
     <link href="https://xiaohetaoo.github.io/posts/he-shi-numeral-pinyin-cipher.html"/>
     <id>https://xiaohetaoo.github.io/posts/he-shi-numeral-pinyin-cipher.html</id>
     <updated>2026-09-04T00:00:00+08:00</updated>
-    <summary>初中课余研究的中文加密法，对发音进行加密</summary>
+    <summary>初中课余研究的中文加密法，对发音进行加密。</summary>
     <category term="加密"/>
     <category term="介绍"/>
   </entry>
@@ -77,7 +77,7 @@
     <link href="https://xiaohetaoo.github.io/posts/he-shi-structure-cipher.html"/>
     <id>https://xiaohetaoo.github.io/posts/he-shi-structure-cipher.html</id>
     <updated>2026-09-04T00:00:00+08:00</updated>
-    <summary>高中课余研究的汉字加密法，对汉字结构进行加密</summary>
+    <summary>高中课余研究的汉字加密法，对汉字结构进行加密。</summary>
     <category term="加密"/>
     <category term="介绍"/>
   </entry>

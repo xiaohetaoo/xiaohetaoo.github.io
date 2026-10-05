@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
-  <script>try{var m=location.search.match(/theme=(light|dark|cn-red)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":t==="cn-red"?"#faf4f0":"#000000"}}catch(e){}</script>
+  <script>try{var m=location.search.match(/[?&]theme=(light|dark|cn-red)(?:&|$)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":t==="cn-red"?"#faf4f0":"#000000"}}catch(e){}</script>
   <script>/* 方向性滑动：nav-deep / nav-back / nav-side 必须在新页第一次渲染前挂到 <html> 上。
      pagereveal 有时早于 body 末尾脚本执行，那时才挂类会让过渡从默认淡入突变成横滑（看着像"淡入后瞬移"），
      所以方向标记的消费放在 head 里同步做，和上面的主题预置脚本同思路。 */
@@ -15,7 +15,7 @@
       document.documentElement.classList.add("nav-back");}}catch(e){}</script>
   <title>论功利 · 小核桃的个人博客</title>
   <link rel="canonical" href="https://xiaohetaoo.github.io/posts/on-utility.html" />
-  <meta property="og:title" content="论功利" />
+  <meta property="og:title" content="论功利 · 小核桃的个人博客" />
   <meta property="og:description" content="高中课余写的思辨性议论文，探讨读书学习的真谛。" />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://xiaohetaoo.github.io/posts/on-utility.html" />
@@ -23,7 +23,7 @@
   <meta property="og:site_name" content="小核桃的个人博客" />
   <meta property="og:locale" content="zh_CN" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="论功利" />
+  <meta name="twitter:title" content="论功利 · 小核桃的个人博客" />
   <meta name="twitter:description" content="高中课余写的思辨性议论文，探讨读书学习的真谛。" />
   <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
   <meta property="article:published_time" content="2026-08-30T00:00:00+08:00" />
@@ -45,7 +45,7 @@
     "url": "https://xiaohetaoo.github.io"
   },
   "publisher": {
-    "@type": "Person",
+    "@type": "Organization",
     "name": "小核桃",
     "logo": {
       "@type": "ImageObject",
@@ -94,7 +94,7 @@
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261005a" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261005b" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -228,7 +228,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20261005a"></script>
+  <script src="../assets/js/main.js?v=20261005b"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
@@ -251,7 +251,6 @@ var _hmt = _hmt || [];
           </span>
         </label>
         <div class="key-modal-result" id="key-modal-result" aria-live="polite"></div>
-        
       </div>
     </div>
   </div>

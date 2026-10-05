@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
-  <script>try{var m=location.search.match(/theme=(light|dark|cn-red)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":t==="cn-red"?"#faf4f0":"#000000"}}catch(e){}</script>
+  <script>try{var m=location.search.match(/[?&]theme=(light|dark|cn-red)(?:&|$)/);var t=m?m[1]:localStorage.getItem("theme");if(t){document.documentElement.setAttribute("data-theme",t);var c=document.querySelector('meta[name="theme-color"]');if(c)c.content=t==="light"?"#f5f6f8":t==="cn-red"?"#faf4f0":"#000000"}}catch(e){}</script>
   <script>/* 方向性滑动：nav-deep / nav-back / nav-side 必须在新页第一次渲染前挂到 <html> 上。
      pagereveal 有时早于 body 末尾脚本执行，那时才挂类会让过渡从默认淡入突变成横滑（看着像"淡入后瞬移"），
      所以方向标记的消费放在 head 里同步做，和上面的主题预置脚本同思路。 */
@@ -16,7 +16,7 @@
   <noscript><style>[data-loading]{display:none}</style></noscript>
   <title>全部文章 · 小核桃的个人博客</title>
   <link rel="canonical" href="https://xiaohetaoo.github.io/archive.html" />
-  <meta property="og:title" content="全部文章" />
+  <meta property="og:title" content="全部文章 · 小核桃的个人博客" />
   <meta property="og:description" content="全部文章归档：游戏、思考、小说、技术笔记。搜索框直达。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://xiaohetaoo.github.io/archive.html" />
@@ -24,7 +24,7 @@
   <meta property="og:site_name" content="小核桃的个人博客" />
   <meta property="og:locale" content="zh_CN" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="全部文章" />
+  <meta name="twitter:title" content="全部文章 · 小核桃的个人博客" />
   <meta name="twitter:description" content="全部文章归档：游戏、思考、小说、技术笔记。搜索框直达。" />
   <meta name="twitter:image" content="https://xiaohetaoo.github.io/assets/img/og-image-square.png" />
 
@@ -49,13 +49,13 @@
 }
   </script>
 <meta name="description" content="小核桃的个人博客的全部文章归档。" />
-  <meta name="date" content="2026-09-06" />
+  <meta name="date" content="2026-10-05" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon-64.png" />
   <link rel="shortcut icon" href="assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="assets/css/style.css?v=20261005a" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20261005b" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -125,6 +125,8 @@ var _hmt = _hmt || [];
         <!-- 列表由 assets/js/main.js 读取 posts.json 渲染 -->
         <noscript>
           <p class="sub">你的浏览器禁用了 JS，请直接从下方链接进入文章：</p>
+          <!-- 兜底列表顺序需与 main.js sortPosts 输出对齐（置顶优先 → 最后更新倒序）：
+          新文章/修订上浮后手工同步本列表（check-site 第 3 项只数条数、不查顺序） -->
           <ul class="fallback-list">
             <li><a href="posts/exist-error.html">存在错误</a></li>
             <li><a href="posts/games-i-played.html">我玩过的游戏（双语）</a></li>
@@ -172,7 +174,7 @@ var _hmt = _hmt || [];
     </div>
   </footer>
 
-  <script src="assets/js/main.js?v=20261005a"></script>
+  <script src="assets/js/main.js?v=20261005b"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
@@ -195,7 +197,6 @@ var _hmt = _hmt || [];
           </span>
         </label>
         <div class="key-modal-result" id="key-modal-result" aria-live="polite"></div>
-        
       </div>
     </div>
   </div>
