@@ -30,6 +30,9 @@
        · JSON-LD BreadcrumbList：第 3 项 name 与 item
        · post-nav 上/下篇：按 sortPosts 邻居改两个 <a> 的 href 与 .t 文案
          （首篇 prev / 末篇 next 用 ghost 占位——check-site 第 7 项会拦，别照抄占位链）
+       · 修订旧文时（新建不用）：posts.json 该条加 "updated" 修订日 + 可见 meta 日期后加
+         「最近更新：日期」行 + article:modified_time / dateModified 同步（排序键就是 updated，
+         文章会按修订日上浮；显示日期仍是发布日）
        不需要动的：og:image / og:image:alt / twitter:image（全站共用）、og:site_name / locale、
        author/publisher（都是小核桃） -->
   <title>TODO：文章标题 · 小核桃的个人博客</title>
@@ -114,7 +117,7 @@
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261004g" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261005a" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -236,6 +239,7 @@ console.log("hello xiaohetao");</code></pre>
         <div class="comments-head"><span class="kicker">$ cat 留言板</span></div>
         <div id="giscus"></div>
       </section>
+      <p class="end-mark">已经到底啦~</p>
     </div>
   </main>
 
@@ -260,7 +264,7 @@ console.log("hello xiaohetao");</code></pre>
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20261004g"></script>
+  <script src="../assets/js/main.js?v=20261005a"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

@@ -1797,7 +1797,7 @@ button {
   .edu-dot { animation: none; }
 }
 
-/* ---------- 固定说明行（移动端 + 触屏设备专用，20261003c；20261004g 扩到宽屏触屏） ----------
+/* ---------- 固定说明行（移动端 + 触屏设备专用，20261003c；20261005a 扩到宽屏触屏） ----------
    触屏上悬浮气泡会盖住附近文字（用户报告），改为：轻点圆点后简介显示在
    路线图下方这行常驻留白里（.edu-path:has(:focus) 纯 CSS 切换，零 JS）。
    纯鼠标桌面整行不渲染（悬浮气泡已覆盖该场景）；触屏端气泡整体 display:none */
@@ -4329,4 +4329,13 @@ html.intro-pending .reveal {
   .upd-timeline::before { left: 6px; }
   .upd-item::before { left: -27px; }
   .upd-list li { font-size: 14px; }
+}
+
+/* 文章页 / 项目页内容收尾标记（20261005a）：居中一句轻声「到底啦」，弱色不抢戏 */
+.end-mark {
+  margin-top: 56px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-3);
 }

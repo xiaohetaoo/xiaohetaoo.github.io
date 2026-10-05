@@ -22,7 +22,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261004g";
+  var DATA_VER = "20261005a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1324,11 +1324,15 @@
     return postsCache;
   }
 
-  /* 站内显示序 = 置顶优先 → 日期倒序：列表 / 侧栏 / post-nav 回填 / feed 全部同源此序 */
+  /* 站内显示序 = 置顶优先 → 最后更新倒序（列表 / 侧栏 / post-nav 回填 / feed 全部同源此序）：
+     排序键 = posts.json 的 updated（最后修订日），无修订回落发布 date，20261005a 起。
+     修订过的文章按修订日上浮，但**显示**的日期仍是发布日（首页/归档卡片不变），
+     文章页 meta 里另有「最近更新」行。pinned 仍置顶，置顶内部也按同键排。 */
   function sortPosts(posts) {
+    function key(p) { return p.updated || p.date; }
     return posts.slice().sort(function (a, b) {
       if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-      return b.date.localeCompare(a.date);
+      return key(b).localeCompare(key(a)) || b.date.localeCompare(a.date);
     });
   }
 
