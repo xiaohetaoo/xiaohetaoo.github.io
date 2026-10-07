@@ -43,7 +43,8 @@
        · 修订旧文还需同步两个数据文件：feed.xml 该条 <updated> 改修订日（凡修订导致站内
          排序位置变化，把整块 <entry> 移到新位置——feed 全量按显示序排列，不限前两位）与
          sitemap.xml 该条 <lastmod> 改修订日——
-         check-site 只查 feed 条目数不查顺序、只查 lastmod 格式不查数值，拦不住漂移（2026-10-05 记）
+         feed 顺序/数值与 sitemap lastmod 数值 check-site 都已机器校验（2026-10-07 起），
+         漏同步直接 FAIL，不再靠注释提醒 -->
        不需要动的：og:image / og:image:alt / twitter:image（全站共用）、og:site_name / locale、
        author（小核桃）与 publisher（Organization 类型、name 小核桃——Google 文章富结果口径） -->
   <title>TODO：文章标题 · 小核桃的个人博客</title>
@@ -128,7 +129,7 @@
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261005b" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261007a" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -274,7 +275,7 @@ console.log("hello xiaohetao");</code></pre>
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20261005b"></script>
+  <script src="../assets/js/main.js?v=20261007a"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>

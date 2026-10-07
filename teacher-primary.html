@@ -70,12 +70,29 @@
       aspect-ratio: 1;
       border-radius: 50%;
       background: radial-gradient(circle at 38% 34%, #fffef9 0%, #f3f0e2 58%, #c3cddd 100%);
-      box-shadow: 0 0 90px 26px rgba(222, 234, 255, 0.3);
+      /* 光晕拆到伪元素动 opacity（2026-10-07）：直接动画 box-shadow 是 paint 型，
+         每帧重绘大模糊区；opacity 走合成器。::after 弱晕恒亮（= 原 reduced 静态帧），
+         ::before 强晕呼吸叠加，视觉等价于原来的阴影插值 */
+    }
+    .moon::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      box-shadow: 0 0 90px 26px rgba(222, 234, 255, 0.30);
+    }
+    .moon::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      box-shadow: 0 0 110px 32px rgba(222, 234, 255, 0.38);
+      opacity: 0;
       animation: moon-breathe 13s ease-in-out infinite;
     }
     @keyframes moon-breathe {
-      0%, 100% { box-shadow: 0 0 90px 26px rgba(222, 234, 255, 0.26); }
-      50%      { box-shadow: 0 0 110px 32px rgba(222, 234, 255, 0.38); }
+      0%, 100% { opacity: 0; }
+      50%      { opacity: 1; }
     }
 
     .star {
@@ -300,7 +317,7 @@
       .scene-copy { margin-top: 9vh; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .moon, .star, .cloud, .cloud-veil, .ridge-far, .mist, .scene-copy > * { animation: none !important; }
+      .moon::before, .star, .cloud, .cloud-veil, .ridge-far, .mist, .scene-copy > * { animation: none !important; }
     }
   </style>
 </head>

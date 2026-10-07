@@ -115,7 +115,7 @@
       50%      { opacity: 0.75; }
     }
 
-    /* 三层海浪：单段三次贝塞尔构成 1440 周期（两端切线同向），整体左移 1440 无缝循环。
+    /* 三层海浪：单段三次贝塞尔构成 720 周期（两端切线同向），左移 720 后与自身重合无缝循环。
        远层慢、近层快，做视差。 */
     .waves {
       position: absolute;
@@ -151,6 +151,10 @@
     .boat {
       position: absolute;
       left: 50%;
+      /* 水平居中必须写在基态：原来 translateX(-50%) 只存在于 bob 关键帧里，
+         reduced-motion 停动画后基态无 transform，船右偏半宽（移动端 62vw 右缘出屏）。
+         关键帧里的 translateX 仍要保留——transform 在关键帧里是整条覆盖 */
+      transform: translateX(-50%);
       bottom: 15%;
       width: min(46vw, 340px);
       filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.38));

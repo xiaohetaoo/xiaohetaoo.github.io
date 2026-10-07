@@ -22,6 +22,22 @@
   --accent-dim: rgba(103, 158, 254, 0.14);
   --accent-border: rgba(103, 158, 254, 0.32);
 
+  /* accent 派生 token（三主题各一份）：凡按主题变色的强调蓝/红一律走这些变量。
+     基础规则写死 rgba(103,158,254,…) 曾逼出「亮色补丁区」逐条覆盖的债，2026-10-07
+     收口——新增主题只需在本块与两个浅底 token 块各写一次，不再加补丁规则 */
+  --accent-sel: rgba(103, 158, 254, 0.35);                 /* ::selection 底色 */
+  --accent-hover-shadow: 0 6px 26px rgba(103, 158, 254, 0.35); /* .btn-primary:hover 辉光阴影（整值） */
+  --accent-underline: rgba(103, 158, 254, 0.35);           /* .prose a 下划线色 */
+  --accent-card-line: rgba(103, 158, 254, 0.5);            /* .project-card::before 顶光渐变中点色 */
+  --accent-tier-glow: 0 0 24px rgba(103, 158, 254, 0.18);  /* .tier-badge.tier-s 辉光（整值） */
+  --accent-lv2-bg: rgba(103, 158, 254, 0.07);              /* .prof-lv2 熟练档底/边 */
+  --accent-lv2-border: rgba(103, 158, 254, 0.18);
+
+  /* hero / about 辉光斑整条渐变（浅底档第二站色相与暗色不同源，故持整值而非单色） */
+  --hero-glow-a: radial-gradient(circle, rgba(45, 95, 158, 0.34) 0%, rgba(26, 56, 112, 0.18) 40%, transparent 70%);
+  --hero-glow-b: radial-gradient(circle, rgba(26, 56, 112, 0.28) 0%, transparent 70%);
+  --about-glow: radial-gradient(circle, rgba(45, 95, 158, 0.30) 0%, rgba(26, 56, 112, 0.14) 42%, transparent 70%);
+
   --glow-hi: #4a8ac4;
 
   /* hero 渐变起色 + 文本强/代码字/按钮主文字 */
@@ -78,6 +94,10 @@
 
 html {
   scroll-behavior: smooth;
+  /* 锚点落点让位给 fixed 导航：TOC 点击（scrollIntoView block:start）与
+     原生 hash 锚点（如《存在错误》章节导航）都会把目标滚到视口顶,
+     不留 padding 就压进 64px 的导航玻璃底下（nav 64 + 12 透气） */
+  scroll-padding-top: 76px;
   -webkit-text-size-adjust: 100%;
   /* 全站细主题滚动条（Firefox）；各组件的更窄条按自身选择器覆盖 */
   scrollbar-width: thin;
@@ -129,14 +149,15 @@ button {
 }
 
 ::selection {
-  background: rgba(103, 158, 254, 0.35);
+  background: var(--accent-sel);
   color: var(--text-1);
 }
 
+/* outline 已自动跟随元素圆角（现代引擎），这里不再补 border-radius——
+   补了会把无自身圆角的元素（.prose a / .back-link 等）聚焦时四角掰圆，产生形状跳变 */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-  border-radius: 4px;
 }
 
 /* 键盘 / 屏读用户跳过 nav 直达主内容 */
@@ -360,7 +381,8 @@ button {
   z-index: var(--z-base);
 }
 
-/* hero 背景光晕两层：::before 右上主色大晕、::after 补充晕；浅色/中国红的两套在下方主题覆写区 */
+/* hero 背景光晕两层：::before 右上主色大晕、::after 补充晕；
+   渐变走 --hero-glow-a/b token（三主题各一份，浅底 token 块覆写） */
 .hero-glow::before {
   content: "";
   position: absolute;
@@ -368,7 +390,7 @@ button {
   right: -160px;
   width: 780px;
   height: 780px;
-  background: radial-gradient(circle, rgba(45, 95, 158, 0.34) 0%, rgba(26, 56, 112, 0.18) 40%, transparent 70%);
+  background: var(--hero-glow-a);
 }
 
 .hero-glow::after {
@@ -378,7 +400,7 @@ button {
   left: -180px;
   width: 620px;
   height: 620px;
-  background: radial-gradient(circle, rgba(26, 56, 112, 0.28) 0%, transparent 70%);
+  background: var(--hero-glow-b);
 }
 
 .hero-inner {
@@ -482,12 +504,14 @@ button {
   background: var(--accent);
   color: var(--btn-on-primary);
   font-weight: 600;
+  /* alpha 0 的同色相占位：只为 hover 的辉光阴影提供过渡起点（换成 transparent 会在
+     插值中点混入黑色相），三主题共用不需要 token */
   box-shadow: 0 0 0 rgba(103, 158, 254, 0);
 }
 
 .btn-primary:hover {
   background: var(--accent-bright);
-  box-shadow: 0 6px 26px rgba(103, 158, 254, 0.35);
+  box-shadow: var(--accent-hover-shadow);
   transform: translateY(-1px);
 }
 
@@ -954,7 +978,7 @@ button {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(103, 158, 254, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, var(--accent-card-line), transparent);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -1265,7 +1289,7 @@ button {
   width: 640px;
   height: 640px;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(45, 95, 158, 0.30) 0%, rgba(26, 56, 112, 0.14) 42%, transparent 70%);
+  background: var(--about-glow);
 }
 
 .about-profile-main {
@@ -2012,11 +2036,7 @@ button {
 
 /* ---------- 亮色 / 中国红：浅底共享覆盖 ---------- */
 :root[data-theme="light"] .about-profile-glow {
-  background: radial-gradient(circle, rgba(47, 108, 235, 0.10) 0%, rgba(47, 108, 235, 0.04) 42%, transparent 70%);
-}
-
-:root[data-theme="cn-red"] .about-profile-glow {
-  background: radial-gradient(circle, rgba(222, 41, 16, 0.10) 0%, rgba(140, 20, 12, 0.05) 42%, transparent 70%);
+  background: var(--about-glow);
 }
 
 /* 暗色底下那层 5% 白在浅底上不可见，两套浅底各换深色低透明度。
@@ -2157,7 +2177,7 @@ button {
 .prose a {
   color: var(--accent-bright);
   text-decoration: underline;
-  text-decoration-color: rgba(103, 158, 254, 0.35);
+  text-decoration-color: var(--accent-underline);
   text-underline-offset: 3px;
   transition: text-decoration-color 0.2s;
 }
@@ -2304,7 +2324,7 @@ button {
   background: var(--accent-dim);
   color: var(--accent-bright);
   border: 1px solid var(--accent-border);
-  box-shadow: 0 0 24px rgba(103, 158, 254, 0.18);
+  box-shadow: var(--accent-tier-glow);
 }
 
 /* B / C 档徽章与 A 档同款中性配色（S 档独享高亮蓝） */
@@ -2343,8 +2363,8 @@ button {
 
 .prof-lv2 {
   color: var(--accent-bright);
-  background: rgba(103, 158, 254, 0.07);
-  border: 1px solid rgba(103, 158, 254, 0.18);
+  background: var(--accent-lv2-bg);
+  border: 1px solid var(--accent-lv2-border);
 }
 
 .prof-lv3 {
@@ -2397,18 +2417,21 @@ button {
   content: "";
   position: absolute;
   inset: -10px;
-  border-radius: 14px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.72);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  /* visibility 同步切换：部分引擎对 opacity:0 的 backdrop-filter 仍走采样/合成路径，
+     非吸附态也会让整页滚动挂一层 blur——hidden 才是彻底不跑 */
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s;
   pointer-events: none;
   z-index: -1; /* 在本块 stacking context 内压到输入框之下、正文之上 */
 }
 
-.game-search.is-stuck::before { opacity: 1; }
+.game-search.is-stuck::before { opacity: 1; visibility: visible; }
 
 .game-search-results {
   position: absolute;
@@ -2434,7 +2457,7 @@ button {
   align-items: baseline;
   gap: 10px;
   padding: 9px 11px;
-  border-radius: 8px;
+  border-radius: 8px; /* 8px 无对应 token 档（--radius-xs 6 / --radius 14），候选行专属豁免 */
   cursor: pointer;
   transition: background-color 0.16s var(--ease-out);
 }
@@ -2652,7 +2675,7 @@ html.theme-anim::view-transition-new(root) {
 /* 展开后按钮退化为输入框内的放大镜图标（样式对齐项目页的大搜索框） */
 .nav-search.open .nav-search-btn {
   position: absolute;
-  left: 54px; /* wrap 坐标系：input 左缘在 +44px + padding-left 12px → 56px */
+  left: 54px; /* wrap 坐标系：input 左缘 +44px，20px 图标在 38px 左 padding 区内居中（(38−20)/2≈9，取整 10 视觉微调） */
   top: 50%;
   transform: translateY(-50%);
   width: 20px;
@@ -2913,6 +2936,18 @@ html.theme-anim::view-transition-new(root) {
   --accent-dim: rgba(47, 108, 235, 0.10);
   --accent-border: rgba(47, 108, 235, 0.32);
 
+  /* accent 派生 token 亮色档（与 :root 暗色档同名同位，总注释见 :root 块） */
+  --accent-sel: rgba(47, 108, 235, 0.30);
+  --accent-hover-shadow: 0 6px 26px rgba(47, 108, 235, 0.30);
+  --accent-underline: rgba(47, 108, 235, 0.35);
+  --accent-card-line: rgba(47, 108, 235, 0.45);
+  --accent-tier-glow: 0 0 24px rgba(47, 108, 235, 0.18);
+  --accent-lv2-bg: rgba(47, 108, 235, 0.08);
+  --accent-lv2-border: rgba(47, 108, 235, 0.25);
+  --hero-glow-a: radial-gradient(circle, rgba(47, 108, 235, 0.10) 0%, rgba(47, 108, 235, 0.04) 40%, transparent 70%);
+  --hero-glow-b: radial-gradient(circle, rgba(47, 108, 235, 0.07) 0%, transparent 70%);
+  --about-glow: radial-gradient(circle, rgba(47, 108, 235, 0.10) 0%, rgba(47, 108, 235, 0.04) 42%, transparent 70%);
+
   --glow-hi: #1e56c8;
 
   --grad-start: #1893b4;
@@ -2943,24 +2978,20 @@ html.theme-anim::view-transition-new(root) {
 :root[data-theme="cn-red"] .nav-search.open .nav-search-input:focus { background: rgba(90, 30, 20, 0.09); }
 :root[data-theme="light"] .nav-search-results { box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14); }
 :root[data-theme="cn-red"] .nav-search-results { box-shadow: 0 16px 40px rgba(90, 30, 20, 0.18); }
-:root[data-theme="light"] .hero-glow::before {
-  background: radial-gradient(circle, rgba(47, 108, 235, 0.10) 0%, rgba(47, 108, 235, 0.04) 40%, transparent 70%);
-}
-:root[data-theme="light"] .hero-glow::after {
-  background: radial-gradient(circle, rgba(47, 108, 235, 0.07) 0%, transparent 70%);
-}
 :root[data-theme="light"] .hero-badge { background: rgba(16, 24, 40, 0.04); }
 :root[data-theme="cn-red"] .hero-badge { background: rgba(90, 30, 20, 0.06); }
 :root[data-theme="light"] .btn-secondary { background: rgba(16, 24, 40, 0.03); }
 :root[data-theme="cn-red"] .btn-secondary { background: rgba(90, 30, 20, 0.05); }
 :root[data-theme="light"] .side-item:hover { background: rgba(16, 24, 40, 0.05); }
 :root[data-theme="cn-red"] .side-item:hover { background: rgba(90, 30, 20, 0.07); }
-:root[data-theme="light"] .post-card,
+/* .post-card 基础 background 已是 var(--bg-panel)，浅底只需换阴影；
+   .project-card 基础是渐变，浅底连底带影一起换 */
+:root[data-theme="light"] .post-card { box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05); }
 :root[data-theme="light"] .project-card {
   background: var(--bg-panel);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
-:root[data-theme="cn-red"] .post-card,
+:root[data-theme="cn-red"] .post-card { box-shadow: 0 1px 2px rgba(90, 30, 20, 0.09); }
 :root[data-theme="cn-red"] .project-card {
   background: var(--bg-panel);
   box-shadow: 0 1px 2px rgba(90, 30, 20, 0.09);
@@ -3015,24 +3046,9 @@ html.theme-anim::view-transition-new(root) {
   filter: invert(1) hue-rotate(180deg);
 }
 
-/* 亮色主题补丁：下面几处基础规则把暗色主题的强调蓝 rgba(103,158,254,…) 写死了，
-   中国红主题当初各自加了覆盖，亮色主题一直沿用暗色那档浅蓝（浅底上偏紫偏淡）。
-   这里按亮色 accent #2f6ceb 补齐；只加覆盖，不动暗色/中国红已有取值 */
-:root[data-theme="light"] ::selection {
-  background: rgba(47, 108, 235, 0.30);
-}
-:root[data-theme="light"] .btn-primary:hover {
-  box-shadow: 0 6px 26px rgba(47, 108, 235, 0.30);
-}
-:root[data-theme="light"] .prose a {
-  text-decoration-color: rgba(47, 108, 235, 0.35);
-}
-:root[data-theme="light"] .project-card::before {
-  background: linear-gradient(90deg, transparent, rgba(47, 108, 235, 0.45), transparent);
-}
-:root[data-theme="light"] .tier-badge.tier-s {
-  box-shadow: 0 0 24px rgba(47, 108, 235, 0.18);
-}
+/* accent 派生 token（--accent-sel/--accent-hover-shadow 等）2026-10-07 收口后，
+   基础规则按主题变色的强调色一律走 token，这里不再需要逐条「亮色补丁」规则；
+   新主题只需补 token 档。旧补丁区整体删除（值已并入三份 token 档，逐值等价） */
 
 /* ---------- 中国红主题（隐藏彩蛋：长按主题按钮 1s 触发） ----------
    亮色基底：米白底 + 中国红强调；亮色主题的背景适配规则已共享（见上），
@@ -3055,6 +3071,19 @@ html.theme-anim::view-transition-new(root) {
   --accent-dim: rgba(222, 41, 16, 0.08);
   --accent-border: rgba(222, 41, 16, 0.32);
 
+  /* accent 派生 token 中国红档（与 :root 暗色档同名同位，总注释见 :root 块）；
+     辉光渐变第二站用暗红 rgba(140,20,12) 而非 accent 同色，是暖底上的层次色 */
+  --accent-sel: rgba(222, 41, 16, 0.28);
+  --accent-hover-shadow: 0 6px 26px rgba(222, 41, 16, 0.30);
+  --accent-underline: rgba(222, 41, 16, 0.40);
+  --accent-card-line: rgba(222, 41, 16, 0.45);
+  --accent-tier-glow: 0 0 24px rgba(222, 41, 16, 0.22);
+  --accent-lv2-bg: rgba(222, 41, 16, 0.08);
+  --accent-lv2-border: rgba(222, 41, 16, 0.25);
+  --hero-glow-a: radial-gradient(circle, rgba(222, 41, 16, 0.10) 0%, rgba(140, 20, 12, 0.05) 40%, transparent 70%);
+  --hero-glow-b: radial-gradient(circle, rgba(222, 41, 16, 0.07) 0%, transparent 70%);
+  --about-glow: radial-gradient(circle, rgba(222, 41, 16, 0.10) 0%, rgba(140, 20, 12, 0.05) 42%, transparent 70%);
+
   /* 标题渐变收尾用 accent-bright 同值：原 #8c1f28 在暖米底上发闷发黑 */
   --glow-hi: #b81c11;
 
@@ -3064,23 +3093,6 @@ html.theme-anim::view-transition-new(root) {
   --btn-on-primary: #ffffff;
 }
 :root[data-theme="cn-red"] .nav { background: rgba(250, 244, 240, 0.82); }
-:root[data-theme="cn-red"] ::selection { background: rgba(222, 41, 16, 0.28); }
-:root[data-theme="cn-red"] .hero-glow::before {
-  background: radial-gradient(circle, rgba(222, 41, 16, 0.10) 0%, rgba(140, 20, 12, 0.05) 40%, transparent 70%);
-}
-:root[data-theme="cn-red"] .hero-glow::after {
-  background: radial-gradient(circle, rgba(222, 41, 16, 0.07) 0%, transparent 70%);
-}
-:root[data-theme="cn-red"] .btn-primary:hover { box-shadow: 0 6px 26px rgba(222, 41, 16, 0.30); }
-:root[data-theme="cn-red"] .project-card::before {
-  background: linear-gradient(90deg, transparent, rgba(222, 41, 16, 0.45), transparent);
-}
-:root[data-theme="cn-red"] .prose a { text-decoration-color: rgba(222, 41, 16, 0.40); }
-:root[data-theme="cn-red"] .tier-badge.tier-s { box-shadow: 0 0 24px rgba(222, 41, 16, 0.22); }
-:root[data-theme="cn-red"] .prof-lv2 {
-  background: rgba(222, 41, 16, 0.08);
-  border: 1px solid rgba(222, 41, 16, 0.25);
-}
 /* ---------- Giscus 评论区（文章页末尾） ---------- */
 .comments {
   margin-top: 56px;
@@ -3100,7 +3112,7 @@ html.theme-anim::view-transition-new(root) {
 .giscus-skeleton span {
   display: block;
   height: 14px;
-  border-radius: 7px;
+  border-radius: 7px; /* = 高度一半的正圆条，随高度走不用 token */
   margin: 0 0 14px;
   background: linear-gradient(90deg, var(--bg-panel) 0%, var(--bg-panel-2) 50%, var(--bg-panel) 100%);
   background-size: 200% 100%;
@@ -3211,13 +3223,11 @@ html.theme-anim::view-transition-new(root) {
   font-weight: 550;
 }
 
-/* 文字表格（还原为两列对照表） */
+/* 文字表格（还原为两列对照表）：display/overflow 独有；
+   width/border-collapse/font-size 由 .prose table 提供，th 的 mono 字体由 .prose th 提供，不重写 */
 .prose .pipe-table {
   display: block;
   overflow-x: auto;
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
 }
 
 .prose .pipe-table th,
@@ -3230,7 +3240,6 @@ html.theme-anim::view-transition-new(root) {
 }
 
 .prose .pipe-table th {
-  font-family: var(--font-mono);
   font-size: 13px;
   letter-spacing: 0.04em;
   color: var(--accent-bright);
@@ -3474,11 +3483,15 @@ html.theme-anim::view-transition-new(root) {
   .brand {
     padding: 6px 6px;
     margin: -6px -6px;
+    flex-shrink: 0; /* nav 总宽不超屏：brand 占 40px 锁定不被压缩 */
   }
 
   /* 导航显示 文章 + 项目 + 联系 3 个文字链接，GitHub 整条隐藏 */
   .nav-links {
     gap: 2px;
+    flex: 1;
+    justify-content: flex-end;
+    min-width: 0;
   }
   .nav-links a {
     padding: 8px 10px; /* 12→10：360 屏也能放下，375+ 右对齐观感不变 */
@@ -3490,20 +3503,11 @@ html.theme-anim::view-transition-new(root) {
     display: none;
   }
 
-  /* nav 总宽不超屏外：brand 占 40px，nav-links 占剩余空间，theme-toggle 44px，nav-search 44px */
-  .brand {
-    flex-shrink: 0;
-  }
-  .nav-links {
-    flex: 1;
-    justify-content: flex-end;
-    min-width: 0;
-  }
   .nav-search {
     flex-shrink: 0;
     margin-left: 2px;
   }
-  /* 桌面 10px；窄屏收 6px 给文字链接让位（360 屏放得下、不压 logo） */
+  /* 桌面 10px；窄屏收 4px 给文字链接让位（360 屏放得下、不压 logo） */
   .theme-toggle,
   .key-toggle {
     margin-left: 4px;
@@ -3612,7 +3616,7 @@ html.theme-anim::view-transition-new(root) {
     align-items: flex-start;
   }
 
-  /* 口令彩蛋弹窗贴边但不顶满（合并自原 line 2688 段） */
+  /* 口令彩蛋弹窗贴边但不顶满 */
   .key-modal { padding: 12px; }
   .key-modal-panel {
     max-width: none;
@@ -3643,8 +3647,6 @@ html.theme-anim::view-transition-new(root) {
   .nav-links { gap: 0; }
   .nav-links a { padding: 8px 7px; }
   .nav-search { margin-left: 0; }
-  .theme-toggle,
-  .key-toggle { margin-left: 4px; }
 }
 
 /* ---------- 降低动效 ---------- */
@@ -3971,7 +3973,7 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 /* 抽屉式换屏（命中特殊口令后）：旧表单上滑滑出，称呼态从下滑入。
    两个块（.key-modal-field / .key-modal-result）同步走同一组关键帧，
    视觉上就是整块换了一屏；transform/opacity 不动布局，弹窗高度不跳。
-   时长与 main.js 里的 220/300ms 对齐，改一处要改两处。 */
+   时长与 main.js 里的 220/280ms 对齐，改一处要改两处。 */
 @keyframes keySwapOut {
   from { opacity: 1; transform: none; }
   to   { opacity: 0; transform: translateY(-14px); }
@@ -4048,7 +4050,8 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   color: var(--accent-bright);
   opacity: 0;
   animation: click-dust var(--t, 0.68s) ease-out forwards;
-  will-change: transform, opacity;
+  /* 不写 will-change：粒子是每次点击动态创建、动画完自删的短命节点，
+     常驻提示反而让每次点击都强制建层/毁层；有 animation 运行时引擎自会提升 */
 }
 #click-dust i.big { width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; }
 @keyframes click-dust {

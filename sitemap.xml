@@ -2,17 +2,20 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://xiaohetaoo.github.io/</loc>
-    <lastmod>2026-10-01</lastmod>
+    <!-- JSON-LD WebSite.publisher 对齐全站 Organization（2026-10-07，爬虫消费字段） -->
+    <lastmod>2026-10-07</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/archive.html</loc>
-    <lastmod>2026-09-29</lastmod>
+    <!-- 「已经到底啦~」收尾（2026-10-05，可见文案） -->
+    <lastmod>2026-10-05</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html</loc>
-    <lastmod>2026-09-29</lastmod>
+    <!-- 「已经到底啦~」收尾（2026-10-05，可见文案） -->
+    <lastmod>2026-10-05</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -22,7 +25,8 @@
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/updates.html</loc>
-    <lastmod>2026-10-04</lastmod>
+    <!-- 时间轴补 2026-10-07 条目（可见文案） -->
+    <lastmod>2026-10-07</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -127,6 +131,8 @@
     <lastmod>2026-09-06</lastmod>
     <priority>0.6</priority>
   </url>
+  <!-- 项目锚点（#p=标题）：loc 里按规范用百分号编码；projects.html 的 ItemList 用未编码
+       中文——两种书写解码后同一 URL，check-site 的集合比较已做归一化，改任一侧都要保持其现有口径 -->
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html#p=%E5%B7%85%E5%B3%B0%E7%AB%9E%E6%8A%80%E5%9C%BA</loc>
     <lastmod>2026-09-08</lastmod>

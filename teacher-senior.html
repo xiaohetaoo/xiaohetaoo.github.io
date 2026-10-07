@@ -188,7 +188,8 @@
       .notes { opacity: 0.55; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .blob, .scene-copy > * { animation: none !important; }
+      /* .blob 无动画不列（早年误留的死选择器）；真正要停的是诗文区的入场类 */
+      .scene-copy > * { animation: none !important; }
     }
   </style>
 </head>

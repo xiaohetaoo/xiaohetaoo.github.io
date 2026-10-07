@@ -207,14 +207,19 @@
     return parseInt(parts[1], 10) + "月" + parseInt(parts[2], 10) + "日";
   }
 
-  function pickFestival() {
-    /* 预览参数的 id 允许小写字母/数字/连字符；id 统一带年份后缀（见文件头命名口径） */
-    var want = (location.search.match(/[?&]festival=([a-z0-9-]+)/) || [])[1];
-    if (want) {
-      for (var i = 0; i < FESTIVALS.length; i++) {
-        if (FESTIVALS[i].id === want) return FESTIVALS[i];
-      }
+  function byId(id) {
+    for (var i = 0; i < FESTIVALS.length; i++) {
+      if (FESTIVALS[i].id === id) return FESTIVALS[i];
     }
+    return null;
+  }
+
+  function pickFestival(want) {
+    /* want：boot 里解析好的 ?festival= 参数值（null = 无预览请求）。
+       预览参数的 id 允许小写字母/数字/连字符；id 统一带年份后缀（见文件头命名口径）。
+       正则与扫表只在 boot 里做一次，结果经参数传进来（原来 pickFestival/previewId
+       各解析各的，同一串参数处理三遍） */
+    if (want) return byId(want);
     var today = todayStr();
     for (var j = 0; j < FESTIVALS.length; j++) {
       if (FESTIVALS[j].date === today) return FESTIVALS[j];
@@ -227,11 +232,7 @@
      会被当成「每次访问都重弹、永不写看过」的强制预览（20261002e）。 */
   function previewId() {
     var want = (location.search.match(/[?&]festival=([a-z0-9-]+)/) || [])[1];
-    if (!want) return null;
-    for (var i = 0; i < FESTIVALS.length; i++) {
-      if (FESTIVALS[i].id === want) return want;
-    }
-    return null;
+    return want && byId(want) ? want : null;
   }
 
   function alreadyShown(id) {
@@ -289,7 +290,7 @@
     "@keyframes fst-fade{from{opacity:0}to{opacity:1}}" +
     "@keyframes fst-pop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}" +
     "@media (max-width:510px){.fst-modal{padding:12px}.fst-panel{max-width:none;border-radius:var(--radius)}}" +
-    /* reduce 兜底：庄重款面板动画特异性 (0,2,0) 高于裸 .fst-panel (0,1,0)，必须单列进选择器列表
+    /* reduce 兜底：庄重款面板动画选择器特异性 (0,3,0) 高于裸 .fst-panel (0,1,0)，必须单列进选择器列表
        （同规则内各选择器按自身特异性比较，且本条在源序上更靠后、同分胜出），否则 reduce 下庄重款仍播 fst-fade */
     "@media (prefers-reduced-motion:reduce){.fst-backdrop,.fst-panel,.fst-modal.solemn .fst-panel{animation:none}}";
 
@@ -330,7 +331,7 @@
     return root;
   }
 
-  function open(f) {
+  function open(f, preview) {
     if (document.getElementById("fst-modal")) return; // 防重复注入（脚本被引两次等）
 
     injectStyle();
@@ -355,7 +356,6 @@
     if (closeBtn) closeBtn.focus();
 
     function close() {
-      root.hidden = true;
       root.remove();
       document.removeEventListener("keydown", onKey);
       /* 还锁要看脸色（与 key-modal 关闭同款）：main 可能正被搜索面板或
@@ -385,9 +385,9 @@
     document.addEventListener("keydown", onKey);
 
     /* 预览模式不写「看过」标记：刷新还能再弹，方便逐个节日过一遍。
-       判定用 previewId()（参数给的是真实存在的 id），脏参数回落的当天节日照常写。
+       preview 由 boot 判好传入（参数给的是真实存在的 id），脏参数回落的当天节日照常写。
        此刻开场动画已结束、弹窗真实可见可关，「打开即算看过」成立。 */
-    if (previewId() !== f.id) markShown(f.id);
+    if (!preview) markShown(f.id);
   }
 
   /* ---------- 5. 等开场动画播完（main.js 6.7 的 finish 会摘 intro-pending、解除 inert，
@@ -420,11 +420,12 @@
   /* ---------- 6. 入口 ---------- */
   function boot() {
     if (/[?&]static(?:=1)?(?=&|$)/.test(location.search)) return; // 静态渲染约定：不弹
-    var f = pickFestival();
+    var want = previewId();             // 参数只在这里解析一次，往下全部传值
+    var f = pickFestival(want);
     if (!f) return;
-    var preview = previewId() === f.id; // 脏参数（空值/写错 id）不算预览，见 previewId 注释
-    if (!preview && alreadyShown(f.id)) return;
-    waitIntroDone(function () { open(f); });
+    var preview = !!want;               // want 非 null 即「真实存在的节日 id」（见 previewId）；
+    if (!preview && alreadyShown(f.id)) return; // 脏参数回落的当天节日不算预览
+    waitIntroDone(function () { open(f, preview); });
   }
 
   /* 预渲染守卫：副本里什么都不做（尤其不写「看过」），真被点开（prerenderingchange）

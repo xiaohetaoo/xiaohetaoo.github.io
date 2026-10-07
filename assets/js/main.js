@@ -1,5 +1,6 @@
 /* ============================================================
-   小核桃的个人博客 · 交互脚本（全站唯一外部 JS，零依赖、ES5 风格）
+   小核桃的个人博客 · 交互脚本（全站每页必载的外部 JS，零依赖、ES5 风格；
+   festival.js 仅首页另载）
    覆盖：主题切换 / Hero 原子轨道 / 滚动进场与倾斜 / 列表渲染与搜索 /
    导航全局搜索 / 口令弹窗 / 智能预取 / 星尘背景与迸发 / 开场动画 / 跨页过渡等。
    功能不再逐条编号罗列（列表易过期）：定位用各节「---------- N. ×× ----------」
@@ -9,8 +10,11 @@
 (function () {
   "use strict";
 
-  // 系统减动效偏好：所有动画/倾斜/预取走终态降级
-  var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // 系统减动效偏好：MQL 只建这一份。reducedMotion 是顶层快照（页面生命期内的动画门）；
+  // edu/口令弹窗这类「进入时再判」的路径读 live 值 REDUCED_MQ.matches——原来 3 处
+  // 各自 matchMedia 一份，口径分叉（快照 vs live 语义本就不同，但至少该读同一个查询）
+  var REDUCED_MQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var reducedMotion = REDUCED_MQ.matches;
   // ?static：跳过所有动画，直接渲染最终状态（用于截图/打印等确定性场景）。
   // 必须按完整参数名精确匹配——子串匹配会被 archive.html?q=static 这类搜索词误触发
   var staticMode = /[?&]static(?:=1)?(?=&|$)/.test(window.location.search);
@@ -26,13 +30,21 @@
   function fineHover() {
     return window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   }
+
+  // 归一化（游戏名单页内搜索与口令比对共用一份）：忽略大小写、全部空白与全部标点符号。
+  // /[\s\p{P}\p{S}]/u 按 Unicode 属性匹配「空白 + 标点 + 符号」，中英文标点
+  //（，。！？～「」《》……）和 + - _ = 之类一并去掉；数字/字母属于 \p{N}/\p{L}
+  // 不在其中，所以口令 7436474582453 照常参与比对。
+  function normText(s) {
+    return String(s == null ? "" : s).replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
+  }
   function cappedDpr() {
     return Math.min(window.devicePixelRatio || 1, 2);
   }
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261005b";
+  var DATA_VER = "20261007a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -307,12 +319,20 @@
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
 
-    // 三条椭圆轨道（角度、半径、转速各不相同），中心一个缓慢旋转的立方体线框
+    // 三条椭圆轨道（角度、半径、转速各不相同），中心一个缓慢旋转的立方体线框。
+    // rot 是常量：cos/sin 预缓存；rx/ry 预乘 0.92 椭圆缩放——电子/轨道热路径每帧
+    // 免掉重复三角调用与乘法（每帧 ~6 次三角 → 0）
     var orbits = [
       { rx: 0.47, ry: 0.155, rot: -Math.PI / 7, speed: 0.42, phase: 0.4, color: "#679efe" },
       { rx: 0.47, ry: 0.155, rot:  Math.PI / 7, speed: 0.30, phase: 2.6, color: "#4a8ac4" },
       { rx: 0.16, ry: 0.455, rot:  0.06,        speed: 0.22, phase: 4.6, color: "#8ab4ff" }
-    ];
+    ].map(function (o) {
+      o.cosRot = Math.cos(o.rot);
+      o.sinRot = Math.sin(o.rot);
+      o.rxE = o.rx * 0.92;
+      o.ryE = o.ry * 0.92;
+      return o;
+    });
 
     // 深浅主题各自的画布配色（轨道 / 电子 / 立方体），切换主题后下一帧自动生效
     var CANVAS_PALETTES = {
@@ -355,6 +375,11 @@
         orbits.forEach(function (o, i) { o.color = pal.orbitColors[i]; });
       }
     }
+    // 调色板事件驱动：初始化读一次（此刻 head 预置脚本写入的 data-theme 已就位），
+    // 之后由 applyTheme 派发的 themechange 驱动——不再每帧轮询 getAttribute（60 次/秒）。
+    // 依据：data-theme 的运行时唯一写入方就是 applyTheme（head 内联脚本只在 main.js 之前跑一次）
+    syncPalette();
+    document.addEventListener("themechange", syncPalette);
 
     // 鼠标互动：只有立方体朝光标方向微微偏转；电子一律沿轨道匀速行进、不受鼠标影响
     //（原 electronPull 吸引已按用户要求整个移除，20260913d）
@@ -377,7 +402,7 @@
       ctx.translate(W / 2, H / 2);
       ctx.rotate(o.rot);
       ctx.beginPath();
-      ctx.ellipse(0, 0, o.rx * W * 0.92, o.ry * W * 0.92, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, o.rxE * W, o.ryE * W, 0, 0, Math.PI * 2);
       ctx.strokeStyle = currentPal.orbitStroke;
       ctx.lineWidth = 1.4;
       ctx.stroke();
@@ -386,9 +411,9 @@
 
     function drawElectron(o, t) {
       var a = o.phase + t * o.speed;
-      var ex = Math.cos(a) * o.rx * W * 0.92;
-      var ey = Math.sin(a) * o.ry * W * 0.92;
-      var cos = Math.cos(o.rot), sin = Math.sin(o.rot);
+      var ex = Math.cos(a) * o.rxE * W;
+      var ey = Math.sin(a) * o.ryE * W;
+      var cos = o.cosRot, sin = o.sinRot;
       var x = W / 2 + ex * cos - ey * sin;
       var y = H / 2 + ex * sin + ey * cos;
 
@@ -457,11 +482,14 @@
       cubeLean.y += (ly - cubeLean.y) * k;
       tiltX += cubeLean.y * 0.22;
       rotY += cubeLean.x * 0.35;
+      // 旋转矩阵的 cos/sin 只随 rotY/tiltX 变、不随顶点变：提出循环，8 顶点 × 4 次 → 4 次/帧
+      var cY = Math.cos(rotY), sY = Math.sin(rotY);
+      var cX = Math.cos(tiltX), sX = Math.sin(tiltX);
       var pts = CUBE.map(function (v) {
         var x = v[0] * s, y = v[1] * s, z = v[2] * s;
-        var x1 = x * Math.cos(rotY) + z * Math.sin(rotY);
-        var z1 = -x * Math.sin(rotY) + z * Math.cos(rotY);
-        var y1 = y * Math.cos(tiltX) - z1 * Math.sin(tiltX);
+        var x1 = x * cY + z * sY;
+        var z1 = -x * sY + z * cY;
+        var y1 = y * cX - z1 * sX;
         return [W / 2 + x1, H / 2 + y1];
       });
       ctx.strokeStyle = currentPal.cubeStroke;
@@ -499,7 +527,6 @@
       var dt = lastTs === null ? 0.016 : Math.min(0.05, (ts - lastTs) / 1000);
       lastTs = ts;
       var t = (ts - start) / 1000;
-      syncPalette();
       drawScene(t, dt);
       if (!reducedMotion && !staticMode && !document.hidden && heroVisible) {
         scheduleFrame();
@@ -539,8 +566,7 @@
         resize();
         updateHeroRect();
         if (reducedMotion || staticMode) {
-          // 静态重绘同样要手动同步调色板（不走 frame()）
-          syncPalette();
+          // 静态重绘不走 frame()：调色板由 themechange/初始化驱动，这里直接画终态
           drawScene(0, 0);
         }
       }, 120);
@@ -606,9 +632,7 @@
     resize();
     updateHeroRect();
     if (reducedMotion || staticMode) {
-      // 静态渲染一帧。static/reduced 路径不走 frame()，调色板要手动同步，
-      // 否则亮色主题下画的是深色调色板版
-      syncPalette();
+      // 静态渲染一帧（调色板已在 1 节初始化时同步；static/reduced 不走 frame()）
       drawScene(0, 0);
     } else {
       scheduleFrame();
@@ -863,7 +887,9 @@
         buildGlowSprite();
       }
     }
-    buildGlowSprite();
+    // 同 hero 的 syncPalette：初始化读一次 + themechange 事件驱动，不再每帧轮询属性
+    syncDustPalette();
+    document.addEventListener("themechange", syncDustPalette);
 
     function dustResize() {
       var dpr = cappedDpr();
@@ -925,7 +951,6 @@
       if (dScrollDy > dh) dScrollDy = dh; else if (dScrollDy < -dh) dScrollDy = -dh;
       dScrollOff += dScrollDy;
 
-      syncDustPalette();
       dctx.clearRect(0, 0, dw, dh);
       dctx.fillStyle = "rgb(" + dustPal.dot + ")";
       for (var i = 0; i < dust.length; i++) {
@@ -1044,8 +1069,10 @@
     var root = document.documentElement;
     if (!root.classList.contains("intro-pending")) return;
     var onResize = null;
+    var rsTimer = null; // onResize 的防抖句柄：finish 里要一并清掉，防收场后还重建一次位图
     var finish = function () {
       clearTimeout(panicT); // panicT 在下方才赋值：提前退路径里是 undefined，clear 无害
+      clearTimeout(rsTimer); // 同上：onResize 赋值前提前退是 undefined，clear 无害
       root.classList.remove("intro-pending");
       root.classList.remove("intro-reveal");
       if (onResize) window.removeEventListener("resize", onResize);
@@ -1095,12 +1122,18 @@
     ctx.scale(dpr, dpr);
     // 手机端滚动会收合地址栏 → innerHeight 变大：画布 CSS 盒跟着视口长、位图不跟，
     // 整幅星尘被纵向拉伸、落点偏移。视口一变就重建位图（W/H 一起跟）。
+    // 防抖 120ms：cv.width 赋值即整块重分配位图（1080p@DPR2 ≈ 33MB），拖窗每秒几十发
+    // 事件不能连发重建；动画期粒子落点由逐帧按钮跟随兜着，防抖窗口里的短暂拉伸无感知。
     onResize = function () {
-      W = window.innerWidth; H = window.innerHeight;
-      cv.width = Math.round(W * dpr);
-      cv.height = Math.round(H * dpr);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
+      clearTimeout(rsTimer);
+      rsTimer = setTimeout(function () {
+        var d = cappedDpr(); // 每次现求值（口径见文件头 23 行）：拖去另一台显示器位图密度才正确
+        W = window.innerWidth; H = window.innerHeight;
+        cv.width = Math.round(W * d);
+        cv.height = Math.round(H * d);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(d, d);
+      }, 120);
     };
     window.addEventListener("resize", onResize);
 
@@ -1331,7 +1364,7 @@
   }
 
   // 文章页链接统一拼接：root 兼容两种形态——siteRoot(true) 的 ""/"../"/"/"（已带尾斜杠）
-  // 与侧栏/推荐阅读的 "../"/"."（裸根，这里补尾斜杠）；slug 统一 esc，
+  // 与 siteRoot(false) 的 ""/".."/"."（裸根，这里补尾斜杠）；slug 统一 esc，
   // 杜绝个别调用点漏转义的口径分叉（2026-10-05 审查发现 post-nav 回填处漏了 esc）
   function postHref(root, slug) {
     var base = root || "";
@@ -1492,7 +1525,7 @@
      输入即列候选（中文名 / 英文名 / 档位·熟练度分组），点候选或回车跳到对应条目并高亮
      闪烁，地址写 #g=<名字>（可分享：别人打开同一链接直接定位并高亮）。索引只在初始化
      时扫一遍 DOM（各档位标题 + 熟练度分组标签 + 全部条目），之后纯字符串比较；候选上限
-     12 条、面板自己滚。匹配走 norm()（小写 + 去空白/标点/符号），所以「黑神话悟空」
+     12 条、面板自己滚。匹配走 normText()（小写 + 去空白/标点/符号），所以「黑神话悟空」
      「call of duty」「s档」「精通」都能命中。 ---------- */
   (function () {
     var wrap = document.getElementById("game-search");
@@ -1520,14 +1553,13 @@
     });
     if (!items.length) return;
 
-    function norm(s) { return (s || "").toLowerCase().replace(/[\s\p{P}\p{S}]/gu, ""); }
     function metaShort(it) { return it.group && it.meta === "档位" ? "档位" : String(it.meta || "").split("·")[0].trim(); }
     function match(q) {
-      var nq = norm(q), out = [];
+      var nq = normText(q), out = [];
       if (!nq) return out;
       for (var i = 0; i < items.length; i++) {
         var it = items[i];
-        if (norm(it.zh).indexOf(nq) >= 0 || (it.en && norm(it.en).indexOf(nq) >= 0)) out.push(it);
+        if (normText(it.zh).indexOf(nq) >= 0 || (it.en && normText(it.en).indexOf(nq) >= 0)) out.push(it);
       }
       return out;
     }
@@ -1606,9 +1638,9 @@
       if (raw.indexOf("#g=") !== 0) return;
       var name;
       try { name = decodeURIComponent(raw.slice(3)); } catch (e) { name = raw.slice(3); }
-      var nq = norm(name), hit = null;
+      var nq = normText(name), hit = null;
       if (!nq) return;
-      for (var i = 0; i < items.length; i++) { if (norm(items[i].zh) === nq) { hit = items[i]; break; } }
+      for (var i = 0; i < items.length; i++) { if (normText(items[i].zh) === nq) { hit = items[i]; break; } }
       if (hit) go(hit, instant);
     }
 
@@ -1679,7 +1711,7 @@
     var pathBox = document.querySelector(".edu-path");
     var energy = document.querySelector(".edu-energy");
     if (!pathBox || !energy) return;
-    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (REDUCED_MQ.matches) return; // live 判：进入本页时系统刚切到减动效也要停
 
     var CROSS_MS = 4200;   // 全程滑行时长：4.2s 一圈，速度从容（2.6s 用户嫌快）
     var centers = null;    // 五站圆心（相对 .edu-path 内容盒）
@@ -1781,8 +1813,9 @@
         if (visible && !rafId) rafId = requestAnimationFrame(frame);
       });
     }, { threshold: 0.05 }).observe(pathBox);
-
-    window.addEventListener("resize", measure);
+    // 不挂 resize：frame() 每帧都重跑 measure()（可见期自动跟随视口变化），
+    // 滚出视口后下次 IO 拉起的首帧也会先量——单独的 resize 监听只会给
+    // 屏外元素白做一轮布局读，是全文件唯一没节流的 resize 路径（2026-10-07 删）
   })();
 
   /* ---------- 8. 项目列表（projects.json 驱动）
@@ -2259,7 +2292,7 @@
     loadPosts()
       .then(function (posts) {
         var path = window.location.pathname;
-        var root = path.indexOf("/posts/") !== -1 ? ".." : ".";
+        var root = siteRoot(false); // 口径单点（404 页 siteRoot 返回 ""，postHref 兼容裸根）
         // 侧栏与 post-nav 回填共用同一份排序（原来上下各排一次，纯冗余）
         var sorted = sortPosts(posts);
         sideList.innerHTML = sorted
@@ -2428,7 +2461,7 @@
     var postNav = document.querySelector(".post-page .post-nav");
     if (!postNav) return;
     var path = window.location.pathname;
-    var root = path.indexOf("/posts/") !== -1 ? ".." : ".";
+    var root = siteRoot(false); // 口径单点（原来手写 ".."/"."，不认 404 绝对根）
     var currentSlug = (path.match(/\/posts\/([^\/]+)\.html/) || [])[1] || "";
     loadPosts()
       .then(function (posts) {
@@ -2485,7 +2518,9 @@
   var sections = ["posts", "projects", "contact"]
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
-  /* 滚动高亮的锚链接集合，与上方 sections 的 id 一一对应 */
+  /* 滚动高亮的锚链接集合，与上方 sections 的 id 一一对应。
+     一次性静态快照：nav-links 的文字链接全站静态书写、从不被 JS 重渲染
+     （搜索展开只是 display:none），所以快照永不过期 */
   var navAnchors = document.querySelectorAll(".nav-links a[href^='#']");
 
   if (sections.length && "IntersectionObserver" in window) {
@@ -2502,6 +2537,8 @@
           }
         });
       },
+      /* 判定带取值依据：上沿收 30%、下沿收 60% —— 章节滚过视口上三分之一才点亮、
+         滚到下五分之二以内还保持，让「当前章节」跟阅读位置一致而不是一进视口就跳 */
       { rootMargin: "-30% 0px -60% 0px" }
     );
     sections.forEach(function (s) { spy.observe(s); });
@@ -2578,14 +2615,22 @@
     };
     if (viewportMq.addEventListener) viewportMq.addEventListener("change", onMqChange);
     else if (viewportMq.addListener) viewportMq.addListener(onMqChange);
+    // resize 路径 rAF 节流：读 getBoundingClientRect + 写 2 个样式是读写交错，
+    // 拖窗时逐事件执行会 layout thrashing——一帧内多次事件合并为一次（同全站
+    // scroll 监听的节流模式）。mobile 分支的 clearPanelInline 同样收敛进来
+    var panelRaf = 0;
     window.addEventListener("resize", function () {
-      if (!open) return;
-      if (viewportMq.matches) {
-        // mobile 模式：CSS 已用 100vw 撑满，清掉 inline style 让它每次自动重算
-        clearPanelInline();
-      } else {
-        positionPanel();
-      }
+      if (!open || panelRaf) return;
+      panelRaf = requestAnimationFrame(function () {
+        panelRaf = 0;
+        if (!open) return; // 一帧之内面板可能已被关掉
+        if (viewportMq.matches) {
+          // mobile 模式：CSS 已用 100vw 撑满，清掉 inline style 让它每次自动重算
+          clearPanelInline();
+        } else {
+          positionPanel();
+        }
+      });
     });
     function hitArea(target) {
       // 输入框/按钮在 wrap 里，结果面板在 body 下，两处都算"点在搜索上"
@@ -2632,16 +2677,19 @@
       return panel.querySelectorAll("[data-option]");
     }
 
-    function setActive(el) {
+    // 选中态同步：descendantInput 指定 aria-activedescendant 写到哪个输入框
+    //（桌面 input / 移动 mobileInput 副本，其余逻辑两分支完全一致）
+    function setActive(el, descendantInput) {
+      var desc = descendantInput || input;
       options().forEach(function (o) {
         o.classList.toggle("focused", o === el);
         o.setAttribute("aria-selected", o === el ? "true" : "false");
       });
       if (el) {
-        input.setAttribute("aria-activedescendant", el.id);
+        desc.setAttribute("aria-activedescendant", el.id);
         el.scrollIntoView({ block: "nearest" });
       } else {
-        input.removeAttribute("aria-activedescendant");
+        desc.removeAttribute("aria-activedescendant");
       }
     }
 
@@ -2772,7 +2820,8 @@
             // Esc 关闭后焦点还放大镜；口令/节日弹窗开着时 nav 处于 inert，focus 会抛错，
             // 与站内 focus 调用同款 try/catch，preventScroll 防页面跳顶
             if (e.key === "Escape") { setOpen(false); try { btn.focus({ preventScroll: true }); } catch (e) {} return; }
-            // ↑↓ 在结果间移动（与桌面端 nav input 行为一致）
+            // ↑↓ 在结果间移动（与桌面端 nav input 行为一致：走同一个 setActive，
+            // aria-activedescendant 写到 mobileInput 副本）
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
               var opts = panel.querySelectorAll("[data-option]");
               if (!opts.length) return;
@@ -2780,20 +2829,12 @@
               var current = panel.querySelector(".focused");
               var idx = -1;
               opts.forEach(function (o, i) { if (o === current) idx = i; });
-              var next = e.key === "ArrowDown"
-                ? opts[Math.min(idx + 1, opts.length - 1)]
-                : opts[Math.max(idx - 1, 0)];
-              // 同步 .focused + aria-selected + aria-activedescendant
-              opts.forEach(function (o) {
-                o.classList.toggle("focused", o === next);
-                o.setAttribute("aria-selected", o === next ? "true" : "false");
-              });
-              if (next) {
-                mobileInput.setAttribute("aria-activedescendant", next.id);
-                next.scrollIntoView({ block: "nearest" });
-              } else {
-                mobileInput.removeAttribute("aria-activedescendant");
-              }
+              setActive(
+                e.key === "ArrowDown"
+                  ? opts[Math.min(idx + 1, opts.length - 1)]
+                  : opts[Math.max(idx - 1, 0)],
+                mobileInput
+              );
               return;
             }
             if (e.key === "Enter") {
@@ -3036,12 +3077,9 @@
       input.setAttribute("aria-expanded", "false");
       var nav = wrap.closest("nav");
       if (nav) nav.classList.remove("nav-search-open");
-      var main = document.querySelector("main");
-      var keyModal = document.getElementById("key-modal");
-      // 口令弹窗若也开着，main 的 inert 归它管，不能顺手摘；
-      // 节日弹窗（festival.js，关闭即整体 remove）同理要登记——bfcache 恢复时它仍可能开着
-      var festivalOpen = !!document.getElementById("fst-modal");
-      if (main && (!keyModal || keyModal.hidden) && !festivalOpen) main.removeAttribute("inert");
+      // inert 归还走共享规则（open 已复位 false：syncMainInert 只在口令/节日弹窗都
+      // 没压着 main 时才摘——bfcache 恢复时它们仍可能开着，原内联规则与它逐条等价）
+      syncMainInert();
     });
   })();
 
@@ -3152,7 +3190,7 @@
     function startName() {
       preloadBirthday();
       var body = modal.querySelector(".key-modal-body");
-      var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var reduced = REDUCED_MQ.matches; // live 判：开弹窗那一刻的减动效状态
       if (!body || reduced) { applyName(); return; }
       var gen = ++flowGen;
       body.classList.add("is-swapping");
@@ -3174,16 +3212,10 @@
       window.location.href = base + "birthday.html#name=" + encodeURIComponent(name);
     }
 
-    // 归一化：忽略大小写、全部空白与全部标点符号。/[\s\p{P}\p{S}]/u 按 Unicode 属性匹配
-    //「空白 + 标点 + 符号」，中英文标点（，。！？～「」《》……）和 + - _ = 之类一并去掉；
-    // 数字/字母属于 \p{N}/\p{L} 不在其中，所以 7436474582453 照常参与比对。
-    function norm(s) {
-      return String(s == null ? "" : s).replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
-    }
     // 口令侧只在初始化时归一化一次（KEYS_N），之后每次查询只归一化输入、再线性比对。
-    var KEYS_N = KEYS.map(function (e) { return { e: e, n: norm(e.k) }; });
+    var KEYS_N = KEYS.map(function (e) { return { e: e, n: normText(e.k) }; });
     function lookup(raw) {
-      var q = norm(raw);
+      var q = normText(raw);
       if (!q) return null;   // 全是标点/空白等于没输入，不算命中
       for (var i = 0; i < KEYS_N.length; i++) {
         if (KEYS_N[i].n === q) return KEYS_N[i].e;
