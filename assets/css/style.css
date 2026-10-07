@@ -3973,7 +3973,9 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 /* 抽屉式换屏（命中特殊口令后）：旧表单上滑滑出，称呼态从下滑入。
    两个块（.key-modal-field / .key-modal-result）同步走同一组关键帧，
    视觉上就是整块换了一屏；transform/opacity 不动布局，弹窗高度不跳。
-   时长与 main.js 里的 220/280ms 对齐，改一处要改两处。 */
+   JS 里 setTimeout 用 220/300ms 两段：外层 220 = keySwapOut 0.22s 精确对齐，
+   内层 300 = keySwapIn 0.28s 动画末尾再留 20ms 缓冲再摘 is-entering，
+   避免动画被截断。改动画时长要同步改这两处。 */
 @keyframes keySwapOut {
   from { opacity: 1; transform: none; }
   to   { opacity: 0; transform: translateY(-14px); }
