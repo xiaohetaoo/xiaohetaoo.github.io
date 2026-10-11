@@ -653,7 +653,13 @@
             }
           }
           fit();
-          window.addEventListener("resize", fit);
+          /* resize 防抖：fit() 内 getComputedStyle + scrollWidth 每次同步强制布局，
+             手机地址栏收展/旋转会连发；load/fonts.ready 一生只发一次，保持直调 */
+          var fitTimer = null;
+          window.addEventListener("resize", function () {
+            clearTimeout(fitTimer);
+            fitTimer = setTimeout(fit, 200);
+          });
           window.addEventListener("load", fit);
           if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
         })();

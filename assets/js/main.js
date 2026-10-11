@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261011b";
+  var DATA_VER = "20261011c";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -373,12 +373,32 @@
       if (pal !== currentPal) {
         currentPal = pal;
         orbits.forEach(function (o, i) { o.color = pal.orbitColors[i]; });
+        buildGlowSprites(); // 轨道色随主题变了，辉光精灵同步重烘
       }
+    }
+    // 电子辉光精灵：辉光径向对称，按轨道色预烘焙成离屏图，每帧 drawImage 贴图——
+    // 原先 drawElectron 每帧 3 次 createRadialGradient（60fps ≈ 180 次/秒的渐变对象
+    // 分配），烘焙先例同 dust 的 buildGlowSprite；贴图缩到实际辉光半径，stop 比例不变
+    var GLOW_SPRITE_R = 32;
+    function buildGlowSprites() {
+      orbits.forEach(function (o) {
+        var c = document.createElement("canvas");
+        c.width = c.height = GLOW_SPRITE_R * 2;
+        var gctx = c.getContext("2d");
+        var g = gctx.createRadialGradient(GLOW_SPRITE_R, GLOW_SPRITE_R, 0, GLOW_SPRITE_R, GLOW_SPRITE_R, GLOW_SPRITE_R);
+        g.addColorStop(0, o.color);
+        g.addColorStop(0.35, currentPal.glowMid);
+        g.addColorStop(1, currentPal.glowEnd);
+        gctx.fillStyle = g;
+        gctx.fillRect(0, 0, GLOW_SPRITE_R * 2, GLOW_SPRITE_R * 2);
+        o.glowSprite = c;
+      });
     }
     // 调色板事件驱动：初始化读一次（此刻 head 预置脚本写入的 data-theme 已就位），
     // 之后由 applyTheme 派发的 themechange 驱动——不再每帧轮询 getAttribute（60 次/秒）。
     // 依据：data-theme 的运行时唯一写入方就是 applyTheme（head 内联脚本只在 main.js 之前跑一次）
     syncPalette();
+    buildGlowSprites(); // 初次烘焙：初值未变时 syncPalette 不会触发重建
     document.addEventListener("themechange", syncPalette);
 
     // 鼠标互动：只有立方体朝光标方向微微偏转；电子一律沿轨道匀速行进、不受鼠标影响
@@ -418,14 +438,8 @@
       var y = H / 2 + ex * sin + ey * cos;
 
       var r = 5.5;
-      var g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
-      g.addColorStop(0, o.color);
-      g.addColorStop(0.35, currentPal.glowMid);
-      g.addColorStop(1, currentPal.glowEnd);
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(x, y, r * 4, 0, Math.PI * 2);
-      ctx.fill();
+      // 辉光贴图：预烘焙精灵一次 drawImage（原每帧 createRadialGradient，见 buildGlowSprites 处说明）
+      ctx.drawImage(o.glowSprite, x - r * 4, y - r * 4, r * 8, r * 8);
 
       ctx.fillStyle = currentPal.electronCore;
       ctx.beginPath();
@@ -1372,21 +1386,26 @@
     return base + "posts/" + esc(slug) + ".html";
   }
 
-  // 同一页面多处列表共用一次请求；文章页在 /posts/ 子目录，要回到站点根再取。
-  // 失败时清空缓存并 rethrow：提示照常显示，但缓存不再锁死——下次任何消费方
-  // （搜索输入、重新渲染）调用即重新 fetch，页面不必整页刷新就能自愈
-  var postsCache = null;
-  function loadPosts() {
-    if (!postsCache) {
-      postsCache = fetch(siteRoot(false) + "/posts.json?v=" + DATA_VER)
-        .then(function (r) { return r.json(); })
-        .catch(function (e) { postsCache = null; throw e; });
-    }
-    return postsCache;
+  // JSON 缓存工厂：同一页面多处列表共用一次请求；失败时清空缓存并 rethrow——
+  // 提示照常显示，但缓存不再锁死，下次任何消费方（搜索输入、重新渲染）调用即
+  // 重新 fetch，页面不必整页刷新就能自愈。路径按 siteRoot(false) 口径拼接
+  //（文章页在 /posts/ 子目录要回站点根、404 页走绝对根），?v= 统一走 DATA_VER
+  function makeJsonCache(path) {
+    var cache = null;
+    return function () {
+      if (!cache) {
+        cache = fetch(siteRoot(false) + "/" + path + "?v=" + DATA_VER)
+          .then(function (r) { return r.json(); })
+          .catch(function (e) { cache = null; throw e; });
+      }
+      return cache;
+    };
   }
+  var loadPosts = makeJsonCache("posts.json");
 
   /* 站内显示序 = 置顶优先 → 最后更新倒序（列表 / 侧栏 / post-nav 回填 / feed 全部同源此序）：
-     排序键 = posts.json 的 updated（最后修订日），无修订回落发布 date（2026-10-05 起）。
+     排序键 = posts.json 的 updated（最后修订日），无修订回落发布 date（2026-10-05 起）；
+     主键并列时再回落发布日倒序（次级键），同日修订的文章顺序稳定可解释。
      修订过的文章按修订日上浮，但**显示**的日期仍是发布日（首页/归档卡片不变），
      文章页 meta 里另有「最近更新」行。pinned 仍置顶，置顶内部也按同键排。 */
   function sortPosts(posts) {
@@ -1491,24 +1510,28 @@
     if (archiveList) renderPostCards(archiveList, 0, q);
   }
 
-  // 文章/项目搜索输入共用的绑定：URL 只增删 q（可分享直达），120ms 防抖后重渲染。
-  // syncUrl=false（首页项目搜索）只本地过滤——首页 ?q= 已被文章搜索占用
+  // 文章/项目搜索输入共用的绑定：URL 只增删 q（可分享直达），URL 同步与重渲染
+  // 同批走 120ms 防抖。syncUrl=false（首页项目搜索）只本地过滤——首页 ?q= 已被文章搜索占用
   function bindSearchInput(input, rerender, syncUrl) {
     var timer = null;
     input.addEventListener("input", function () {
-      if (syncUrl) {
-        var q = input.value.trim();
-        try {
-          // 以当前 search 为底只增删 q，保留 theme/festival 等其它参数；全空时不留裸 "?"
-          var usp = new URLSearchParams(window.location.search);
-          if (q) usp.set("q", q); else usp.delete("q");
-          var qs = usp.toString();
-          window.history.replaceState(null, "",
-            window.location.pathname + (qs ? "?" + qs : "") + window.location.hash);
-        } catch (e) {}
-      }
       clearTimeout(timer);
-      timer = setTimeout(rerender, 120);
+      timer = setTimeout(function () {
+        // URL 同步与重渲染同批防抖：replaceState 涉及 URL 序列化+历史条目改写，
+        // 逐键执行在快速打字时是纯浪费；防抖后终态 URL 与分享语义不变
+        if (syncUrl) {
+          var q = input.value.trim();
+          try {
+            // 以当前 search 为底只增删 q，保留 theme/festival 等其它参数；全空时不留裸 "?"
+            var usp = new URLSearchParams(window.location.search);
+            if (q) usp.set("q", q); else usp.delete("q");
+            var qs = usp.toString();
+            window.history.replaceState(null, "",
+              window.location.pathname + (qs ? "?" + qs : "") + window.location.hash);
+          } catch (e) {}
+        }
+        rerender();
+      }, 120);
     });
   }
 
@@ -1552,6 +1575,9 @@
       }
     });
     if (!items.length) return;
+    // 归一化预存进索引（先例同 KEYS_N 的口径注释）：查询侧只归一化输入，
+    // 不再每键击对全部条目重复跑 normText 的正则替换（名单越长打字热路径越省）
+    items.forEach(function (it) { it.nzh = normText(it.zh); it.nen = normText(it.en); });
 
     function metaShort(it) { return it.group && it.meta === "档位" ? "档位" : String(it.meta || "").split("·")[0].trim(); }
     function match(q) {
@@ -1559,7 +1585,7 @@
       if (!nq) return out;
       for (var i = 0; i < items.length; i++) {
         var it = items[i];
-        if (normText(it.zh).indexOf(nq) >= 0 || (it.en && normText(it.en).indexOf(nq) >= 0)) out.push(it);
+        if (it.nzh.indexOf(nq) >= 0 || (it.nen && it.nen.indexOf(nq) >= 0)) out.push(it);
       }
       return out;
     }
@@ -1893,16 +1919,7 @@
     }, 2600);
   }
 
-  var projectsCache = null;
-  function loadProjects() {
-    if (!projectsCache) {
-      // 与 loadPosts 同样的根前缀规则（含 404 页绝对根兜底）+ 同样的失败自愈
-      projectsCache = fetch(siteRoot(false) + "/projects.json?v=" + DATA_VER)
-        .then(function (r) { return r.json(); })
-        .catch(function (e) { projectsCache = null; throw e; });
-    }
-    return projectsCache;
-  }
+  var loadProjects = makeJsonCache("projects.json");
 
   function sortProjects(projects) {
     // 置顶优先（组内保持 json 里的书写顺序，稳定排序）；其余按日期倒序，新项目排上面
@@ -2102,7 +2119,8 @@
       var keyModalNow = document.getElementById("key-modal");
       var keyOpen = !!keyModalNow && !keyModalNow.hidden;
       // fst-modal 用「节点存在」判开关是跨文件约定：festival close 会 remove 节点
-      //（不 hidden 复用），若改实现需同步 syncMainInert / Ctrl+K 守卫共三处
+      //（不 hidden 复用），若改实现需同步 syncMainInert / Ctrl+K 守卫 / 本文件
+      // 4.5 setOpen(false) 的归还复查共四处
       var fstOpen = !!document.getElementById("fst-modal");
       if (main && !searchOpen && !keyOpen && !fstOpen) main.removeAttribute("inert");
       // 口令弹窗同样锁着 nav/footer/skip-link：还开着就不摘（四方共享口径一致）
@@ -3551,7 +3569,7 @@
     }
   })();
 
-  /* ---------- 5. 页脚年份 ---------- */
+  /* ---------- 12. 页脚年份 ---------- */
   var year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 })();

@@ -692,6 +692,7 @@ window.GAME_DATA = {
   ];
   /* 每步：一个旋律音；每 8 步补一个低音（131/196 交替）撑节奏 */
   function bgmTick() {
+    if (muted) return; /* 静音期间定时器照跑但全部早退：不破坏「取消静音后下一拍自动续上」，又免掉每 300ms 构造参数再被 tone 丢掉的空转 */
     const f = MEL[bgmStep % MEL.length];
     if (f) tone(f, .42, 'sine', .045, 0, 0, true);
     if (bgmStep % 8 === 0) tone(131, .9, 'triangle', .05, 0, 0, true);
@@ -704,12 +705,14 @@ window.GAME_DATA = {
     isMuted() { return muted; },
     startBgm() {
       const c = ac(); if (!c || bgmTimer) return;
-      bgmBus(c);                       /* 预建音量轨 */      bgmGain.gain.cancelScheduledValues(c.currentTime);  /* 清掉上一次未走完的淡出，避免事件打架 */
+      bgmBus(c);                       /* 预建音量轨 */
+      bgmGain.gain.cancelScheduledValues(c.currentTime);  /* 清掉上一次未走完的淡出，避免事件打架 */
       bgmGain.gain.setValueAtTime(0, c.currentTime);
       bgmGain.gain.linearRampToValueAtTime(1, c.currentTime + .8);  /* 0.8s 淡入 */
       bgmTimer = setInterval(bgmTick, 300);
     },
-    stopBgm() { clearInterval(bgmTimer); bgmTimer = null; if (bgmGain) bgmFade(0, .5); },  /* 0.5s 淡出；从未播过 BGM 就不碰 AudioContext */
+    /* 0.5s 淡出；从未播过 BGM 就不碰 AudioContext */
+    stopBgm() { clearInterval(bgmTimer); bgmTimer = null; if (bgmGain) bgmFade(0, .5); },
     tap() { tone(520, .07, 'triangle', .12); },
     found() { tone(880, .1, 'sine', .3); tone(1320, .18, 'sine', .26, .09); },        // 清脆"叮~哒"
     miss() { tone(300, .12, 'sine', .12, 0, -80); },                                   // 低沉"嗒"
@@ -1743,7 +1746,7 @@ window.drawPoster = function (canvas, st) {
     const lens = $('cover-lens'), svg = document.querySelector('.cover svg'), lensHit = $('lens-hit');
     if (!lens || !svg) return;
     const badge = $('cover-badge');
-    let dragging = false, from = null, startOff = null, activeId = null;
+    let dragging = false, from = null, startOff = null, activeId = null, dragCtm = null, dragInv = null;
     const off = { x: 0, y: 0 };
     /* 放大镜罩住右上角 12360 徽标时才显示徽标 */
     function checkBadge() {
@@ -1764,6 +1767,9 @@ window.drawPoster = function (canvas, st) {
       /* 只认左键与主指：右键不起手，拖拽途中落下的第二根手指也不另起一场 */
       if (e.button !== 0 || !e.isPrimary) return;
       from = pt(e); if (!from) return;
+      /* CTM 拖拽期间不变（拖拽本身不触发缩放/旋转）：起手缓存一次矩阵与其逆，move 全程
+         沿用——原先每帧 2 次 getScreenCTM + 矩阵求逆，是拖拽热路径（60-120Hz）上最贵的调用 */
+      dragCtm = svg.getScreenCTM(); dragInv = dragCtm ? dragCtm.inverse() : null;
       dragging = true; startOff = { x: off.x, y: off.y }; activeId = e.pointerId;
       try { svg.setPointerCapture(e.pointerId); } catch (err) { }
       const bob = lens.querySelector('.lens-bob'); if (bob) bob.classList.add('still');
@@ -1774,14 +1780,15 @@ window.drawPoster = function (canvas, st) {
     if (lensHit) lensHit.addEventListener('pointerdown', startDrag);
     window.addEventListener('pointermove', (e) => {
       if (!dragging || e.pointerId !== activeId) return; /* 别的手指的移动不抢镜 */
-      const p = pt(e); if (!p) return;
-      off.x = clamp(startOff.x + p.x - from.x, -300, 130);
-      off.y = clamp(startOff.y + p.y - from.y, -160, 130);
+      if (!dragInv) return;
+      const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+      const q = p.matrixTransform(dragInv);
+      off.x = clamp(startOff.x + q.x - from.x, -300, 130);
+      off.y = clamp(startOff.y + q.y - from.y, -160, 130);
       lens.setAttribute('transform', `translate(${off.x} ${off.y})`);
       /* 热区跟着镜片走：off 是 SVG 用户单位，热区是 HTML 盒子，按 CTM 缩放比换算成 CSS 像素，
-         镜片停在哪热区就跟到哪——否则新位置起手纵拖又被滚屏抢走、原地热区空抓 */
-      const ctm = svg.getScreenCTM();
-      if (lensHit && ctm) lensHit.style.transform = `translate(${off.x * ctm.a}px, ${off.y * ctm.d}px)`;
+         镜片停在哪热区就跟到哪——否则新位置起手纵拖又被滚屏抢走、原地热区空抓（缩放比取起手时缓存） */
+      if (lensHit && dragCtm) lensHit.style.transform = `translate(${off.x * dragCtm.a}px, ${off.y * dragCtm.d}px)`;
       checkBadge();
       e.preventDefault();
     }, { passive: false });

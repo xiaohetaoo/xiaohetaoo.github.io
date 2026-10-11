@@ -9,8 +9,9 @@
   <script>/* 方向性滑动：nav-deep / nav-back / nav-side 必须在新页第一次渲染前挂到 <html> 上。
      pagereveal 有时早于 body 末尾脚本执行，那时才挂类会让过渡从默认淡入突变成横滑（看着像"淡入后瞬移"），
      所以方向标记的消费放在 head 里同步做，和上面的主题预置脚本同思路。
-     本脚本与主题预置脚本逐字节复制于全站 22 个页面：新增自包含专题页（teacher-* /
-     birthday / huiyan-shisi 等）要同步进下方 referrer 白名单正则，漏一处过渡方向不一致。 */
+     本脚本与主题预置脚本逐字节复制于全站所有页面（新增页面必须原样带上）：新增自包含
+     专题页（teacher-* / birthday / huiyan-shisi 等）要同步进下方 referrer 白名单正则，
+     漏一处过渡方向不一致。 */
   try{var _d=sessionStorage.getItem("xht-nav-dir");
     if(_d==="deep"||_d==="back"||_d==="side"){sessionStorage.removeItem("xht-nav-dir");
       document.documentElement.classList.add(_d==="deep"?"nav-deep":_d==="side"?"nav-side":"nav-back");}
@@ -44,7 +45,7 @@
          排序位置变化，把整块 <entry> 移到新位置——feed 全量按显示序排列，不限前两位）与
          sitemap.xml 该条 <lastmod> 改修订日——
          feed 顺序/数值与 sitemap lastmod 数值 check-site 都已机器校验（2026-10-07 起），
-         漏同步直接 FAIL，不再靠注释提醒 -->
+         漏同步直接 FAIL，不再靠注释提醒
        不需要动的：og:image / og:image:alt / twitter:image（全站共用）、og:site_name / locale、
        author（小核桃）与 publisher（Organization 类型、name 小核桃——Google 文章富结果口径） -->
   <title>TODO：文章标题 · 小核桃的个人博客</title>
@@ -129,7 +130,7 @@
   <link rel="shortcut icon" href="../assets/img/favicon.ico" />
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png" />
   <link rel="alternate" type="application/atom+xml" title="小核桃的个人博客" href="/feed.xml" />
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261011b" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261011c" />
   <!-- 百度统计（预渲染守卫：投机规则会预渲染本页，副本里不上报、真被点开（prerenderingchange）再跑，否则刷脏 PV） -->
   <script>
 var _hmt = _hmt || [];
@@ -275,7 +276,7 @@ console.log("hello xiaohetao");</code></pre>
     </div>
   </footer>
 
-  <script src="../assets/js/main.js?v=20261011b"></script>
+  <script src="../assets/js/main.js?v=20261011c"></script>
 
   <div class="key-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
     <div class="key-modal-backdrop" data-key-close></div>
