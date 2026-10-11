@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261011a";
+  var DATA_VER = "20261011b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1855,7 +1855,9 @@
     var titleTag = isTrigger ? "span" : lvl;
     var inner =
       '<span class="p-icon" aria-hidden="true">' + icon + "</span>" +
-      "<" + titleTag + (isTrigger ? ' class="p-title"' : "") + ">" + esc(p.title) + '<span class="p-date">' + esc(p.date) + pin + "</" + titleTag + ">" +
+      // p-date 必须显式闭合：旧写法靠 </h3> 触发解析器隐式闭合，标题降为 span 后
+      // </span> 会被 p-date 吃掉、p-title 永不闭合，desc/foot 全被吞进标题
+      "<" + titleTag + (isTrigger ? ' class="p-title"' : "") + ">" + esc(p.title) + '<span class="p-date">' + esc(p.date) + pin + "</span>" + "</" + titleTag + ">" +
       '<span class="p-desc">' + esc(p.desc) + "</span>" +
       '<span class="p-foot"><span class="tags">' + tags + '</span><span class="p-link mono">' + esc(p.linkText) + "</span></span>";
     if (isTrigger) {
@@ -2044,22 +2046,30 @@
       return { slug: slug, title: (rp && rp.title) || fallbackTitle };
     }
 
-    function openWith(p) {
+    function openWith(p, card) {
       ensureModal();
       var rp = readRelated(p.relatedPost, p.title);
       modal.querySelector("#proj-modal-title").textContent = p.title;
       var descEl = modal.querySelector(".proj-modal-desc");
       descEl.textContent = p.desc || "";
       descEl.hidden = !p.desc;
+      // 数据边界：relatedPost 数据不全时隐藏对应动作行，不渲染空链——
+      // href 缺失不用 "#" 兜底（那会新标签打开当前页锚点），slug 缺失不拼
+      // posts/undefined.html；check-site 第 16 道门禁管数据，这里管渲染兜底
       var actLink = modal.querySelector('.proj-modal-action[data-act="link"]');
+      actLink.hidden = !p.href;
       actLink.href = p.href || "#";
       actLink.querySelector(".proj-modal-action-sub").textContent = p.linkText || "";
       var actPost = modal.querySelector('.proj-modal-action[data-act="post"]');
       // 文章链接统一走 postHref（siteRoot 兼容文章页子目录与 404 绝对根，同 post-nav 口径）
-      actPost.href = postHref(siteRoot(true), rp.slug);
+      var hasSlug = !!(rp.slug && typeof rp.slug === "string");
+      actPost.hidden = !hasSlug;
+      actPost.href = hasSlug ? postHref(siteRoot(true), rp.slug) : "#";
       actPost.querySelector(".proj-modal-action-sub").textContent = rp.title;
 
-      lastFocus = document.activeElement;
+      // Safari 点 button 不移焦点（activeElement 停在 body），回落到被点的卡片，
+      // 保证 close() 有处还焦点
+      lastFocus = document.activeElement !== document.body ? document.activeElement : (card || document.activeElement);
       modal.hidden = false;
       // 焦点锁四件套与 4.5 key-modal 同款：main/nav/footer/skip-link 全锁，
       // 键盘焦点不会逃出弹窗（免费 focus trap）
@@ -2072,8 +2082,12 @@
       var skipLink = document.querySelector(".skip-link");
       if (skipLink) skipLink.setAttribute("inert", "");
       requestAnimationFrame(function () {
-        var first = modal.querySelector(".proj-modal-action");
-        if (first && !modal.hidden) first.focus({ preventScroll: true });
+        if (modal.hidden) return;  // 一帧之内弹窗可能已被关掉
+        // 焦点落第一个可见动作（数据边界兜底可能隐藏了某条动作行）
+        var actions = modal.querySelectorAll(".proj-modal-action");
+        for (var i = 0; i < actions.length; i++) {
+          if (!actions[i].hidden) { actions[i].focus({ preventScroll: true }); break; }
+        }
       });
     }
 
@@ -2087,12 +2101,15 @@
       var searchOpen = !!document.querySelector(".nav-links.nav-search-open");
       var keyModalNow = document.getElementById("key-modal");
       var keyOpen = !!keyModalNow && !keyModalNow.hidden;
+      // fst-modal 用「节点存在」判开关是跨文件约定：festival close 会 remove 节点
+      //（不 hidden 复用），若改实现需同步 syncMainInert / Ctrl+K 守卫共三处
       var fstOpen = !!document.getElementById("fst-modal");
       if (main && !searchOpen && !keyOpen && !fstOpen) main.removeAttribute("inert");
-      if (nav && !fstOpen) nav.removeAttribute("inert");
-      if (footer && !fstOpen) footer.removeAttribute("inert");
+      // 口令弹窗同样锁着 nav/footer/skip-link：还开着就不摘（四方共享口径一致）
+      if (nav && !fstOpen && !keyOpen) nav.removeAttribute("inert");
+      if (footer && !fstOpen && !keyOpen) footer.removeAttribute("inert");
       var skipLink = document.querySelector(".skip-link");
-      if (skipLink && !fstOpen) skipLink.removeAttribute("inert");
+      if (skipLink && !fstOpen && !keyOpen) skipLink.removeAttribute("inert");
       // 焦点还给触发卡片（无障碍约定；此时 main 已解除 inert，可安全聚焦）
       if (lastFocus && typeof lastFocus.focus === "function") {
         try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
@@ -2109,7 +2126,7 @@
       var p = PROJ_ACTIONS[card.getAttribute("data-project")];
       if (!p) return;
       e.preventDefault();
-      openWith(p);
+      openWith(p, card);
     });
     // Esc 关闭（焦点可能还在卡片或地址栏回焦点，document 级才能接住；同 key-modal 兜底）
     document.addEventListener("keydown", function (e) {
@@ -2405,7 +2422,7 @@
     }
   })();
 
-  /* ---------- 8.5 阅读进度条（仅文章页） ---------- */
+  /* ---------- 8.7 阅读进度条（仅文章页） ---------- */
   // 顶部 2px 蓝线，rAF 节流 + scaleX 走合成层；只挂文章页——archive/projects 的
   // main 也复用 .post-page 做布局，只认它会把进度条注到列表页去
   (function () {
@@ -3442,13 +3459,17 @@
         // nav/footer，也不能顺手摘（inert 多方共享，见手册八·52）
         var searchOpen = !!document.querySelector(".nav-links.nav-search-open");
         var fstOpen = !!document.getElementById("fst-modal");
-        if (main && !searchOpen && !fstOpen) main.removeAttribute("inert");
-        if (nav && !fstOpen) nav.removeAttribute("inert");
-        if (footer && !fstOpen) footer.removeAttribute("inert");
+        // 项目选择弹窗（8.5）压着 main/nav/footer/skip-link 时同样不摘：inert
+        // 四方共享（搜索/口令/节日/项目弹窗），与 8.5 close() 的清单互为镜像
+        var projModalNow = document.getElementById("proj-modal");
+        var projOpen = !!projModalNow && !projModalNow.hidden;
+        if (main && !searchOpen && !fstOpen && !projOpen) main.removeAttribute("inert");
+        if (nav && !fstOpen && !projOpen) nav.removeAttribute("inert");
+        if (footer && !fstOpen && !projOpen) footer.removeAttribute("inert");
         // skip-link 的 inert 由「最后一个还开着的弹窗」持有：节日弹窗还开着时它仍压着
         // skip-link，这里不摘（festival close 会按 keyOpen 归还，20261002e）
         var skipLink = document.querySelector(".skip-link");
-        if (skipLink && !fstOpen) skipLink.removeAttribute("inert");
+        if (skipLink && !fstOpen && !projOpen) skipLink.removeAttribute("inert");
         btn.setAttribute("aria-expanded", "false");
         // 清空状态（含称呼流程），避免下次打开残留旧结果
         resetFlow();

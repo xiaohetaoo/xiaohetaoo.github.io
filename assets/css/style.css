@@ -971,9 +971,17 @@ button {
   overflow: hidden;
 }
 
-/* relatedPost 项目卡是 button（点击弹选择框，main.js 8.5）：重置浏览器默认，
-   视觉与 a 卡完全一致（背景/边框/圆角/内边距 .project-card 基础已覆盖） */
+/* relatedPost 项目卡是 button（点击弹选择框，main.js 8.5）：重置浏览器默认。
+   关键：button 的内部内容在 Blink/Gecko 里按匿名单行 flex 格式化——块级子元素
+   会被横向排成 flex item 并收缩成窄列（标题逐字折行、描述挤成中列），必须显式
+   给 flex column 复原与 a/div 卡一致的块流视觉；align-items:stretch 让各子块
+   宽度撑满同 block。背景/边框/圆角/内边距仍由 .project-card 基础提供。 */
 button.project-card {
+  -webkit-appearance: none;
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
   font: inherit;
   color: inherit;
@@ -1024,6 +1032,7 @@ button.project-card {
 .project-card h2,
 .project-card h3,
 .project-card .p-title {
+  margin: 0;  /* 显式声明：间距一致性不能依赖全局通配 reset（button 卡 margin 不折叠，reset 一变两卡立刻分叉） */
   font-size: 17px;
   font-weight: 600;
   display: flex;
@@ -4092,7 +4101,7 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 .proj-modal-action-sub {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--text-3);
+  color: var(--text-2);  /* --text-3 落 --bg-panel-2 在浅色两主题不足 WCAG AA（4.26/3.91），提一档 */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4280,7 +4289,7 @@ html.intro-pending .reveal {
   .container { max-width: none; padding: 0; }
   /* 渐显动画没被滚动触发（打印不走 IntersectionObserver）时不能让内容消失 */
   .js .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
-  h1, h2, h3 { color: var(--text-strong); page-break-after: avoid; }
+  h1, h2, h3, .project-card .p-title { color: var(--text-strong); page-break-after: avoid; }
   /* 渐变标题靠背景裁切 + 透明填充色实现，而打印默认不输出背景图形 → 会打出空白；
      这里回退成实色，保证纸上「小核桃」三个字还在。
      只列 about：hero 在上面的隐藏列表里整体 display:none（打印只出正文是有意的），

@@ -363,13 +363,16 @@
          也锁着这两处（inert 多方共享，摘之前清点，见手册八·52）。 */
       var keyModal = document.getElementById("key-modal");
       var keyOpen = !!keyModal && !keyModal.hidden;
+      // 项目选择弹窗（main.js 8.5）压着的锁同样不摘（inert 四方共享口径）
+      var projModal = document.getElementById("proj-modal");
+      var projOpen = !!projModal && !projModal.hidden;
       var searchOpen = !!document.querySelector(".nav-links.nav-search-open");
-      if (mainEl && !searchOpen && !keyOpen) mainEl.removeAttribute("inert");
-      if (navEl && !keyOpen) navEl.removeAttribute("inert");
-      if (footerEl && !keyOpen) footerEl.removeAttribute("inert");
+      if (mainEl && !searchOpen && !keyOpen && !projOpen) mainEl.removeAttribute("inert");
+      if (navEl && !keyOpen && !projOpen) navEl.removeAttribute("inert");
+      if (footerEl && !keyOpen && !projOpen) footerEl.removeAttribute("inert");
       /* skip-link 的 inert 由「最后一个还开着的弹窗」持有：口令弹窗还开着时它
          仍压着 skip-link，这里不摘（key-modal 关闭时会按 fstOpen 归还，20261002e） */
-      if (skipLink && !keyOpen) skipLink.removeAttribute("inert");
+      if (skipLink && !keyOpen && !projOpen) skipLink.removeAttribute("inert");
       if (prevFocus && prevFocus.focus) prevFocus.focus();
     }
     function onKey(e) {
