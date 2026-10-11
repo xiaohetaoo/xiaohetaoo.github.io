@@ -2,8 +2,9 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://xiaohetaoo.github.io/</loc>
-    <!-- JSON-LD WebSite.publisher 对齐全站 Organization（2026-10-07，爬虫消费字段） -->
-    <lastmod>2026-10-07</lastmod>
+    <!-- JSON-LD WebSite.publisher 对齐全站 Organization（2026-10-07，爬虫消费字段）；
+         2026-10-11 noscript 项目名更名（可见文案） -->
+    <lastmod>2026-10-11</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
@@ -14,8 +15,8 @@
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html</loc>
-    <!-- 「已经到底啦~」收尾（2026-10-05，可见文案） -->
-    <lastmod>2026-10-05</lastmod>
+    <!-- noscript 项目名「地理标识」更名「地理组徽」（2026-10-11，可见文案） -->
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -25,8 +26,8 @@
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/updates.html</loc>
-    <!-- 时间轴补 2026-10-07 条目（可见文案） -->
-    <lastmod>2026-10-07</lastmod>
+    <!-- 时间轴补 2026-10-11 条目（可见文案） -->
+    <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -59,6 +60,11 @@
     <loc>https://xiaohetaoo.github.io/posts/exist-error.html</loc>
     <!-- 修订日同步 lastmod（posts.json 的 updated 2026-10-04，第八版全文修订） -->
     <lastmod>2026-10-04</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://xiaohetaoo.github.io/posts/dili-zuhui-jianjie.html</loc>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -144,8 +150,9 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://xiaohetaoo.github.io/projects.html#p=%E5%9C%B0%E7%90%86%E6%A0%87%E8%AF%86</loc>
-    <lastmod>2026-09-04</lastmod>
+    <loc>https://xiaohetaoo.github.io/projects.html#p=%E5%9C%B0%E7%90%86%E7%BB%84%E5%BE%BD</loc>
+    <!-- 2026-10-11 项目「地理标识」更名「地理组徽」，锚点 URL 随 title 变化 -->
+    <lastmod>2026-10-11</lastmod>
     <priority>0.5</priority>
   </url>
   <url>
@@ -175,7 +182,8 @@
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html#p=%E6%B8%B8%E6%88%8F%E7%AC%AC%E4%B9%9D%E8%89%BA%E6%9C%AF</loc>
-    <lastmod>2026-08-30</lastmod>
+    <!-- 2026-10-11 描述删句 + 卡片交互改选择弹窗（可见语义变化） -->
+    <lastmod>2026-10-11</lastmod>
     <priority>0.5</priority>
   </url>
   <url>

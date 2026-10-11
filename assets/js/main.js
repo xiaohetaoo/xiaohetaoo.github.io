@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261007a";
+  var DATA_VER = "20261011a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1832,6 +1832,10 @@
     compass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>'
   };
 
+  /* relatedPost 项目卡的选择弹窗数据：data-project 标题 → 项目数据。
+     key 用标题（projects.json 标题唯一，data-project 与 #p= 锚点同键）。 */
+  var PROJ_ACTIONS = {};
+
   function projectCardHtml(p, i, lvl) {
     // 级别白名单同 postCardHtml：map 直传数组等非 "h2" 一律按 h3 兜底
     if (lvl !== "h2") lvl = "h3";
@@ -1843,11 +1847,21 @@
     var pin = p.pinned ? '<span class="pin-badge">置顶</span>' : "";
     var delay = ' style="--d:' + Math.min(i * 0.05, 0.3).toFixed(2) + 's"';
     var icon = PROJECT_ICONS[p.icon] || PROJECT_ICONS.cube;
+    // relatedPost 项目卡是 button（点击弹选择框，见 8.5）：button 内容模型=短语内容；
+    // 标题降为 span.p-title（样式与 h3 同档，CSS 选择器并在一起），icon/desc/foot 也
+    // 降为 span（CSS display 保持原块级/弹性布局）。inner 是 button/a/div 三种卡共用
+    // 的一段，span 化对 a/div 同样合法（flow 允许 phrasing），统一改、不分叉。
+    var isTrigger = !!p.relatedPost;
+    var titleTag = isTrigger ? "span" : lvl;
     var inner =
-      '<div class="p-icon" aria-hidden="true">' + icon + "</div>" +
-      "<" + lvl + ">" + esc(p.title) + '<span class="p-date">' + esc(p.date) + pin + "</" + lvl + ">" +
-      '<p class="p-desc">' + esc(p.desc) + "</p>" +
-      '<div class="p-foot"><span class="tags">' + tags + '</span><span class="p-link mono">' + esc(p.linkText) + "</span></div>";
+      '<span class="p-icon" aria-hidden="true">' + icon + "</span>" +
+      "<" + titleTag + (isTrigger ? ' class="p-title"' : "") + ">" + esc(p.title) + '<span class="p-date">' + esc(p.date) + pin + "</" + titleTag + ">" +
+      '<span class="p-desc">' + esc(p.desc) + "</span>" +
+      '<span class="p-foot"><span class="tags">' + tags + '</span><span class="p-link mono">' + esc(p.linkText) + "</span></span>";
+    if (isTrigger) {
+      PROJ_ACTIONS[p.title] = p;
+      return '<button class="project-card reveal" type="button"' + delay + ' data-project="' + esc(p.title) + '" data-project-trigger aria-haspopup="dialog">' + inner + "</button>";
+    }
     if (p.href) {
       return '<a class="project-card reveal"' + delay + ' data-project="' + esc(p.title) + '" href="' + esc(p.href) + '" target="_blank" rel="noopener">' + inner + "</a>";
     }
@@ -1974,6 +1988,137 @@
   }
 
   rerenderProjectLists();
+
+  /* ---------- 8.5 项目选择弹窗（relatedPost 项目卡专用） ----------
+     带 relatedPost 的项目卡渲染成 button（见 projectCardHtml），点击不再直跳
+     外链，而是弹出选择框：「获取资源」（原外链，新标签打开）与「阅读相关文章」。
+     弹窗节点在这里按需注入一次，不用改各页 HTML；类名复用 .key-modal 体系，
+     三主题遮罩/面板配色与减动效兜底随之自动生效。焦点锁与口令弹窗（4.5 setOpen）
+     同一套共享规则：锁 main/nav/footer/skip-link，归还时防御性复查其余浮层。 */
+  (function () {
+    var modal = null;
+    var lastFocus = null;
+
+    var DOWNLOAD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>';
+    var BOOK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>';
+    var CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
+    function ensureModal() {
+      if (modal) return;
+      modal = document.createElement("div");
+      modal.className = "key-modal";
+      modal.id = "proj-modal";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-labelledby", "proj-modal-title");
+      modal.hidden = true;
+      modal.innerHTML =
+        '<div class="key-modal-backdrop" data-proj-close></div>' +
+        '<div class="key-modal-panel" role="document">' +
+          '<div class="key-modal-head">' +
+            '<span class="key-modal-title" id="proj-modal-title"></span>' +
+            '<button class="key-modal-close" type="button" aria-label="关闭" data-proj-close>' + CLOSE_SVG + "</button>" +
+          "</div>" +
+          '<p class="proj-modal-desc"></p>' +
+          '<div class="proj-modal-actions">' +
+            '<a class="proj-modal-action" data-act="link" target="_blank" rel="noopener">' +
+              '<span class="proj-modal-action-icon" aria-hidden="true">' + DOWNLOAD_SVG + "</span>" +
+              '<span class="proj-modal-action-body"><span class="proj-modal-action-title">获取资源</span><span class="proj-modal-action-sub mono"></span></span>' +
+            "</a>" +
+            '<a class="proj-modal-action" data-act="post">' +
+              '<span class="proj-modal-action-icon" aria-hidden="true">' + BOOK_SVG + "</span>" +
+              '<span class="proj-modal-action-body"><span class="proj-modal-action-title">阅读相关文章</span><span class="proj-modal-action-sub"></span></span>' +
+            "</a>" +
+          "</div>" +
+        "</div>";
+      document.body.appendChild(modal);
+      // 遮罩/关闭按钮统一走 [data-proj-close]（同 key-modal 的 data-key-close 模式）
+      modal.addEventListener("click", function (e) {
+        if (e.target && e.target.closest && e.target.closest("[data-proj-close]")) close();
+      });
+    }
+
+    // relatedPost 兼容两种写法：字符串（只给 slug，标题回落项目名）或对象 {slug, title}
+    function readRelated(rp, fallbackTitle) {
+      var slug = typeof rp === "string" ? rp : rp.slug;
+      return { slug: slug, title: (rp && rp.title) || fallbackTitle };
+    }
+
+    function openWith(p) {
+      ensureModal();
+      var rp = readRelated(p.relatedPost, p.title);
+      modal.querySelector("#proj-modal-title").textContent = p.title;
+      var descEl = modal.querySelector(".proj-modal-desc");
+      descEl.textContent = p.desc || "";
+      descEl.hidden = !p.desc;
+      var actLink = modal.querySelector('.proj-modal-action[data-act="link"]');
+      actLink.href = p.href || "#";
+      actLink.querySelector(".proj-modal-action-sub").textContent = p.linkText || "";
+      var actPost = modal.querySelector('.proj-modal-action[data-act="post"]');
+      // 文章链接统一走 postHref（siteRoot 兼容文章页子目录与 404 绝对根，同 post-nav 口径）
+      actPost.href = postHref(siteRoot(true), rp.slug);
+      actPost.querySelector(".proj-modal-action-sub").textContent = rp.title;
+
+      lastFocus = document.activeElement;
+      modal.hidden = false;
+      // 焦点锁四件套与 4.5 key-modal 同款：main/nav/footer/skip-link 全锁，
+      // 键盘焦点不会逃出弹窗（免费 focus trap）
+      var main = document.querySelector("main");
+      var nav = document.querySelector("header.nav");
+      var footer = document.querySelector("footer.footer");
+      if (main) main.setAttribute("inert", "");
+      if (nav) nav.setAttribute("inert", "");
+      if (footer) footer.setAttribute("inert", "");
+      var skipLink = document.querySelector(".skip-link");
+      if (skipLink) skipLink.setAttribute("inert", "");
+      requestAnimationFrame(function () {
+        var first = modal.querySelector(".proj-modal-action");
+        if (first && !modal.hidden) first.focus({ preventScroll: true });
+      });
+    }
+
+    function close() {
+      modal.hidden = true;
+      // 归还 inert：此刻其余浮层理论上都没开（它们开着时 main 已 inert，点不到
+      // 卡片），仍按 4.5 setOpen(false) 的共享规则防御性复查，避免互踩
+      var main = document.querySelector("main");
+      var nav = document.querySelector("header.nav");
+      var footer = document.querySelector("footer.footer");
+      var searchOpen = !!document.querySelector(".nav-links.nav-search-open");
+      var keyModalNow = document.getElementById("key-modal");
+      var keyOpen = !!keyModalNow && !keyModalNow.hidden;
+      var fstOpen = !!document.getElementById("fst-modal");
+      if (main && !searchOpen && !keyOpen && !fstOpen) main.removeAttribute("inert");
+      if (nav && !fstOpen) nav.removeAttribute("inert");
+      if (footer && !fstOpen) footer.removeAttribute("inert");
+      var skipLink = document.querySelector(".skip-link");
+      if (skipLink && !fstOpen) skipLink.removeAttribute("inert");
+      // 焦点还给触发卡片（无障碍约定；此时 main 已解除 inert，可安全聚焦）
+      if (lastFocus && typeof lastFocus.focus === "function") {
+        try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
+      }
+      lastFocus = null;
+    }
+
+    // 卡片点击走 document 级委托：列表由 innerHTML 重建，挂容器会随重渲染失效；
+    // button 原生响应 Enter/Space，键盘与鼠标同路
+    document.addEventListener("click", function (e) {
+      if (modal && !modal.hidden) return;  // 弹窗开着时点击属于弹窗自己（遮罩关闭已在节点上绑）
+      var card = e.target && e.target.closest && e.target.closest(".project-card[data-project-trigger]");
+      if (!card) return;
+      var p = PROJ_ACTIONS[card.getAttribute("data-project")];
+      if (!p) return;
+      e.preventDefault();
+      openWith(p);
+    });
+    // Esc 关闭（焦点可能还在卡片或地址栏回焦点，document 级才能接住；同 key-modal 兜底）
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && modal && !modal.hidden) {
+        e.preventDefault();
+        close();
+      }
+    });
+  })();
 
   /* ---------- 9. Giscus 评论（GitHub Discussions，仅文章页） ---------- */
   var GISCUS = {
@@ -2660,7 +2805,10 @@
       var main = document.querySelector("main");
       var keyModalNow = document.getElementById("key-modal");
       var festivalOpen = !!document.getElementById("fst-modal");
-      if (main && (open || ((!keyModalNow || keyModalNow.hidden) && !festivalOpen))) main.toggleAttribute("inert", open);
+      // 项目选择弹窗（8.5）压着 main 时同样不摘：inert 多方共享，见 4.5 setOpen
+      var projModalNow = document.getElementById("proj-modal");
+      var projOpen = !!projModalNow && !projModalNow.hidden;
+      if (main && !projOpen && (open || ((!keyModalNow || keyModalNow.hidden) && !festivalOpen))) main.toggleAttribute("inert", open);
     }
 
     function bindOptions() {
@@ -3051,6 +3199,9 @@
       // 节日弹窗（festival.js）开着时键盘同样属于弹窗：不去拉起藏在它（z 220）后面
       // （z 101）的搜索面板，避免留下半开残态
       if (document.getElementById("fst-modal")) return;
+      // 项目选择弹窗（8.5，同为 z 220）开着时同理不拉起
+      var projModalNow = document.getElementById("proj-modal");
+      if (projModalNow && !projModalNow.hidden) return;
       e.preventDefault();
       setOpen(!open);
     });

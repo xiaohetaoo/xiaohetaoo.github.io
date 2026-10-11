@@ -83,7 +83,7 @@
     "href": "https://wwbau.lanzoub.com/i4bXx47dv8wb"
   },
   {
-    "title": "地理标识",
+    "title": "地理组徽",
     "date": "2026-09-04",
     "desc": "高中学校举办的地理标识设计比赛参赛作品，获一等奖，内涵自己揣摩awa，密码：xhto",
     "tags": [
@@ -92,7 +92,8 @@
     ],
     "icon": "compass",
     "linkText": "lanzoub.com ↗",
-    "href": "https://wwbau.lanzoub.com/iYA7o46m6o4h"
+    "href": "https://wwbau.lanzoub.com/iYA7o46m6o4h",
+    "relatedPost": { "slug": "dili-zuhui-jianjie", "title": "地理组徽简介" }
   },
   {
     "title": "粒子轨道可视化",
@@ -121,13 +122,14 @@
   {
     "title": "游戏第九艺术",
     "date": "2026-08-30",
-    "desc": "高中班会演示PPT，两百页点击领取，密码：xhto，放视频处自己加或找我要原版，剧本文章区有，同名。",
+    "desc": "高中班会演示PPT，两百页点击领取，密码：xhto，放视频处自己加或找我要原版。",
     "tags": [
       "游戏",
       "PPT"
     ],
     "icon": "presentation",
     "linkText": "lanzoub.com ↗",
-    "href": "https://wwbau.lanzoub.com/i69rF45golwd"
+    "href": "https://wwbau.lanzoub.com/i69rF45golwd",
+    "relatedPost": { "slug": "ninth-art", "title": "游戏第九艺术" }
   }
 ]

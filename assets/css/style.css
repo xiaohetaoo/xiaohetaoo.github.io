@@ -971,6 +971,16 @@ button {
   overflow: hidden;
 }
 
+/* relatedPost 项目卡是 button（点击弹选择框，main.js 8.5）：重置浏览器默认，
+   视觉与 a 卡完全一致（背景/边框/圆角/内边距 .project-card 基础已覆盖） */
+button.project-card {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .project-card::before {
   content: "";
   position: absolute;
@@ -1012,7 +1022,8 @@ button {
 }
 
 .project-card h2,
-.project-card h3 {
+.project-card h3,
+.project-card .p-title {
   font-size: 17px;
   font-weight: 600;
   display: flex;
@@ -1031,6 +1042,7 @@ button {
 }
 
 .project-card .p-desc {
+  display: block;
   margin-top: 9px;
   font-size: 14px;
   color: var(--text-3);
@@ -4016,6 +4028,74 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
 }
 :root[data-theme="cn-red"] .key-modal-panel {
   box-shadow: 0 20px 48px rgba(90, 30, 20, 0.24);
+}
+
+/* ---------- 项目选择弹窗（main.js 8.5，relatedPost 项目卡专用） ----------
+   弹窗壳（遮罩/面板/标题行/关闭按钮）整体复用 .key-modal 类名，上面的
+   主题配色与减动效兜底随之自动生效；这里只写弹窗自己的描述行与两个动作项。 */
+.proj-modal-desc {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-3);
+}
+.proj-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.proj-modal-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--bg-panel-2);
+  color: var(--text-1);
+  text-decoration: none;
+  transition: border-color 0.18s, background 0.18s, transform 0.12s;
+}
+.proj-modal-action:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+}
+.proj-modal-action:active {
+  transform: scale(0.98);
+}
+.proj-modal-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-xs);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-bright);
+}
+.proj-modal-action-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.proj-modal-action-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.proj-modal-action-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.proj-modal-action-sub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 减弱动效：弹窗直接呈现（换屏动画由 main.js 同样跳过，这里再兜一道） */
