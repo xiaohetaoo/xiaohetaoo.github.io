@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261017a";
+  var DATA_VER = "20261017b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -907,7 +907,7 @@
        glowSprite 会一直停在 null —— 而 dustDraw 对发光粒子无条件 drawImage(glowSprite)，
        于是首帧就抛 TypeError，把 main.js 第 6 节之后的整条执行链全部中断
        （口令弹窗、列表渲染、reveal、页脚年份全不执行，暗色主题=默认主题，影响面最大）。
-       20261017a 给 hero 补了同款初次烘焙（见 1 节 buildGlowSprites 的注释），dust 侧漏了。 */
+       2026-10-17 给 hero 补了同款初次烘焙（见 1 节 buildGlowSprites 的注释），dust 侧漏了。 */
     buildGlowSprite();
     document.addEventListener("themechange", syncDustPalette);
 

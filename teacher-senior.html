@@ -38,6 +38,9 @@
        行进（offset-rotate: auto 自动随坡度旋转），因此音符始终"顺着五线谱流动"。
        停动画（reduced-motion）时音符按各自的 --dist 静态停在谱线上。 -->
   <style>
+    /* 跨文档转场 opt-in（同 birthday.html 与另两张画页）：消掉
+       "ViewTransition opt-in disabled" 提示；本页无方向类，走默认交叉淡入 */
+    @view-transition { navigation: auto; }
     :root { --ease: cubic-bezier(0.22, 1, 0.36, 1); --ink: #f4ecff; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }

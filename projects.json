@@ -131,5 +131,17 @@
     "linkText": "lanzoub.com ↗",
     "href": "https://wwbau.lanzoub.com/i69rF45golwd",
     "relatedPost": { "slug": "ninth-art", "title": "游戏第九艺术" }
+  },
+  {
+    "title": "过四斩六",
+    "date": "2026-10-17",
+    "desc": "简洁小巧的四六级背单词软件",
+    "tags": [
+      "单词",
+      "软件"
+    ],
+    "icon": "cube",
+    "linkText": "GitHub ↗",
+    "href": "https://github.com/xiaohetaoo/guo-4-zhan-6"
   }
 ]

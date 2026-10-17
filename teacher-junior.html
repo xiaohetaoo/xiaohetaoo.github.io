@@ -36,6 +36,9 @@
   <!-- 独立主题页：自包含（无站点样式/脚本/导航/主题按钮），纯 CSS 氛围。
        夜海：星空 → 地平线微光 → 三层视差海浪 → 帆船（提灯）+ 倒影 → 文案。 -->
   <style>
+    /* 跨文档转场 opt-in（同 birthday.html 与另两张画页）：消掉
+       "ViewTransition opt-in disabled" 提示；本页无方向类，走默认交叉淡入 */
+    @view-transition { navigation: auto; }
     :root { --ease: cubic-bezier(0.22, 1, 0.36, 1); --ink: #eaf4ff; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }

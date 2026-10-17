@@ -1,7 +1,6 @@
 # 本地工具与临时文件，不入库
 _patch_keys.py
 posts/_novel_shell.html
-check-site.js
 _shots/
 _edge-tmp*/
 _edge-tmp[0-9]*/
@@ -13,3 +12,6 @@ __pycache__/
 gui-test-screenshots/
 _commitmsg.txt
 _bumpver.js
+
+# 上下文手稿固定放仓库外（D:\zcode\blog-context-export.md），防止误提交进公开站
+blog-context-export.md

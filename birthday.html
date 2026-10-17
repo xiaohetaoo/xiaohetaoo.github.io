@@ -41,6 +41,11 @@
        改名字只需动 <h1 class="bday-title"> 里的「某某某」，别处不用碰；
        从口令弹窗进来时会带 ?name=xxx，由 <h1> 后面那段脚本覆盖（同样只需改「某某某」兜底值）。 -->
   <style>
+    /* 跨文档转场 opt-in：本页没有方向类，跳进来时走浏览器默认的交叉淡入。
+       不加这行，从站内页（如首页口令弹窗）进入会在控制台留一条
+       "ViewTransition opt-in disabled" 提示——功能无碍，只是噪音。 */
+    @view-transition { navigation: auto; }
+
     :root {
       --cream: #fffaf1;
       --cream-2: #fdf1da;

@@ -3,8 +3,9 @@
   <url>
     <loc>https://xiaohetaoo.github.io/</loc>
     <!-- JSON-LD WebSite.publisher 对齐全站 Organization（2026-10-07，爬虫消费字段）；
-         2026-10-11 noscript 项目名更名（可见文案） -->
-    <lastmod>2026-10-11</lastmod>
+         2026-10-11 noscript 项目名更名（可见文案）；
+         2026-10-17 首页项目区新增「过四斩六」卡片（可见文案） -->
+    <lastmod>2026-10-17</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
@@ -15,8 +16,9 @@
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html</loc>
-    <!-- noscript 项目名「地理标识」更名「地理组徽」（2026-10-11，可见文案） -->
-    <lastmod>2026-10-11</lastmod>
+    <!-- noscript 项目名「地理标识」更名「地理组徽」（2026-10-11，可见文案）；
+         2026-10-17 项目列表与 noscript 新增「过四斩六」（可见文案） -->
+    <lastmod>2026-10-17</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -26,7 +28,7 @@
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/updates.html</loc>
-    <!-- 时间轴补 2026-10-11 条目（可见文案）；2026-10-17 拆出独立日期条目（可见文案） -->
+    <!-- 时间轴补 2026-10-11 条目（可见文案）；2026-10-17 拆出独立日期条目 + 追加新项目条目（可见文案） -->
     <lastmod>2026-10-17</lastmod>
     <priority>0.6</priority>
   </url>
@@ -194,6 +196,12 @@
   <url>
     <loc>https://xiaohetaoo.github.io/projects.html#p=%E6%85%A7%E7%9C%BC%E8%AF%86%E7%A7%81</loc>
     <lastmod>2026-09-26</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://xiaohetaoo.github.io/projects.html#p=%E8%BF%87%E5%9B%9B%E6%96%A9%E5%85%AD</loc>
+    <!-- 2026-10-17 新增项目「过四斩六」（新锚点） -->
+    <lastmod>2026-10-17</lastmod>
     <priority>0.5</priority>
   </url>
 </urlset>
