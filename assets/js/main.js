@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261011c";
+  var DATA_VER = "20261017a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -903,6 +903,12 @@
     }
     // 同 hero 的 syncPalette：初始化读一次 + themechange 事件驱动，不再每帧轮询属性
     syncDustPalette();
+    /* 初次烘焙：暗色下 pal 与初值同为 dark，syncDustPalette 的「值变了才重建」不会触发，
+       glowSprite 会一直停在 null —— 而 dustDraw 对发光粒子无条件 drawImage(glowSprite)，
+       于是首帧就抛 TypeError，把 main.js 第 6 节之后的整条执行链全部中断
+       （口令弹窗、列表渲染、reveal、页脚年份全不执行，暗色主题=默认主题，影响面最大）。
+       20261017a 给 hero 补了同款初次烘焙（见 1 节 buildGlowSprites 的注释），dust 侧漏了。 */
+    buildGlowSprite();
     document.addEventListener("themechange", syncDustPalette);
 
     function dustResize() {
@@ -2162,6 +2168,14 @@
     category: "Announcements",
     categoryId: "DIC_kwDOUHvnPc4DEhME"
   };
+  /* 站内主题 → giscus 主题的唯一判定（注入与 themechange 两处共用）：
+     giscus 只有 dark/light 两档，站内三主题里 light 与 cn-red 都是亮色基底 → light，
+     其余（含首访无 data-theme、以及任何未知值）→ dark，与站内暗色默认一致。
+     原先两处各写一份且默认值相反（一处未知→dark、一处未知→light），
+     虽然 detail.theme 受控不会出现未知值，但口径分叉迟早被新调用点踩到。 */
+  function giscusThemeOf(theme) {
+    return theme === "light" || theme === "cn-red" ? "light" : "dark";
+  }
   var giscusBox = document.getElementById("giscus");
   if (giscusBox) {
     var commentsSection = giscusBox.closest(".comments, .section");
@@ -2227,8 +2241,7 @@
         giscusScript.setAttribute("data-input-position", "top");
         // 中国红是亮色基底，评论区同样用 light；首访（无 data-theme）是暗色默认，
         // 必须落 dark——判定要按"是亮色基底才给 light"，不能按"≠dark 给 light"
-        var themeCur = document.documentElement.getAttribute("data-theme");
-        giscusScript.setAttribute("data-theme", themeCur === "light" || themeCur === "cn-red" ? "light" : "dark");
+        giscusScript.setAttribute("data-theme", giscusThemeOf(document.documentElement.getAttribute("data-theme")));
         giscusScript.setAttribute("data-lang", "zh-CN");
         // eager（默认值）：配合上面的 3000px 提前触发，让 widget 在用户读到评论区之前就取回来
         giscusScript.setAttribute("data-loading", "eager");
@@ -2275,9 +2288,11 @@
       } else {
         armGiscus();
       }
-      // 评论区跟随站内深浅主题切换（监听主题事件，动画路径下也能拿到切换后的值）
+      // 评论区跟随站内深浅主题切换（监听主题事件，动画路径下也能拿到切换后的值）。
+      // 口径与初始注入共用 giscusThemeOf()：原先这里写的是「≠dark 给 light」，
+      // 与注入处的「是亮色基底才给 light」默认值相反，未知/异常值会落到不同主题
       document.addEventListener("themechange", function (ev) {
-        var t = ev.detail && ev.detail.theme === "dark" ? "dark" : "light";
+        var t = giscusThemeOf(ev.detail && ev.detail.theme);
         var frame = document.querySelector("iframe.giscus-frame");
         if (frame && frame.contentWindow) {
           frame.contentWindow.postMessage({ giscus: { setConfig: { theme: t } } }, "https://giscus.app");
@@ -3222,6 +3237,19 @@
       setOpen(false);
     });
 
+    /* Esc 兜底（document 级）：上面两个分支的 Esc 只绑在各自 input 上，焦点一旦不在
+       输入框（点了放大镜但 rAF 的 focus 还没落地、或用户点了面板空白处），Esc 就没人接，
+       面板会僵在 open 态且 main 保持 inert —— 正文点不动，只能刷新或点空白自救。
+       口令弹窗（4.5）与节日弹窗都有 document 级兜底，这里补齐同一口径。
+       放在 Ctrl+K 之前：同一个 keydown 事件里先处理关闭，避免再走打开逻辑。 */
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" || !open) return;
+      // 焦点在输入框时上面两个分支已处理过（会 preventDefault 后 return），
+      // 这里只在「事件没被处理」的情况下补刀——重复调用 setOpen(false) 是幂等的
+      setOpen(false);
+      try { btn.focus({ preventScroll: true }); } catch (err) {}
+    });
+
     // Ctrl+K / Cmd+K 全局快捷键；输入框/富文本编辑中不抢（P1 守卫）
     document.addEventListener("keydown", function (e) {
       if (!(e.ctrlKey || e.metaKey) || (e.key !== "k" && e.key !== "K")) return;
@@ -3325,11 +3353,12 @@
        key  ：输口令（初始态）
        name ：问称呼，输入框换文案，带长度提示；校验一过就直接跳生日页
        提示行这个额外节点在这里动态建：口令弹窗的静态 HTML 在 22 个页面里各有一份，
-       能用 JS 建的就别去改 22 遍。 */
+       能用 JS 建的就别去改 22 遍。步骤行（key-modal-step）同理。 */
     var MODE = "key";
     var flowGen = 0;   // 换屏代次：关弹窗/复位就 +1，作废还在飞的那次换屏
     var field = input ? input.closest(".key-modal-field") : null;
     var labelEl = modal.querySelector(".key-modal-label");
+    var titleEl = document.getElementById("key-modal-title");
 
     var hintEl = document.createElement("span");
     hintEl.className = "key-modal-hint";
@@ -3338,15 +3367,35 @@
     // display 硬切会在换屏动画中途一帧撑高面板 25px（20260913b）
     if (field) field.appendChild(hintEl);
 
+    /* 步骤行：两段流程没有任何步骤暗示，换屏后用户容易以为还在输口令
+       （2026-10-11 实测：把口令本身当称呼提交，撞上「太长了」校验）。
+       插在标题之后、表单之前，与 hint 同款 max-height 渐变显隐。 */
+    var stepEl = document.createElement("span");
+    stepEl.className = "key-modal-step";
+    stepEl.textContent = "第 2 步 · 共 2 步";
+    var headEl = modal.querySelector(".key-modal-head");
+    if (headEl && headEl.parentNode) headEl.parentNode.insertBefore(stepEl, headEl.nextSibling);
+    else if (field && field.parentNode) field.parentNode.insertBefore(stepEl, field);
+
     function setMode(m) {
       MODE = m;
-      hintEl.classList.toggle("on", m === "name");
-      if (labelEl) labelEl.textContent = m === "name" ? "怎么称呼你？" : "输入口令";
-      if (submit) submit.setAttribute("aria-label", m === "name" ? "继续" : "提交口令");
-      input.placeholder = m === "name" ? "输入你的称呼" : "请输入口令";
+      var isName = m === "name";
+      hintEl.classList.toggle("on", isName);
+      stepEl.classList.toggle("on", isName);
+      // 标签两态：称呼态由 CSS 提权成面板里最大的问句（17px/600/--text-1）
+      if (labelEl) {
+        labelEl.textContent = isName ? "怎么称呼你？" : "输入口令";
+        labelEl.classList.toggle("is-name", isName);
+      }
+      /* 标题跟着换：口令态是「口令彩蛋」，称呼态换成「收到口令」——
+         面板最大的那行字必须自己变，否则换屏后视觉上像什么都没发生
+         （只改小字标签的旧做法已证明不够，2026-10-11）。 */
+      if (titleEl) titleEl.textContent = isName ? "收到口令" : "口令彩蛋";
+      if (submit) submit.setAttribute("aria-label", isName ? "继续" : "提交口令");
+      input.placeholder = isName ? "输入你的称呼" : "请输入口令";
       // 可访问名随两态同步：placeholder 只给视觉，朗读名不能跟实际用途脱节（20261001d）
-      input.setAttribute("aria-label", m === "name" ? "输入称呼" : "输入口令");
-      input.maxLength = m === "name" ? 16 : 60;
+      input.setAttribute("aria-label", isName ? "输入称呼" : "输入口令");
+      input.maxLength = isName ? 16 : 60;
     }
     // 回到初始态并清空：关弹窗、以及打开弹窗时兜底调用
     function resetFlow() {

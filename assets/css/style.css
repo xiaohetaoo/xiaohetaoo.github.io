@@ -33,7 +33,13 @@
   --accent-lv2-bg: rgba(103, 158, 254, 0.07);              /* .prof-lv2 熟练档底/边 */
   --accent-lv2-border: rgba(103, 158, 254, 0.18);
 
-  /* 玻璃底/面板阴影/悬停阴影三族整值 token（三主题各一份，20261011c 审查批收口）：
+  /* 警示色（报错 / 校验失败）：口令弹窗称呼流程的「太长」「没写」等提示用它。
+     原先这些提示与"空白提示"同为 --text-3 中性灰，输错了和没输入长得一模一样，
+     用户看不出自己出错（实测把口令当称呼提交后毫无反馈感）。三主题各一档，
+     深底用暖红、两个浅底用深红，各自满足正文对比度 */
+  --warn: #f08a76;
+
+  /* 玻璃底/面板阴影/悬停阴影三族整值 token（三主题各一份，20261017a 审查批收口）：
      凡「同几何同配方、仅随主题换色」的玻璃底与阴影一律走这三个变量，不再逐条写
      浅底覆盖规则——新增主题只补本块与两个浅底 token 块。
      例外：.teacher-card:hover 暗色档刻意用更轻的 0.42（低于本档 0.5），保留字面 */
@@ -2977,6 +2983,9 @@ html.theme-anim::view-transition-new(root) {
   --panel-shadow: 0 16px 40px rgba(16, 24, 40, 0.14);
   --hover-shadow: 0 18px 44px rgba(16, 24, 40, 0.14);
 
+  /* 警示色亮色档：冷底上的深红（对比度高于暗色档的暖红，浅底需要压暗才够） */
+  --warn: #c0341f;
+
   --glow-hi: #1e56c8;
 
   --grad-start: #1893b4;
@@ -3113,6 +3122,9 @@ html.theme-anim::view-transition-new(root) {
   --glass-nav-bg: rgba(250, 244, 240, 0.82);
   --panel-shadow: 0 16px 40px rgba(90, 30, 20, 0.18);
   --hover-shadow: 0 18px 44px rgba(90, 30, 20, 0.18);
+
+  /* 警示色中国红档：暖米底上要够深才不像装饰色，且与 accent 红拉开明度差 */
+  --warn: #a8321c;
 
   /* 标题渐变收尾用 accent-bright 同值：原 #8c1f28 在暖米底上发闷发黑 */
   --glow-hi: #b81c11;
@@ -3889,12 +3901,45 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   display: block;
   margin: 0 0 12px;
 }
+/* 表单标签两态（main.js setMode 驱动 .is-name）：
+   口令态 = 安静的小字说明；称呼态 = 面板里最大的问句。
+   原先两态都写 12px/--text-3，导致「怎么称呼你？」比标题「口令彩蛋」小两档，
+   用户换屏后根本没意识到在问自己叫什么（实测把口令当称呼又提交了一次）。 */
 .key-modal-label {
   display: block;
   font-size: 12px;
   color: var(--text-3);
   margin-bottom: 6px;
   letter-spacing: 0.02em;
+  transition: font-size 0.28s var(--ease-out), color 0.28s var(--ease-out),
+    margin-bottom 0.28s var(--ease-out);
+}
+.key-modal-label.is-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: 0;
+  margin-bottom: 10px;
+}
+/* 步骤指示：只在称呼态出现（.on 与 hint 同款 max-height 渐变，不用 [hidden] 硬切）。
+   两段流程却没有步骤感是这一屏的主要问题之一，这里补一个极轻的进度提示。 */
+.key-modal-step {
+  display: block;
+  overflow: hidden;
+  max-height: 0;
+  margin-bottom: 0;
+  opacity: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  transition: max-height 0.28s var(--ease-out), opacity 0.28s var(--ease-out),
+    margin-bottom 0.28s var(--ease-out);
+}
+.key-modal-step.on {
+  max-height: 2em;
+  margin-bottom: 10px;
+  opacity: 1;
 }
 .key-modal-input-row {
   display: flex;
@@ -3965,8 +4010,15 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   color: var(--text-3);
   font-style: italic;
 }
+/* 报错态必须自己「像报错」：原先与 empty 同为 --text-3 中性灰，输错和没输入
+   长得一模一样（2026-10-11 用户截图实测：把口令当称呼提交后毫无出错感）。
+   左侧竖条 + 警示色文字 + 淡警示底，三层冗余保证一眼可辨。 */
 .key-modal-result[data-state="miss"] {
-  color: var(--text-3);
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  box-shadow: inset 3px 0 0 var(--warn);
+  font-weight: 500;
 }
 .key-modal-result[data-state="hit"] {
   border-color: var(--accent-border);
