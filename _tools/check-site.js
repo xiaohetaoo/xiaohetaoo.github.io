@@ -815,5 +815,243 @@ for (const p of posts) {
 }
 check('posts.json 日期真实且 updated >= date（' + posts.length + ' 条）', dateBad.length === 0, dateBad.slice(0, 4).join(' | '));
 
+// ================= 2026-10-18 审查轮新增（19~22）=================
+// 起因：一次只读审查 + 逐条变异测试发现，原 24 道门禁在「SEO 报告类元数据」与
+// 「页面级结构」上完全空白——注入 noindex、canonical 指向站外、删掉 og:url、
+// 删掉整块 Article JSON-LD、feed 标题换成别篇的、删掉 404 的 XHT_AT_404、
+// head 塞裸文本、同页两个 h1、重复 id…… 全部 24/24 放行。
+// 复现工具：D:\zcode\tools\_mutate-gate-gaps.js（18 条里 17 条逃逸）。
+const SITE = 'https://xiaohetaoo.github.io';
+const allPages = [...TOP, ...POST_PAGES];
+const pageUrl = (f) => (f === 'index.html' ? SITE + '/' : SITE + '/' + f);
+const metaOf = (html, re) => {
+  const m = html.match(re);
+  return m ? decodeEntities(m[1]).trim() : null;
+};
+
+// 19. SEO 头字段矩阵（2026-10-18 补）：
+//     canonical 按路径现算并自指；og:url == canonical；og:title == twitter:title == <title>；
+//     twitter 卡必须用 name= 而不是 property=（历史上批量替换就漏在这）。
+//     另加 robots 白名单——这正是 posts/_template.html 自述的
+//     「忘删 noindex = 整篇除名且自检全绿」陷阱，此前门禁完全没管。
+const seoBad = [];
+const NOINDEX_OK = new Set(['404.html', 'birthday.html', 'huiyan-shisi.html']); // huiyan 自包含，二·10 豁免
+// huiyan-shisi.html 按二·10 不参与全站审查（上游镜像 + 自包含），它的 og:title 用宣传语
+// 而非 <title>，属上游口径 → 整个 SEO 矩阵对它豁免，只保留「不得 noindex」之外的检查跳过
+const SEO_SKIP = new Set(['huiyan-shisi.html']);
+for (const f of allPages) {
+  if (SEO_SKIP.has(f)) continue;
+  const html = read(f);
+  if (!html) continue;
+  const title = metaOf(html, /<title>([^<]*)<\/title>/i);
+  const canon = metaOf(html, /<link\b[^>]*rel\s*=\s*["']canonical["'][^>]*href\s*=\s*["']([^"']*)["']/i);
+  const ogUrl = metaOf(html, /<meta\b[^>]*property\s*=\s*["']og:url["'][^>]*content\s*=\s*["']([^"']*)["']/i);
+  const ogTitle = metaOf(html, /<meta\b[^>]*property\s*=\s*["']og:title["'][^>]*content\s*=\s*["']([^"']*)["']/i);
+  const twTitle = metaOf(html, /<meta\b[^>]*name\s*=\s*["']twitter:title["'][^>]*content\s*=\s*["']([^"']*)["']/i);
+  const want = pageUrl(f);
+  if (!canon) seoBad.push(f + ' 缺 canonical');
+  else if (canon !== want) seoBad.push(f + ' canonical=' + canon + '（应 ' + want + '）');
+  if (ogUrl !== canon) seoBad.push(f + ' og:url 与 canonical 不一致');
+  if (!ogTitle) seoBad.push(f + ' 缺 og:title');
+  else if (ogTitle !== title) seoBad.push(f + ' og:title ≠ <title>（' + ogTitle + ' vs ' + title + '）');
+  if (!twTitle) seoBad.push(f + ' 缺 twitter:title（必须用 name= 而非 property=）');
+  else if (twTitle !== ogTitle) seoBad.push(f + ' twitter:title ≠ og:title');
+  const noindex = /<meta\b[^>]*name\s*=\s*["']robots["'][^>]*content\s*=\s*["'][^"']*noindex/i.test(html);
+  if (noindex && !NOINDEX_OK.has(f)) seoBad.push(f + ' 出现 noindex（只允许 404/birthday）');
+}
+check('SEO 头字段矩阵：canonical 自指 / og:url 一致 / og·twitter·title 三者同值 / robots 白名单（' + allPages.length + ' 页）',
+  seoBad.length === 0, seoBad.slice(0, 4).join(' | '));
+
+// 19b. 文章页 Article JSON-LD 的日期必须等于 posts.json 的 date / updated‖date
+//      （此前只校验 posts.json 自身的日期，页面里把年份写错完全没人管）
+const artBad = [];
+for (const p of posts) {
+  const html = read('posts/' + p.slug + '.html');
+  if (!html) continue;
+  const blocks = html.match(LD_RE) || [];   // LD_RE 带 /g；String.match 会自动重置 lastIndex
+  let art = null;
+  for (const b of blocks) if (/"@type"\s*:\s*"(?:Article|BlogPosting|NewsArticle)"/.test(b)) art = b;
+  if (!art) { artBad.push(p.slug + ' 缺 Article JSON-LD'); continue; }
+  const dp = (art.match(/"datePublished"\s*:\s*"([^"]*)"/) || [])[1];
+  const dm = (art.match(/"dateModified"\s*:\s*"([^"]*)"/) || [])[1];
+  const wantMod = p.updated || p.date;
+  if (dp !== p.date) artBad.push(p.slug + ' datePublished=' + dp + '（posts.json date=' + p.date + '）');
+  if (dm !== wantMod) artBad.push(p.slug + ' dateModified=' + dm + '（应 ' + wantMod + '）');
+}
+check('文章页 Article JSON-LD 日期 == posts.json date/updated（' + posts.length + ' 篇）',
+  artBad.length === 0, artBad.slice(0, 4).join(' | '));
+
+// 20. 404 专项（2026-10-18 补）：404.html 是全站唯一「会被服务在任意深度路径」的页面，
+//     靠 window.XHT_AT_404 与 main.js 的 siteRoot() 协作把 json fetch / 链接切到绝对根。
+//     这层耦合此前零覆盖——删掉那行，本地直开 /404.html 照样正常，只有线上深链
+//     （/a/b 也返回 404.html）才炸：siteRoot 走 else 返回 "."、posts.json 取不到、列表全空，
+//     而自检全绿。另外它每个站内引用都必须以 / 开头（相对路径在深链上解析到错误目录）。
+const bad404 = [];
+{
+  const html = read('404.html');
+  if (!html) bad404.push('404.html 读不到');
+  else {
+    if (!/window\.XHT_AT_404\s*=\s*true/.test(html)) bad404.push('缺 window.XHT_AT_404 = true 声明');
+    if (!/window\.XHT_AT_404/.test(read('assets/js/main.js'))) bad404.push('main.js 未消费 XHT_AT_404（siteRoot 会退回相对口径）');
+    if (!/name\s*=\s*["']robots["'][^>]*noindex/i.test(html)) bad404.push('缺 robots noindex');
+    // 引用扫描同样先剥注释与脚本内容（404.html 各处注释里写着 /assets/… 这类示例路径，
+    // 不剥会把注释里的相对写法当成真引用误报）
+    const refSrc = html
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+    const refs = [...refSrc.matchAll(/\b(?:href|src|poster)\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
+    for (const r of refs) {
+      if (/^(?:https?:|data:|mailto:|#|javascript:|\/\/)/i.test(r)) continue;
+      if (!r.startsWith('/')) bad404.push('站内引用非绝对路径：' + r);
+    }
+  }
+}
+check('404 专项：XHT_AT_404 三处耦合齐全 + 站内引用全绝对路径',
+  bad404.length === 0, bad404.slice(0, 4).join(' | '));
+
+// 21. 页面结构（2026-10-18 补）：每页恰一个 <h1>、id 全页唯一、head 里无游离文本。
+//     最后一条对应 20261011c 那次「模板 head 注释提前闭合 → 裸文本渲染进 head 并随复制
+//     传染新文章」的事故类型——当时靠人眼发现，现在由门禁兜住。
+const structBad = [];
+// 计数前必须剥掉「注释 + script/style 内容」：页内注释与脚本里经常出现 <h1>/id="…" 这类
+// 字面量（birthday.html 的注释里就有 4 处 <h1>，直接数会把 1 个真标题报成 5 个；
+// 本门禁前一版就是这么误报的）。
+const stripForStruct = (html) =>
+  html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+// huiyan-shisi.html 按二·10 不参与全站审查（上游镜像 + 自包含）。它的 head 里有
+// `<link rel="icon" href="data:image/svg+xml,<svg …></svg>">` —— 属性值内含 `>`，
+// 任何「<[^>]*>」式的简易标签剥离都会在此提前截断、留下 `">` 残渣。
+// 属上游写法，本轮不动它（改上游资源超出范围），结构检查对它豁免。
+const STRUCT_SKIP = new Set(['huiyan-shisi.html']);
+for (const f of allPages) {
+  if (STRUCT_SKIP.has(f)) continue;
+  const html = read(f);
+  if (!html) continue;
+  const body = stripForStruct(html);
+  const h1 = (body.match(/<h1\b/gi) || []).length;
+  if (h1 !== 1) structBad.push(f + ' h1 数量=' + h1 + '（应恰 1）');
+  const ids = [...body.matchAll(/\sid\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
+  const dup = ids.filter((v, i) => ids.indexOf(v) !== i);
+  if (dup.length) structBad.push(f + ' 重复 id：' + [...new Set(dup)].join('/'));
+  const head = (html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i) || [])[1];
+  if (head) {
+    // 剥「整块（含内容）」的元素后再剥标签——顺序与范围都要对：
+    //   ① script/style/title/noscript 都是 head 里的**内容型**元素，只剥标签会留下正文，
+    //      被当成游离文本（本门禁前两版分别误报了主题内联脚本与 <title> 的文字）
+    //   ② 剥完这些之后，head 里合法的东西只剩 meta/link 这类空元素，剥标签后应为空白
+    const naked = head
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, '')
+      .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&[a-z#0-9]+;/gi, '')
+      .trim();
+    if (naked) structBad.push(f + ' head 有游离文本：' + JSON.stringify(naked.slice(0, 30)));
+  }
+}
+check('页面结构：每页恰 1 个 h1 + id 唯一 + head 无游离文本（' + allPages.length + ' 页）',
+  structBad.length === 0, structBad.slice(0, 4).join(' | '));
+
+// 22. 数据完整性（2026-10-18 补）：feed 的 title/summary 此前只判「存在」，
+//     内容换成别篇的照样全绿（feed 是订阅端唯一的推送源，错配会直接推错内容）；
+//     projects.json 的 date/icon/desc/linkText/tags 也是零校验
+//     （icon 改成 banana、desc 清空、date 写成 2026-13-45 都能过）。
+const dataBad = [];
+{
+  const feed = read('feed.xml');
+  const entryRe = /<entry(?:\s[^>]*)?>([\s\S]*?)<\/entry>/g;
+  const feedList = [];
+  let em;
+  while ((em = entryRe.exec(feed))) {
+    const body = em[1];
+    // 普通成对子元素（title / summary / id）
+    const get = (tag) => {
+      const m = body.match(new RegExp('<' + tag + '(?:\\s[^>]*)?>([\\s\\S]*?)<\\/' + tag + '>'));
+      return m ? decodeEntities(m[1].trim()) : null;
+    };
+    // Atom 的 <link> 是**自闭合带属性**写法（<link href="…"/>），不是成对子元素——
+    // 按 <link>text</link> 解析会恒为 null（本门禁第一版因此把 17 条全报成"link 不是文章页"）
+    const lm = body.match(/<link\b[^>]*href\s*=\s*["']([^"']+)["']/i);
+    feedList.push({
+      title: get('title'),
+      summary: get('summary'),
+      link: lm ? decodeEntities(lm[1].trim()) : null,
+      id: get('id'),
+    });
+  }
+  const bySlug = new Map(posts.map((p) => [p.slug, p]));
+  for (const e of feedList) {
+    const slug = e.link ? (e.link.match(/\/posts\/([^./]+)\.html/) || [])[1] : null;
+    if (!slug) { dataBad.push('feed 有条目 link 不是文章页：' + e.link); continue; }
+    const p = bySlug.get(slug);
+    if (!p) { dataBad.push('feed 条目指向不存在的文章：' + slug); continue; }
+    if (e.title !== p.title) dataBad.push(slug + ' feed title 与 posts.json 不符');
+    if ((e.summary || '').trim() !== (p.excerpt || '').trim()) dataBad.push(slug + ' feed summary 与 posts.json excerpt 不符');
+    if (e.id !== e.link) dataBad.push(slug + ' feed id ≠ link');
+  }
+  const ICONS = new Set(['cube', 'gamepad', 'play', 'gift', 'presentation', 'heart', 'compass']);
+  for (const p of projects) {
+    if (!p.date || !isRealDate(p.date)) dataBad.push('项目「' + p.title + '」date 非真实日期：' + p.date);
+    if (!ICONS.has(p.icon)) dataBad.push('项目「' + p.title + '」icon 未知：' + p.icon);
+    if (!p.desc || !String(p.desc).trim()) dataBad.push('项目「' + p.title + '」desc 为空');
+    if (!p.linkText || !String(p.linkText).trim()) dataBad.push('项目「' + p.title + '」linkText 为空');
+    if (!Array.isArray(p.tags) || !p.tags.length) dataBad.push('项目「' + p.title + '」tags 为空');
+  }
+}
+check('数据完整性：feed title·summary == posts.json + 项目字段齐全（' + projects.length + ' 项）',
+  dataBad.length === 0, dataBad.slice(0, 4).join(' | '));
+
+// 22b. sitemap 非文章条目的 lastmod 方向性校验（2026-10-18 补）：
+//      文章条目的 lastmod 已由 gate 12 精确校验（== updated‖date），但顶层页与项目锚点
+//      此前零校验——随便改成 1999 也全绿。
+//      口径说明（手册「方案 B」）：顶层页与项目锚点的 lastmod 是**语义变化日**，
+//      允许晚于 content date（例如地理组徽改名的 10-11 就晚于项目加入日 09-04），
+//      所以只能断言方向（不得早于 content date），不能强求相等——强求相等会把
+//      方案 B 的正常形态判成错误。
+const lmDirBad = [];
+{
+  const sm = read('sitemap.xml');
+  const urlRe = /<url>\s*<loc>([^<]*)<\/loc>[\s\S]*?<\/url>/g;
+  const projByTitle = new Map(projects.map((p) => [p.title, p]));
+  const TOP_DATE_SRC = { // 顶层页的 content date 来源（无 meta date 的用 null 跳过）
+    'https://xiaohetaoo.github.io/': 'index.html',
+    'https://xiaohetaoo.github.io/archive.html': 'archive.html',
+    'https://xiaohetaoo.github.io/projects.html': 'projects.html',
+    'https://xiaohetaoo.github.io/updates.html': 'updates.html',
+    'https://xiaohetaoo.github.io/about.html': 'about.html',
+  };
+  let um;
+  while ((um = urlRe.exec(sm))) {
+    const loc = um[1];
+    const lm = (um[0].match(/<lastmod>([^<]*)<\/lastmod>/) || [])[1];
+    if (!lm || !isRealDate(lm)) continue;   // 真实日期由 gate 9 管
+    // 项目锚点：#p=<百分号编码标题>
+    if (loc.includes('#p=')) {
+      let title = '';
+      try { title = decodeURIComponent(loc.split('#p=')[1]); } catch (e) { title = loc.split('#p=')[1]; }
+      const p = projByTitle.get(title);
+      if (p && p.date && isRealDate(p.date) && lm < p.date) {
+        lmDirBad.push('项目「' + title + '」lastmod=' + lm + ' 早于加入日 ' + p.date);
+      }
+      continue;
+    }
+    // 顶层页：用 meta date 作为 content date（无则跳过）
+    const src = TOP_DATE_SRC[loc];
+    if (!src) continue;
+    const md = (read(src).match(/<meta name="date" content="([^"]*)"/) || [])[1];
+    if (md && isRealDate(md) && lm < md) {
+      lmDirBad.push(src + ' lastmod=' + lm + ' 早于 meta date=' + md);
+    }
+  }
+}
+check('sitemap 非文章 lastmod 不早于内容日期（项目锚点 + 顶层页，方案 B 方向性）',
+  lmDirBad.length === 0, lmDirBad.slice(0, 4).join(' | '));
+
 console.log('\n== 结果：' + pass + ' 通过，' + fail + ' 失败 ==');
 process.exit(fail ? 1 : 0);

@@ -575,6 +575,23 @@ button {
   touch-action: pan-y;
 }
 
+/* 浅底两主题必须关掉 screen 混合（2026-10-18 修）。
+   screen = 1-(1-a)(1-b) 是**提亮**算子，只在暗底上等于"发光"：浅底时它把
+   CANVAS_PALETTES.light 的笔触 rgba(47,108,235,.38) 推向背景色本身——
+   按规范算（先混合再按 alpha 合成）：bg #f5f6f8 上笔画落到 ~(246,247,250)，
+   与背景只差 1~4 级（肉眼不可见）；electronCore #1d4ed8 因 alpha=1 更是直接
+   落到 ~(246,249,254)，**主视觉最该显眼的电子反而隐形**。cn-red 同理（#faf4f0）。
+   浅底调色板当初就是按"深蓝落在浅底上要有对比"选的（#1d4ed8 等），screen 把这份
+   设计意图抵消掉了。dark 保留 screen 不动——那里它才是"辉光"。
+   选择器用两条独立的 :root[data-theme] 规则（同一元素无需逗号并列表）。 */
+:root[data-theme="light"] #orbit-canvas {
+  mix-blend-mode: normal;
+}
+
+:root[data-theme="cn-red"] #orbit-canvas {
+  mix-blend-mode: normal;
+}
+
 /* ---------- 理念三栏（对齐 harness 理念区） ---------- */
 .concept {
   border-top: 1px solid var(--border);
@@ -3702,6 +3719,11 @@ html.theme-anim::view-transition-new(root) {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    /* 延迟必须一并复位：只把时长压到 0.01ms 而留下正延迟，带 animation-fill-mode: both
+       的入场动画会停在起始态（通常是 opacity:0）——「减动效」反而把内容变成不可见。
+       负延迟（常驻动画的相位偏移，本表当前只有这一类）本就无害，归零同样安全。
+       transition 侧一直有这条，animation 侧 2026-10-18 补上，两侧对齐。 */
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
   }
@@ -4079,6 +4101,16 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   line-height: 1.75;
   color: var(--text-3);
 }
+/* JS 用 `.hidden = true` 控制这两块的显隐（没 href 就没有「获取资源」行、没 desc 就没有
+   描述行），但作者样式给 .proj-modal-action 设了 display:flex —— **作者样式的 display
+   会盖过 UA 的 [hidden]{display:none}**，hidden 属性形同虚设（手册八·28 的原始形态）。
+   2026-10-18 实测：给 .proj-modal-action 设 hidden 后 display 仍是 flex、offsetHeight=72；
+   对照 .proj-modal-desc（未设 display）能正常隐藏。当前 12 条项目全有 href 故未触发，
+   任一条少写 href 就会露出退不掉的空动作行 → 显式补 [hidden] 双保险。 */
+.proj-modal-action[hidden],
+.proj-modal-desc[hidden] {
+  display: none;
+}
 .proj-modal-actions {
   display: flex;
   flex-direction: column;
@@ -4341,6 +4373,29 @@ html.intro-pending .reveal {
   .prose pre, .prose code { background: var(--bg-code) !important; }
   .prose blockquote, .prose table, .prose th, .prose td { border-color: var(--border) !important; }
   .prose img, .prose pre { page-break-inside: avoid; }
+  /* 列表标记降级（2026-10-18 补）：屏幕上的项目符号是「.prose ul 去 list-style +
+     li::before 画一个 background: var(--accent) 的圆点」，而打印默认不输出背景图形
+     → 纸上列表条目只剩换行、没有符号（八·25「背景承载信息必须降级」的漏网）。
+     这里恢复原生标记并把 flex 列布局退回普通流（flex 子项的原生标记行为不稳），
+     ::before 造的那个点则直接关掉，避免两套标记并存。 */
+  .prose ul, .prose ol {
+    display: block;
+    padding-left: 1.6em;
+  }
+  .prose ul { list-style: disc outside; }
+  .prose ol { list-style: decimal outside; }
+  .prose ul > li::before { display: none; }
+  /* 「最新」徽标（updates.html）是 accent 底 + 白字：打印不输出背景 → 白字叠白纸不可见。
+     换成实色字 + 描边保持"徽标"的视觉重量，别用背景传达信息。
+     注意：.upd-badge 的基线条在**本 print 块之后**（样式表末尾），同权重 (0,1,0) 下
+     后者按源序胜出 → 这里的 color 必须带 !important 才压得住（2026-10-18 实测抓到的坑，
+     当时 border 生效而 color 没生效就是这个原因）。 */
+  .upd-badge {
+    background: none !important;
+    color: var(--text-strong) !important;
+    border: 1px solid var(--text-3) !important;
+    font-weight: 700;
+  }
 }
 
 /* ---------- 更新历史页（updates.html，20261004a 新增） ----------
