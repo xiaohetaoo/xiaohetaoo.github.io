@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261017b";
+  var DATA_VER = "20261018a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -3351,37 +3351,19 @@
 
     /* ---- 称呼流程（特殊口令 7436474582453 → 生日页）的两态状态机 ----
        key  ：输口令（初始态）
-       name ：问称呼，输入框换文案，带长度提示；校验一过就直接跳生日页
-       提示行这个额外节点在这里动态建：口令弹窗的静态 HTML 在 22 个页面里各有一份，
-       能用 JS 建的就别去改 22 遍。步骤行（key-modal-step）同理。 */
+       name ：问称呼，输入框换文案；校验一过就直接跳生日页
+       长度提示不再单独占一行：原来这里动态建 .key-modal-hint 写「不超过 5 个字，字母算半个」，
+       2026-10-18 用户要求并进输入框 placeholder、文案精简为「不超过 5 个字」，该节点已删。
+       顺带：步骤行（key-modal-step「第 2 步 · 共 2 步」）同日按用户要求去掉——
+       两段流程的进度感改由标题联动（口令彩蛋 → 收到口令）+ 问句提权承担。 */
     var MODE = "key";
     var flowGen = 0;   // 换屏代次：关弹窗/复位就 +1，作废还在飞的那次换屏
-    var field = input ? input.closest(".key-modal-field") : null;
     var labelEl = modal.querySelector(".key-modal-label");
     var titleEl = document.getElementById("key-modal-title");
-
-    var hintEl = document.createElement("span");
-    hintEl.className = "key-modal-hint";
-    hintEl.textContent = "不超过 5 个字，字母算半个";
-    // 显隐由 .on 类驱动（CSS 侧 max-height/opacity 渐变展开），不再用 hidden 属性——
-    // display 硬切会在换屏动画中途一帧撑高面板 25px（20260913b）
-    if (field) field.appendChild(hintEl);
-
-    /* 步骤行：两段流程没有任何步骤暗示，换屏后用户容易以为还在输口令
-       （2026-10-11 实测：把口令本身当称呼提交，撞上「太长了」校验）。
-       插在标题之后、表单之前，与 hint 同款 max-height 渐变显隐。 */
-    var stepEl = document.createElement("span");
-    stepEl.className = "key-modal-step";
-    stepEl.textContent = "第 2 步 · 共 2 步";
-    var headEl = modal.querySelector(".key-modal-head");
-    if (headEl && headEl.parentNode) headEl.parentNode.insertBefore(stepEl, headEl.nextSibling);
-    else if (field && field.parentNode) field.parentNode.insertBefore(stepEl, field);
 
     function setMode(m) {
       MODE = m;
       var isName = m === "name";
-      hintEl.classList.toggle("on", isName);
-      stepEl.classList.toggle("on", isName);
       // 标签两态：称呼态由 CSS 提权成面板里最大的问句（17px/600/--text-1）
       if (labelEl) {
         labelEl.textContent = isName ? "怎么称呼你？" : "输入口令";
@@ -3392,9 +3374,11 @@
          （只改小字标签的旧做法已证明不够，2026-10-11）。 */
       if (titleEl) titleEl.textContent = isName ? "收到口令" : "口令彩蛋";
       if (submit) submit.setAttribute("aria-label", isName ? "继续" : "提交口令");
-      input.placeholder = isName ? "输入你的称呼" : "请输入口令";
-      // 可访问名随两态同步：placeholder 只给视觉，朗读名不能跟实际用途脱节（20261001d）
-      input.setAttribute("aria-label", isName ? "输入称呼" : "输入口令");
+      // 称呼态的 placeholder 兼作长度提示（原为「输入你的称呼」+ 输入框下方单独一行提示）
+      input.placeholder = isName ? "不超过 5 个字" : "请输入口令";
+      // 可访问名随两态同步：placeholder 只给视觉，朗读名不能跟实际用途脱节（20261001d）；
+      // 长度约束写进朗读名，屏读器用户也能听到（视觉提示已并进 placeholder）
+      input.setAttribute("aria-label", isName ? "输入称呼，不超过 5 个字" : "输入口令");
       input.maxLength = isName ? 16 : 60;
     }
     // 回到初始态并清空：关弹窗、以及打开弹窗时兜底调用

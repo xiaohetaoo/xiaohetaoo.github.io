@@ -3844,7 +3844,7 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  animation: key-modal-fade 0.18s var(--ease-out) both;
+  animation: key-modal-fade 0.32s var(--ease-out) both;
   cursor: pointer;
 }
 
@@ -3857,7 +3857,9 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
   padding: 20px 22px 22px;
-  animation: key-modal-pop 0.22s var(--ease-out) both;
+  /* 弹性落定（B 方案）：0.38s，落位靠 --ease-spring 的轻微过冲收尾。
+     与遮罩 0.32s 错开 60ms，面板比遮罩晚一点点停稳，视觉上是"落进已经暗下来的背景里"。 */
+  animation: key-modal-pop 0.38s var(--ease-spring) both;
 }
 
 .key-modal-head {
@@ -3921,26 +3923,8 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   letter-spacing: 0;
   margin-bottom: 10px;
 }
-/* 步骤指示：只在称呼态出现（.on 与 hint 同款 max-height 渐变，不用 [hidden] 硬切）。
-   两段流程却没有步骤感是这一屏的主要问题之一，这里补一个极轻的进度提示。 */
-.key-modal-step {
-  display: block;
-  overflow: hidden;
-  max-height: 0;
-  margin-bottom: 0;
-  opacity: 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--text-3);
-  transition: max-height 0.28s var(--ease-out), opacity 0.28s var(--ease-out),
-    margin-bottom 0.28s var(--ease-out);
-}
-.key-modal-step.on {
-  max-height: 2em;
-  margin-bottom: 10px;
-  opacity: 1;
-}
+/* 步骤指示行已于 2026-10-18 删除（用户要求去掉「第 2 步 · 共 2 步」）：
+   该节点只由 main.js 动态插入，HTML 里没有，规则随之移除。 */
 .key-modal-input-row {
   display: flex;
   gap: 8px;
@@ -4027,30 +4011,10 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   font-weight: 500;
 }
 
-/* 称呼流程（特殊口令 → 生日页）：长度提示行。
-   不用 [hidden] 硬切 display——换屏动画（keySwapIn 0.28s）进行中提示行突然占位
-   会把面板高度一帧撑高 ~25px，弹窗边框在中途"咯噔"跳一下。改为 max-height +
-   opacity + margin 平滑展开，时长与 keySwapIn 同参（0.28s），面板高度跟着渐变；
-   .on 由 main.js 的 setMode 控制（JS 侧也相应不再用 hidden 属性）。 */
-.key-modal-hint {
-  display: block;
-  overflow: hidden;
-  max-height: 0;
-  margin-top: 0;
-  opacity: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-3);
-  letter-spacing: 0.02em;
-  transition: max-height 0.28s var(--ease-out), opacity 0.28s var(--ease-out),
-    margin-top 0.28s var(--ease-out);
-}
-
-.key-modal-hint.on {
-  max-height: 3em;   /* 单行 18px，3em 留足窄屏意外换行的余量 */
-  margin-top: 7px;
-  opacity: 1;
-}
+/* 称呼流程（特殊口令 → 生日页）：长度提示已并入输入框 placeholder（2026-10-18 用户要求），
+   原先这里那套 .key-modal-hint（max-height 渐变展开的单行提示）与 .key-modal-step
+   （「第 2 步 · 共 2 步」步骤行）一并删除——两个节点都只由 main.js 动态创建，
+   HTML 里从来没有，删规则不会留下裸节点。步骤感改由标题联动 + 问句提权承担。 */
 
 /* 抽屉式换屏（命中特殊口令后）：旧表单上滑滑出，称呼态从下滑入。
    两个块（.key-modal-field / .key-modal-result）同步走同一组关键帧，
@@ -4080,9 +4044,16 @@ html.nav-side:not(.theme-anim)::view-transition-new(root) {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+/* 面板入场：三段式弹性落定（2026-10-18 用户选定的 B 方案）。
+   起点比旧版更低更小（20px / 0.94，旧版 8px / 0.97），落位时用 --ease-spring 轻微过冲再回正。
+   过冲幅度刻意压得很小（scale 峰值约 1.005、位移几乎不回弹），只求"有重量感"，
+   不要那种廉价弹跳——这条曲线是站内名片卡/卡片倾斜回弹的同一套语言。
+   0.38s 比旧版 0.22s 长一档，但遮罩同步 0.32s 淡入，两者错开收尾不打架。
+   只动 transform/opacity：面板内没有子元素依赖父级 transform 定位，弹窗高度不受影响。 */
 @keyframes key-modal-pop {
-  from { opacity: 0; transform: translateY(8px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
+  0%   { opacity: 0; transform: translateY(20px) scale(0.94); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: none; }
 }
 
 /* 口令弹窗的浅底两套：遮罩与面板阴影随主题换色（黑影/冷灰/暖褐，与卡片做法一致） */
