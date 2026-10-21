@@ -11,6 +11,10 @@
   try{var _d=sessionStorage.getItem("xht-nav-dir");
     if(_d==="deep"||_d==="back"||_d==="side"){sessionStorage.removeItem("xht-nav-dir");
       document.documentElement.classList.add(_d==="deep"?"nav-deep":_d==="side"?"nav-side":"nav-back");}
+    /* 下面的正则是**手工维护的自包含独立页清单**：新增独立主题页（teacher-* / birthday
+       类，即不引 style.css/main.js 的整页自包含页）时，必须把文件名同步进这个正则，
+       否则「从新页返回本页」的 nav-back 回退动画会失效（页面能正常加载，只是缺动画，
+       很难察觉）。与各页 siteRoot 绝对根兜底的注释同属维护点。 */
     else if(/\/(?:teacher-[a-z]+|birthday|huiyan-shisi)\.html(?:[?#]|$)/.test(document.referrer||"")){
       document.documentElement.classList.add("nav-back");}}catch(e){}</script>
   <title>论功利 · 小核桃的个人博客</title>

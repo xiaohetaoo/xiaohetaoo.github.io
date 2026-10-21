@@ -34,6 +34,17 @@
  *      一致、带 relatedPost 必须有 href）+ 项目标题唯一
  *   17. posts.json 每条 slug 都有对应页面文件（JSON↔磁盘双射）
  *   18. posts.json 日期真实且 updated >= date
+ *   19. SEO 头字段矩阵：canonical 按路径自指 / og:url 一致 / og·twitter·title 三者同值 /
+ *      robots 白名单（只允许 404/birthday/huiyan）
+ *   19b. 文章页 Article JSON-LD 的 datePublished/dateModified == posts.json 的 date/updated‖date
+ *   20. 404 专项：window.XHT_AT_404 与 main.js 消费端耦合齐全 + 站内引用全绝对路径
+ *   21. 页面结构：每页恰 1 个 h1 + id 全页唯一 + head 内无游离文本
+ *   22. 数据完整性：feed 的 title/summary == posts.json + 项目字段齐全（date/icon/desc/tags）
+ *   22b. sitemap 非文章条目 lastmod 不早于内容日期（项目锚点 + 顶层页，方案 B 方向性）
+ *   23. 列表结构：<li> 开闭配对 + 无连续重复开标签 + 相邻 li 内容重复 + 无空列表容器
+ *      （2026-10-21 补：updates.html 曾出现连续两个 upd-item 开标签并已上线，第 21 道
+ *      只查 h1/id/head 文本，完全不看列表配对 → 补这道。阳性对照见
+ *      tools/_mutate-list-gate.js：5 拦 0 逃 0 误报）
  */
 const fs = require('fs');
 const path = require('path');
@@ -1052,6 +1063,64 @@ const lmDirBad = [];
 }
 check('sitemap 非文章 lastmod 不早于内容日期（项目锚点 + 顶层页，方案 B 方向性）',
   lmDirBad.length === 0, lmDirBad.slice(0, 4).join(' | '));
+
+// 23. 列表结构完整性（2026-10-21 补）：
+//     起因很具体——updates.html 时间轴首行曾出现**连续两个 `<li class="upd-item reveal">`**
+//     （插新条目时把原条目的 `<li>` 顶掉了，导致该条目丢失外层 li），而且已经推上线。
+//     当时第 21 道只查 h1/id/head 游离文本，完全不看列表配对，所以没拦住。
+//     现在查三件事：
+//       a) 全页 `<li` 与 `</li>` 数量必须相等（漏闭合 / 多开）
+//       b) **连续重复的同一开标签**（`<li class="x">` 后面紧跟又一个完全相同的
+//          `<li class="x">`，中间只允许空白）——这正是那次事故的形态。
+//          普通配对计数抓不到它：多一个开 + 多一个闭仍然"配平"。
+//       c) 空列表容器（`<ul></ul>` 无 li 也无文本）——插入时把内容挤走的典型症状。
+//     剥离顺序同第 21 道：先剥注释与 script/style 整块，否则 main.js 注入的模板字符串
+//     （含 `'<li>'` 字面量）会被当成真标签误报。
+const listBad = [];
+{
+  const strip = (html) => html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+  for (const f of allPages) {
+    const html = read(f);
+    if (!html) continue;
+    const body = strip(html);
+    // a) 全局配对
+    const liOpen = (body.match(/<li\b/gi) || []).length;
+    const liClose = (body.match(/<\/li>/gi) || []).length;
+    if (liOpen !== liClose) listBad.push(f + ' <li> 开' + liOpen + ' / 闭' + liClose);
+    // b) 连续重复同一开标签（事故形态）
+    const dupRe = /<li\b([^>]*)>\s*<li\b\1>/g;
+    const dm = body.match(dupRe);
+    if (dm) listBad.push(f + ' 连续重复 ' + dm[0].slice(0, 44).replace(/\s+/g, ' '));
+    // b2) 相邻两条 <li> 的**内容完全相同**（含标签与文本，压掉空白后比）——
+    //     这是复制粘贴插条目的典型后果，且不会被 a) 的开闭配对发现。
+    //     只比「紧邻」的两条，避免把正文里正常重复的短语判成错误。
+    const liPairs = [...body.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((m) =>
+      m[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim());
+    for (let i = 1; i < liPairs.length; i++) {
+      const cur = liPairs[i], prev = liPairs[i - 1];
+      if (cur && cur === prev && cur.length >= 8) {
+        listBad.push(f + ' 相邻 li 内容重复：' + JSON.stringify(cur.slice(0, 40)));
+        break;
+      }
+    }
+    // c) 空列表容器
+    const containerRe = /<(ul|ol)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+    let cm;
+    while ((cm = containerRe.exec(body))) {
+      const inner = cm[2];
+      const n = (inner.match(/<li\b/gi) || []).length;
+      if (n === 0 && inner.replace(/<[^>]*>/g, '').trim() === '') {
+        listBad.push(f + ' 空 <' + cm[1] + '> 容器（无 li 且无文本）');
+        break;
+      }
+    }
+  }
+}
+check('列表结构：<li> 开闭配对 + 无连续重复开标签 + 无相邻同文 li + 无空列表容器（' + allPages.length + ' 页）',
+  listBad.length === 0, listBad.slice(0, 4).join(' | '));
 
 console.log('\n== 结果：' + pass + ' 通过，' + fail + ' 失败 ==');
 process.exit(fail ? 1 : 0);
