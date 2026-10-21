@@ -143,5 +143,17 @@
     "icon": "cube",
     "linkText": "GitHub ↗",
     "href": "https://github.com/xiaohetaoo/guo-4-zhan-6"
+  },
+  {
+    "title": "核语言",
+    "date": "2026-10-21",
+    "desc": "Python C语言用着不习惯？试试核语言！纯中文编程，语法简单，可读性强！",
+    "tags": [
+      "编程",
+      "软件"
+    ],
+    "icon": "cube",
+    "linkText": "GitHub ↗",
+    "href": "https://github.com/xiaohetaoo/he-language"
   }
 ]
