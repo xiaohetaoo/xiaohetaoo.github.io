@@ -8,7 +8,7 @@
   <!-- feed 级时间戳 = 源内最新一条的 <updated>：2026-10-05 起文章排序键换最后修订日，
        「存在错误」修订于 2026-10-04 成为源内最新，这里随之从 2026-09-06 改为 2026-10-04；
        2026-10-11 新增《地理组徽简介》后源内最新变为它，随之改为 2026-10-11 -->
-  <updated>2026-10-11T00:00:00+08:00</updated>
+  <updated>2026-10-21T00:00:00+08:00</updated>
   <author>
     <name>小核桃</name>
     <uri>https://xiaohetaoo.github.io/</uri>
@@ -39,6 +39,15 @@
     <summary>想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。</summary>
     <category term="游戏"/>
     <category term="了解我"/>
+  </entry>
+  <entry>
+    <title>坤坤曲</title>
+    <link href="https://xiaohetaoo.github.io/posts/kunkun-qu.html"/>
+    <id>https://xiaohetaoo.github.io/posts/kunkun-qu.html</id>
+    <updated>2026-10-21T00:00:00+08:00</updated>
+    <summary>琵琶曲的真ikun填词</summary>
+    <category term="ikun"/>
+    <category term="歌词"/>
   </entry>
   <entry>
     <title>地理组徽简介</title>

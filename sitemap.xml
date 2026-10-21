@@ -32,7 +32,7 @@
     <loc>https://xiaohetaoo.github.io/updates.html</loc>
     <!-- 时间轴补 2026-10-11 条目（可见文案）；2026-10-17 拆出独立日期条目 + 追加新项目条目（可见文案）；
          2026-10-18 新增当日条目（口令弹窗瘦身 + 出场动画，可见文案）；
-         2026-10-21 新增当日条目（新项目「核语言」，可见文案） -->
+         2026-10-21 新增当日条目（新项目「核语言」+ 新文章《坤坤曲》，可见文案） -->
     <lastmod>2026-10-21</lastmod>
     <priority>0.6</priority>
   </url>
@@ -66,6 +66,11 @@
     <loc>https://xiaohetaoo.github.io/posts/exist-error.html</loc>
     <!-- 修订日同步 lastmod（posts.json 的 updated 2026-10-04，第八版全文修订） -->
     <lastmod>2026-10-04</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://xiaohetaoo.github.io/posts/kunkun-qu.html</loc>
+    <lastmod>2026-10-21</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
