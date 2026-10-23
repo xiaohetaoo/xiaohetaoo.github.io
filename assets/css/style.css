@@ -22,6 +22,14 @@
   --accent-dim: rgba(103, 158, 254, 0.14);
   --accent-border: rgba(103, 158, 254, 0.32);
 
+  /* 强调色·文字专用档（2026-10-23 审查）：--accent 同时兼任「背景填充」与「小字号文字」
+     两个角色，但两者对亮度的要求相反。浅色两主题下 --accent 作为文字只有 4.35:1，
+     差 0.15 未达 WCAG AA 的 4.5:1（受影响的是 .kicker 13px、.upd-date 15px、
+     .side-item .d 11px、.side-toc .toc-h.current 12.5px 等 14 处小字）。
+     这里单独拆一个只给 color 用的 token：背景填充仍走 --accent（按钮底色/进度条/
+     圆点配色一律不变），文字改用本变量。暗色档 7.90:1 本就达标，两档同值。 */
+  --accent-text: #679efe;   /* 7.90:1 on #000000 */
+
   /* accent 派生 token（三主题各一份）：凡按主题变色的强调蓝/红一律走这些变量。
      基础规则写死 rgba(103,158,254,…) 曾逼出「亮色补丁区」逐条覆盖的债，2026-10-07
      收口——新增主题只需在本块与两个浅底 token 块各写一次，不再加补丁规则 */
@@ -219,7 +227,7 @@ button {
   font-family: var(--font-mono);
   font-size: 13px;
   letter-spacing: 0.08em;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 18px;
 }
 
@@ -556,7 +564,7 @@ button {
   font-style: normal;
   margin: 0 16px;
   letter-spacing: 0;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ---------- Hero 右侧画布 ---------- */
@@ -625,7 +633,7 @@ button {
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.14em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .concept-item h2 {
@@ -762,7 +770,7 @@ button {
 }
 
 .side-item.current .d {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .side-all {
@@ -808,7 +816,7 @@ button {
 .side-toc .toc-h:hover { color: var(--text-1); background: var(--bg-panel-2); }
 .side-toc .toc-h.lv-3 { padding-left: 22px; font-size: 11.5px; }
 .side-toc .toc-h.current {
-  color: var(--accent);
+  color: var(--accent-text);
   border-left-color: var(--accent);
 }
 .side-toc .toc-h.current:hover { color: var(--accent-bright); }
@@ -1381,7 +1389,7 @@ button.project-card {
 .about-aliases-label {
   font-family: var(--font-mono);
   font-size: 12.5px;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-right: 2px;
 }
 
@@ -1971,7 +1979,7 @@ button.project-card {
   font-family: var(--font-mono);
   font-size: 11.5px;
   letter-spacing: 0.14em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .interest-item .zh {
@@ -2819,7 +2827,7 @@ html.theme-anim::view-transition-new(root) {
   margin: 12px 2px 6px;
   font-family: var(--font-mono);
   font-size: 11.5px;
-  color: var(--accent);
+  color: var(--accent-text);
   letter-spacing: 0.04em;
 }
 .nav-search-results .search-hint + .nav-search-label { margin-top: 12px; }
@@ -2851,7 +2859,7 @@ html.theme-anim::view-transition-new(root) {
   border: 1px solid var(--border);
   border-radius: var(--radius-xs);
   background: var(--accent-dim);
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 .nav-project-icon svg {
@@ -2982,6 +2990,10 @@ html.theme-anim::view-transition-new(root) {
   --accent-bright: #1e56c8;
   --accent-dim: rgba(47, 108, 235, 0.10);
   --accent-border: rgba(47, 108, 235, 0.32);
+
+  /* 文字专用强调色（总注释见 :root 块）：原 --accent #2f6ceb 在 #f5f6f8 上只有
+     4.35:1，差 0.15 不达 AA 4.5:1；压深到 #2c66e0 得 4.76:1。背景填充仍用 --accent */
+  --accent-text: #2c66e0;   /* 4.76:1 on #f5f6f8 */
 
   /* accent 派生 token 亮色档（与 :root 暗色档同名同位，总注释见 :root 块） */
   --accent-sel: rgba(47, 108, 235, 0.30);
@@ -3115,12 +3127,19 @@ html.theme-anim::view-transition-new(root) {
 
   --text-1: #2a1613;
   --text-2: #5f4640;
-  --text-3: #8a6b64;
+  /* 2026-10-23 审查：原 #8a6b64 在 #faf4f0 上只有 4.41:1，与同轮修掉的 --accent
+     是同一类问题（浅底两个主题里只差 cn-red 这一档没进 4.5）。压深到 #856660
+     得 4.74:1；暗色档 5.67 / 浅色档 4.50 本就达标，两份不动 */
+  --text-3: #856660;
 
   --accent: #de2910;
   --accent-bright: #b81c11;
   --accent-dim: rgba(222, 41, 16, 0.08);
   --accent-border: rgba(222, 41, 16, 0.32);
+
+  /* 文字专用强调色（总注释见 :root 块）：原 --accent #de2910 在 #faf4f0 上只有
+     4.35:1，压深到 #d32610 得 4.75:1。背景填充仍用 --accent（中国红本色不变） */
+  --accent-text: #d32610;   /* 4.75:1 on #faf4f0 */
 
   /* accent 派生 token 中国红档（与 :root 暗色档同名同位，总注释见 :root 块）；
      辉光渐变第二站用暗红 rgba(140,20,12) 而非 accent 同色，是暖底上的层次色 */
@@ -4454,7 +4473,7 @@ html.intro-pending .reveal {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .upd-badge {

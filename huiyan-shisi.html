@@ -300,6 +300,30 @@ a.btn{text-align:center;text-decoration:none;}
 .back-blog svg{width:14px;height:14px;}
 #screen-game:not(.hidden) ~ .back-blog{display:none;}
 
+/* ---------- 减动效兜底（2026-10-23 审查补） ----------
+   本页此前是 5 个自包含页里唯一没做 prefers-reduced-motion 的（其余 4 个都有），
+   系统开了「减少动态效果」进来照样放 17 组关键帧——其中 blink / revealBlink /
+   hintGlow / numPulse 属闪动类，正是该偏好要防的。
+   写法要照顾两类动画的差异，不能一律 animation:none：
+     · 纯装饰型（float / glow / pulseStar / lensBob / blink …）→ 直接停掉没问题；
+     · 终态承载可见性的（rip / revealIn / labelIn / lvOut 带 forward±both）→
+       终态就是元素该有的样子，写 animation:none 会让它停在初始帧（可能不可见），
+       所以保留 animation-name 与 fill-mode，只把时长压到 0.01ms：
+       浏览器会瞬间走完并停在终态，视觉上等同"最终画面直接呈现"。
+       （本页无 animationend / getAnimations 依赖，0.01ms 不会打断任何玩法逻辑，
+         已 grep 确认：animationend/transitionend 回调 0 处。）
+   transition 同样归一，避免 hover/切屏仍有位移拖尾。 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    animation-delay:0ms !important;
+    transition-duration:.01ms !important;
+    transition-delay:0ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
 </style>
 
 <!-- 百度统计（全站同款 + 预渲染守卫：首页投机规则会把本页设为悬停即预渲染，

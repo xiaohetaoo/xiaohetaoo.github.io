@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261021b";
+  var DATA_VER = "20261022a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1905,24 +1905,58 @@
   // 全局搜索点项目跳过来：projects.html#p=<标题> → 定位到对应卡片并高亮片刻，
   // 让用户在完整卡片里读介绍（下拉浮层里的描述是被截断的）
   var highlightTimer = null;
-  function highlightProjectFromHash() {
+  // 上一次高亮的卡片：连续两次定位（先落 A 再改到 B）时必须先把 A 的类摘掉——
+  // 旧实现只 clearTimeout 不摘类，A 就永久留在 highlight 态（同 5.5 节 game-flash
+  // 的 20261002e 修法，同类漏摘）
+  var lastHighlightCard = null;
+  // 从 #p= 里解出目标标题：定位函数与 hashchange 探针共用同一套解码口径
+  //（原先解码头在 highlightProjectFromHash 内部，新增探针若不共用就会分叉）
+  function decodeHashTarget() {
     var raw = window.location.hash || "";
-    if (raw.indexOf("#p=") !== 0) return;
-    var target;
-    try {
-      target = decodeURIComponent(raw.slice(3));
-    } catch (e) {
-      target = raw.slice(3);
-    }
+    if (raw.indexOf("#p=") !== 0) return "";
+    var s = raw.slice(3);
+    try { return decodeURIComponent(s); } catch (e) { return s; }
+  }
+  // 拼出「按标题找卡片」的选择器：CSS.escape 可用时用它，否则退回转义引号与反斜杠
+  function projectCardSelector(title) {
+    var esc = window.CSS && CSS.escape ? CSS.escape(title) : String(title).replace(/["\\]/g, "\\$&");
+    return '.project-card[data-project="' + esc + '"]';
+  }
+  function highlightProjectFromHash() {
+    var target = decodeHashTarget();
     if (!target) return;
-    var card = document.querySelector('.project-card[data-project="' + (window.CSS && CSS.escape ? CSS.escape(target) : target.replace(/["\\]/g, "\\$&")) + '"]');
+    var card = document.querySelector(projectCardSelector(target));
     if (!card) return;
+    if (lastHighlightCard && lastHighlightCard !== card) lastHighlightCard.classList.remove("highlight");
+    lastHighlightCard = card;
     card.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
     card.classList.add("highlight");
     if (highlightTimer) clearTimeout(highlightTimer);
     highlightTimer = setTimeout(function () {
       card.classList.remove("highlight");
+      if (lastHighlightCard === card) lastHighlightCard = null;
     }, 2600);
+  }
+
+  /* 同文档只改 hash 不会重载页面、renderProjects 也不会再跑，定位高亮就永远不出现。
+     补一个 hashchange 监听（2026-10-23 审查发现：此前只有游戏名单页有 hashchange，
+     项目页没有）。只在真有项目列表容器的页面注册，其它页零开销；
+     判定只看 #p= 前缀，首页的 #posts/#projects/#contact 锚点不受影响。
+     时机：卡片由 fetch(projects.json) 异步渲染，hash 可能在渲染完成前就变了
+     （慢网 / 用户刚进页面就改地址栏）——那时 querySelector 找不到卡片会直接 return。
+     所以先探一次：没有卡片就催一次重渲染，渲染完成钩子里会再调 highlightProjectFromHash。
+     首页（#project-list，配额 6）也走这条，但项目可能不在前 6 条里 —— 那种情况
+     保持原状（找不到就什么也不做），不为了高亮去改首页配额。 */
+  if (document.getElementById("project-list") || document.getElementById("project-all-list")) {
+    window.addEventListener("hashchange", function () {
+      var target = decodeHashTarget();
+      if (!target) return;
+      if (document.querySelector(projectCardSelector(target))) {
+        highlightProjectFromHash();
+      } else {
+        rerenderProjectLists(); // 渲染完成钩子里会再调 highlightProjectFromHash
+      }
+    });
   }
 
   var loadProjects = makeJsonCache("projects.json");
