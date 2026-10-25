@@ -155,5 +155,17 @@
     "icon": "cube",
     "linkText": "GitHub ↗",
     "href": "https://github.com/xiaohetaoo/he-language"
+  },
+  {
+    "title": "核核工具箱",
+    "date": "2026-10-25",
+    "desc": "windows电脑多功能工具箱，适合小白",
+    "tags": [
+      "电脑",
+      "软件"
+    ],
+    "icon": "cube",
+    "linkText": "GitHub ↗",
+    "href": "https://github.com/xiaohetaoo/hehe-toolbox"
   }
 ]
