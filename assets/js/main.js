@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261025a";
+  var DATA_VER = "20261027a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1413,11 +1413,17 @@
      排序键 = posts.json 的 updated（最后修订日），无修订回落发布 date（2026-10-05 起）；
      主键并列时再回落发布日倒序（次级键），同日修订的文章顺序稳定可解释。
      修订过的文章按修订日上浮，但**显示**的日期仍是发布日（首页/归档卡片不变），
-     文章页 meta 里另有「最近更新」行。pinned 仍置顶，置顶内部也按同键排。 */
+     文章页 meta 里另有「最近更新」行。
+     置顶次序（2026-10-27 起）：pinned 文章按 pinOrder 升序（1 = 最前）；
+     无 pinOrder 的置顶文章排在带号的之后、内部仍按 updated‖date 倒序。
+     这样「想让谁排前面」只需给号，不必动日期，也不会被修订上浮打乱；
+     未置顶文章一律排在所有置顶之后（pinOrder 只影响置顶组内部，对非置顶无意义）。 */
   function sortPosts(posts) {
     function key(p) { return p.updated || p.date; }
+    function rank(p) { return typeof p.pinOrder === "number" ? p.pinOrder : Infinity; }
     return posts.slice().sort(function (a, b) {
       if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+      if (a.pinned && b.pinned && rank(a) !== rank(b)) return rank(a) < rank(b) ? -1 : 1;
       return key(b).localeCompare(key(a)) || b.date.localeCompare(a.date);
     });
   }

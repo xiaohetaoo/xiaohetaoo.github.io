@@ -9,7 +9,8 @@
       "游戏",
       "了解我"
     ],
-    "pinned": true
+    "pinned": true,
+    "pinOrder": 1
   },
   {
     "slug": "exist-error",
@@ -21,7 +22,31 @@
       "科幻",
       "小说"
     ],
-    "pinned": true
+    "pinned": true,
+    "pinOrder": 2
+  },
+  {
+    "slug": "on-ineffective-effort",
+    "title": "论无效努力",
+    "date": "2026-08-30",
+    "excerpt": "高中课余写的思辨性议论文，探讨究竟该如何努力，努力多少。",
+    "tags": [
+      "思考",
+      "议论文"
+    ],
+    "pinned": true,
+    "pinOrder": 3
+  },
+  {
+    "slug": "yuedu",
+    "title": "悦独",
+    "date": "2026-08-31",
+    "excerpt": "高中写的现代诗，参赛作品，主题“阅读”，虽然也什么奖都没拿就是了QwQ",
+    "tags": [
+      "现代诗"
+    ],
+    "pinned": true,
+    "pinOrder": 4
   },
   {
     "slug": "illegal-sites-report",
@@ -31,7 +56,9 @@
     "tags": [
       "举报",
       "查询码"
-    ]
+    ],
+    "pinned": true,
+    "pinOrder": 5
   },
   {
     "slug": "he-shi-numeral-pinyin-cipher",
@@ -74,15 +101,6 @@
     ]
   },
   {
-    "slug": "yuedu",
-    "title": "悦独",
-    "date": "2026-08-31",
-    "excerpt": "高中写的现代诗，参赛作品，主题“阅读”，虽然也什么奖都没拿就是了QwQ",
-    "tags": [
-      "现代诗"
-    ]
-  },
-  {
     "slug": "ninth-art",
     "title": "游戏第九艺术",
     "date": "2026-08-31",
@@ -107,16 +125,6 @@
     "title": "面具社会",
     "date": "2026-08-30",
     "excerpt": "高中课余写的思辨性议论文，反思信息时代人的伪装和表里不一。",
-    "tags": [
-      "思考",
-      "议论文"
-    ]
-  },
-  {
-    "slug": "on-ineffective-effort",
-    "title": "论无效努力",
-    "date": "2026-08-30",
-    "excerpt": "高中课余写的思辨性议论文，探讨究竟该如何努力，努力多少。",
     "tags": [
       "思考",
       "议论文"

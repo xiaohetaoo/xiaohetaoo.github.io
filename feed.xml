@@ -23,6 +23,15 @@
        注：句中「其余 14 篇」为 2026-10-05 批次当时口径；2026-10-11 起全库 17 篇，
        新增《地理组徽简介》无修订、按发布日排第三 -->
   <entry>
+    <title>我玩过的游戏（双语）</title>
+    <link href="https://xiaohetaoo.github.io/posts/games-i-played.html"/>
+    <id>https://xiaohetaoo.github.io/posts/games-i-played.html</id>
+    <updated>2026-10-03T00:00:00+08:00</updated>
+    <summary>想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。</summary>
+    <category term="游戏"/>
+    <category term="了解我"/>
+  </entry>
+  <entry>
     <title>存在错误</title>
     <link href="https://xiaohetaoo.github.io/posts/exist-error.html"/>
     <id>https://xiaohetaoo.github.io/posts/exist-error.html</id>
@@ -32,13 +41,30 @@
     <category term="小说"/>
   </entry>
   <entry>
-    <title>我玩过的游戏（双语）</title>
-    <link href="https://xiaohetaoo.github.io/posts/games-i-played.html"/>
-    <id>https://xiaohetaoo.github.io/posts/games-i-played.html</id>
-    <updated>2026-10-03T00:00:00+08:00</updated>
-    <summary>想快速了解我，先看看我喜欢什么游戏，玩过什么游戏。</summary>
-    <category term="游戏"/>
-    <category term="了解我"/>
+    <title>论无效努力</title>
+    <link href="https://xiaohetaoo.github.io/posts/on-ineffective-effort.html"/>
+    <id>https://xiaohetaoo.github.io/posts/on-ineffective-effort.html</id>
+    <updated>2026-08-30T00:00:00+08:00</updated>
+    <summary>高中课余写的思辨性议论文，探讨究竟该如何努力，努力多少。</summary>
+    <category term="思考"/>
+    <category term="议论文"/>
+  </entry>
+  <entry>
+    <title>悦独</title>
+    <link href="https://xiaohetaoo.github.io/posts/yuedu.html"/>
+    <id>https://xiaohetaoo.github.io/posts/yuedu.html</id>
+    <updated>2026-08-31T00:00:00+08:00</updated>
+    <summary>高中写的现代诗，参赛作品，主题“阅读”，虽然也什么奖都没拿就是了QwQ</summary>
+    <category term="现代诗"/>
+  </entry>
+  <entry>
+    <title>非法网站打击公示</title>
+    <link href="https://xiaohetaoo.github.io/posts/illegal-sites-report.html"/>
+    <id>https://xiaohetaoo.github.io/posts/illegal-sites-report.html</id>
+    <updated>2026-09-04T00:00:00+08:00</updated>
+    <summary>小核桃工作室致力于响应国家清朗网络行动，坚决打击违法违规网站！</summary>
+    <category term="举报"/>
+    <category term="查询码"/>
   </entry>
   <entry>
     <title>坤坤曲</title>
@@ -74,15 +100,6 @@
     <updated>2026-09-06T00:00:00+08:00</updated>
     <summary>三角洲每个干员的特色</summary>
     <category term="三角洲"/>
-  </entry>
-  <entry>
-    <title>非法网站打击公示</title>
-    <link href="https://xiaohetaoo.github.io/posts/illegal-sites-report.html"/>
-    <id>https://xiaohetaoo.github.io/posts/illegal-sites-report.html</id>
-    <updated>2026-09-04T00:00:00+08:00</updated>
-    <summary>小核桃工作室致力于响应国家清朗网络行动，坚决打击违法违规网站！</summary>
-    <category term="举报"/>
-    <category term="查询码"/>
   </entry>
   <entry>
     <title>核氏数字拼音中文加密法</title>
@@ -121,14 +138,6 @@
     <category term="规则"/>
   </entry>
   <entry>
-    <title>悦独</title>
-    <link href="https://xiaohetaoo.github.io/posts/yuedu.html"/>
-    <id>https://xiaohetaoo.github.io/posts/yuedu.html</id>
-    <updated>2026-08-31T00:00:00+08:00</updated>
-    <summary>高中写的现代诗，参赛作品，主题“阅读”，虽然也什么奖都没拿就是了QwQ</summary>
-    <category term="现代诗"/>
-  </entry>
-  <entry>
     <title>游戏第九艺术</title>
     <link href="https://xiaohetaoo.github.io/posts/ninth-art.html"/>
     <id>https://xiaohetaoo.github.io/posts/ninth-art.html</id>
@@ -152,15 +161,6 @@
     <id>https://xiaohetaoo.github.io/posts/mask-society.html</id>
     <updated>2026-08-30T00:00:00+08:00</updated>
     <summary>高中课余写的思辨性议论文，反思信息时代人的伪装和表里不一。</summary>
-    <category term="思考"/>
-    <category term="议论文"/>
-  </entry>
-  <entry>
-    <title>论无效努力</title>
-    <link href="https://xiaohetaoo.github.io/posts/on-ineffective-effort.html"/>
-    <id>https://xiaohetaoo.github.io/posts/on-ineffective-effort.html</id>
-    <updated>2026-08-30T00:00:00+08:00</updated>
-    <summary>高中课余写的思辨性议论文，探讨究竟该如何努力，努力多少。</summary>
     <category term="思考"/>
     <category term="议论文"/>
   </entry>

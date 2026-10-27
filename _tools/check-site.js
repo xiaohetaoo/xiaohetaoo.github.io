@@ -118,10 +118,13 @@ function check(name, ok, detail) {
 }
 
 function sortPosts(list) {
-  // 与 main.js sortPosts 同步：排序键 = updated（最后修订日）回落 date（2026-10-05 起）
+  // 与 main.js sortPosts 同步：排序键 = updated（最后修订日）回落 date（2026-10-05 起）；
+  // 置顶次序 2026-10-27 起由 pinOrder 决定（1 = 最前），无号的置顶排在有号之后
   const key = (p) => p.updated || p.date;
+  const rank = (p) => (typeof p.pinOrder === 'number' ? p.pinOrder : Infinity);
   return list.slice().sort((a, b) => {
     if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    if (a.pinned && b.pinned && rank(a) !== rank(b)) return rank(a) < rank(b) ? -1 : 1;
     return key(b).localeCompare(key(a)) || b.date.localeCompare(a.date);
   });
 }
