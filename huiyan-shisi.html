@@ -521,7 +521,7 @@ var _hmt = _hmt || [];
     </div>
     <p class="final-slogan">青年拒绝走私，全民守护国门<br><small>发现线索，打 12360 就行</small></p>
     <button class="btn btn-primary" id="btn-poster">生成我的海报</button>
-    <button class="btn btn-ghost" id="btn-review">知识回顾 · 15 处隐患</button>
+    <button class="btn btn-ghost" id="btn-review">知识回顾 · 15 处隐患</button><!-- 数值由 syncFoundLabels 按 GAME_DATA 回填；此处 15 仅作无 JS 时的兜底 -->
     <div class="final-actions">
       <button class="btn btn-ghost" id="btn-restart">再玩一次</button>
       <button class="btn btn-ghost" id="btn-home-final">返回首页</button>
@@ -772,18 +772,25 @@ window.GAME_DATA = {
     wallA: '#FBEDD8', floorA: '#E3C79F',
     gray: '#9FB6C6', teal: '#4FB3A9', plum: '#B0713F'
   };
+  /* 属性插值转义：haz/egg/txt 用模板字符串把数据往 HTML 属性里拼，若文案里出现
+     双引号或 < / & 会直接破格（当前数据全是全角引号「」所以安全，属未来改文案时的雷）。
+     这里只转义属性专用的五个字符，不动全角引号。C7（2026-10-29 补） */
+  const attr = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   /* 隐患通用包装：可见图形 inner 外包一层 .hazard（data-key/label 供判定与展示），
      末尾叠两件套——透明命中矩形 .hit（点击判定的唯一依据）与提示光晕 .hint-glow（用提示时闪） */
   const haz = (key, label, x, y, w, h, inner) =>
-    `<g class="hazard" data-key="${key}" data-label="${label}">${inner}
+    `<g class="hazard" data-key="${attr(key)}" data-label="${attr(label)}">${inner}
        <rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent"/>
        <rect class="hint-glow" x="${x - 6}" y="${y - 6}" width="${w + 12}" height="${h + 12}" rx="14"/>
      </g>`;
   /* 彩蛋热区：点干扰物弹一句玩笑，不加分 */
   const egg = (msg, x, y, w, h) =>
-    `<rect class="egg" data-msg="${msg}" x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent"/>`;
+    `<rect class="egg" data-msg="${attr(msg)}" x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent"/>`;
+  /* 文本节点转义（txt 的 ${s} 落在标签之间，是文本内容而非属性值）：
+     只挡 < & 就够（文本里的引号合法），但为省心跟 attr 共用同一套五字符 */
   const txt = (x, y, s, size, fill, w = 400, anchor = 'start') =>
-    `<text x="${x}" y="${y}" font-size="${size}" fill="${fill}" font-weight="${w}" text-anchor="${anchor}">${s}</text>`;
+    `<text x="${x}" y="${y}" font-size="${size}" fill="${fill}" font-weight="${w}" text-anchor="${anchor}">${attr(s)}</text>`;
   /* 背景：整幅墙色 + 地面色带（floorY 起为地面） */
   const bg = (wall, floorY, floor) =>
     `<rect width="750" height="1000" fill="${wall}"/><rect y="${floorY}" width="750" height="${1000 - floorY}" fill="${floor}"/>`;
@@ -1176,6 +1183,27 @@ window.drawPoster = function (canvas, st) {
 (function () {
   const D = window.GAME_DATA, $ = (id) => document.getElementById(id);
   const SAVE_KEY = 'hyss_save_v1';
+  /* 全站隐患总数：唯一数据源 = GAME_DATA.levels[].hazards 的长度之和。
+     历史（2026-10-29 修 C6）：旧实现写死 `D.levels.length * 3`（五关 × 每关 3 = 15），
+     而静态文案另有两处硬写「15 处隐患」（结算页按钮 #btn-review、知识回顾弹窗标题），
+     三处耦合只有一处是算出来的；日后某关加/减一个隐患，按钮和弹窗标题会立刻说谎。
+     现在下面统一从这里取数（含 init 时回填静态文案，见 syncFoundLabels）。 */
+  const HAZARD_PER_LEVEL_EXPECTED = 3; // 设计口径：每关 3 个隐患（仅用于自检断言，不参与展示数值）
+  const TOTAL_HAZARDS = D.levels.reduce(function (n, lv) { return n + (lv.hazards ? lv.hazards.length : 0); }, 0);
+  /* 设计口径自检（不通过只告警、不炸游戏）：某关隐患数偏离 3 时，说明关卡数据改了，
+     记得顺手核对每关的 SVG 里 haz() 调用数 —— 二者是两处独立书写，没有编译期绑定 */
+  (function checkHazardsPerLevel() {
+    var bad = D.levels.filter(function (lv) { return !lv.hazards || lv.hazards.length !== HAZARD_PER_LEVEL_EXPECTED; });
+    if (bad.length) console.warn('[huiyan] 每关隐患数偏离设计口径 ' + HAZARD_PER_LEVEL_EXPECTED + '：' +
+      bad.map(function (lv) { return lv.id + '=' + (lv.hazards ? lv.hazards.length : 0); }).join(', '));
+  })();
+  /* 静态文案里带隐患数的地方：init 时按真值回填，改数据不用再手工改 HTML */
+  function syncFoundLabels() {
+    var btn = $('btn-review');
+    if (btn) btn.textContent = '知识回顾 · ' + TOTAL_HAZARDS + ' 处隐患';
+    var revTitle = document.getElementById('rev-count-title');
+    if (revTitle) revTitle.textContent = TOTAL_HAZARDS + ' 处隐患，都在这儿了';
+  }
   /* 全局状态：level 当前关（0 起） · score 累计分（本关得分通关才入账，杜绝失败刷分）
      found 本关已找{key:true} · timeLeft 剩余秒 · timer 计时句柄
      hintUsed/quizDone 本关一次性标志 · times 各关用时（按关下标存） · running 计时进行中 */
@@ -1667,7 +1695,7 @@ window.drawPoster = function (canvas, st) {
   function finishGame() {
     if (state.times[D.levels.length - 1] == null) state.times[D.levels.length - 1] = 0; /* 兼容老 WebView，不用 ??= */
     const totalTime = state.times.reduce((a, b) => a + (b || 0), 0);
-    const totalFound = D.levels.length * 3;
+    const totalFound = TOTAL_HAZARDS; /* 唯一来源 = GAME_DATA 现算，别再写 levels.length * 3 */
     $('final-rank').textContent = '称号：' + rankOf(state.score);
     $('stat-score').textContent = state.score;
     $('stat-time').textContent = totalTime + 's';
@@ -1699,7 +1727,7 @@ window.drawPoster = function (canvas, st) {
     openModal(`
       <div class="modal-head">
         <span class="tag">知识回顾</span>
-        <h3>15 处隐患，都在这儿了</h3>
+        <h3 id="rev-count-title">${TOTAL_HAZARDS} 处隐患，都在这儿了</h3>
       </div>
       <div class="modal-body">${secs}</div>
       <button class="btn btn-primary" data-action="closerev">记住了</button>
@@ -1744,6 +1772,8 @@ window.drawPoster = function (canvas, st) {
   $('btn-restart').addEventListener('click', newGame);
   $('btn-home-final').addEventListener('click', () => { window.Sfx.tap(); show('screen-intro'); refreshIntro(); });
   $('btn-review').addEventListener('click', () => { window.Sfx.tap(); openReview(); });
+  /* 静态文案里的隐患数按 GAME_DATA 真值回填（C6：三处耦合统一到单一数据源） */
+  syncFoundLabels();
   $('btn-poster').addEventListener('click', () => {
     show('screen-poster');
     refreshPoster();

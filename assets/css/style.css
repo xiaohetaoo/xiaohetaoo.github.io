@@ -47,10 +47,14 @@
      深底用暖红、两个浅底用深红，各自满足正文对比度 */
   --warn: #f08a76;
 
-  /* 玻璃底/面板阴影/悬停阴影三族整值 token（三主题各一份，2026-10-17 审查批收口）：
+  /* 玻璃底/面板阴影/悬停阴影三族整值 token（三主题各一份，**20261011c 审查批收口**）：
      凡「同几何同配方、仅随主题换色」的玻璃底与阴影一律走这三个变量，不再逐条写
      浅底覆盖规则——新增主题只补本块与两个浅底 token 块。
-     例外：.teacher-card:hover 暗色档刻意用更轻的 0.42（低于本档 0.5），保留字面 */
+     例外的「例外」（不跟 token 是对的，别顺手统一）：
+       · .teacher-card:hover 暗色档刻意用更轻的 0.42（低于本档 0.5），保留字面；
+       · 移动搜索面板 8px/32px 几何与桌面不同，持自有几何 + 浅底两段同几何换色（见 ≤640 块）。
+     归属勘误（2026-10-29）：本注释曾被 447c21f 改成「20261017a」、又被 a7ed7b2 改成
+     「2026-10-17」，都是错的；`git log -S "glass-nav-bg"` 实测首见于 163dc8c = 20261011c。 */
   --glass-nav-bg: rgba(0, 0, 0, 0.72);                     /* .nav 与 .game-search::before 共用的吸附玻璃底 */
   --panel-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);         /* nav/game 搜索结果浮层面板阴影（整值） */
   --hover-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);          /* 卡片悬停抬升阴影（整值） */
@@ -1738,7 +1742,12 @@ button.project-card {
 .edu-stop:first-of-type .edu-tip { left: -8px; --tip-x: 0; }
 .edu-stop:last-of-type .edu-tip { left: auto; right: -8px; --tip-x: 0; }
 
-/* 浅底两主题换冷灰/暖褐投影（同 game-search-results 的覆写口径，别并进一个选择器共用一份颜色） */
+/* 浅底两主题换冷灰/暖褐投影（**几何 12px/28px 是 .edu-tip 自己的**，只换颜色）。
+   两段选择器必须分开写，别并进一个选择器共用一份颜色——浅色与 cn-red 的色相不同源。
+   注（2026-10-29 勘误）：原注释让读者「同 game-search-results 的覆写口径」，但那份
+   game-search 浅底覆写在 20261011c（163dc8c）收进 --panel-shadow 整值 token 时已删除，
+   引用早失效。本规则自身有效，与 token 的关系是「同类做法（几何各自保留、颜色分主题）」，
+   不是同一份 token。 */
 :root[data-theme="light"] .edu-tip { box-shadow: 0 12px 28px rgba(16, 24, 40, 0.16); }
 :root[data-theme="cn-red"] .edu-tip { box-shadow: 0 12px 28px rgba(90, 30, 20, 0.18); }
 
@@ -3626,6 +3635,12 @@ html.theme-anim::view-transition-new(root) {
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     border-radius: 0;
+    /* 移动面板是「贴 nav 下方的整幅下拉」，几何与桌面浮层不同（8px/32px vs 16px/40px），
+       故不走 --panel-shadow 整值 token，只借它的**配色**：下方浅底两主题段按同几何换色。
+       历史：20261011c（163dc8c）把三族阴影收进 token 时，桌面浅底覆盖改成整值 token、
+       移动这段的 rgba(0,0,0,0.32) 被漏在外面——当时目标是「值逐个等价、无渲染变化」，
+       结果浅底移动端从此顶着纯黑阴影（此前靠 (0,3,0) 覆盖压回桌面几何，颜色是对的）。
+       2026-10-29 修：补同几何的浅底覆盖，几何归移动、配色归主题。 */
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
     padding: 16px;
     /* 禁用桌面端的 pop 进场动画：display none→渲染会重启它，且 fill-mode: both
@@ -3682,6 +3697,11 @@ html.theme-anim::view-transition-new(root) {
   :root[data-theme="light"] .nav-search-results > .nav-search-mobile-input:focus { background-color: rgba(16, 24, 40, 0.07); }
   :root[data-theme="cn-red"] .nav-search-results > .nav-search-mobile-input { background-color: rgba(90, 30, 20, 0.07); }
   :root[data-theme="cn-red"] .nav-search-results > .nav-search-mobile-input:focus { background-color: rgba(90, 30, 20, 0.09); }
+  /* 浅底两主题的移动面板阴影：**几何沿用本块的 8px/32px**，只换颜色（冷灰 / 暖褐），
+     取值与 --panel-shadow 的浅底档同源（16,24,40 / 90,30,20），透明度对齐移动几何的 0.32。
+     两段选择器必须分开写（同族规则在浅色/cn-red 各一份，是本站既有口径，别并成一个） */
+  :root[data-theme="light"] .nav-search-results { box-shadow: 0 8px 32px rgba(16, 24, 40, 0.32); }
+  :root[data-theme="cn-red"] .nav-search-results { box-shadow: 0 8px 32px rgba(90, 30, 20, 0.32); }
   /* 移动端不需要单独遮罩 —— 面板本身已经覆盖剩余屏幕 + 毛玻璃模糊 */
 
   .hero-cta .btn {
