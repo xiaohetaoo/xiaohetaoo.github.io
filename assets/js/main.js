@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261029a";
+  var DATA_VER = "20261030a";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1371,6 +1371,29 @@
     return String(s).replace(/[&<>"']/g, function (c) { return ESC_MAP[c]; });
   };
 
+  /* href 协议白名单：projects.json 的 href 会进两处可点击节点——首页/项目页的
+     a.project-card，与 relatedPost 弹窗（8.5）的「获取资源」动作行。esc() 只转义
+     HTML 字符，**不判协议**：`javascript:` 里没有 <>&"' 任何一个字符，能原样穿过
+     esc 直达 href，点一下就执行；全链路此前无人拦（2026-10-30 审查）。
+     只放行 http/https/mailto/tel 与无协议的站内相对路径，其余 scheme
+     （javascript:/data:/vbscript:/blob: …）一律当「没有链接」处理：卡片退回
+     不可点的 div，弹窗动作行按既有数据边界隐藏（不渲染空链）。
+     判协议前先剥 ASCII 空白与控制字符：浏览器解析 scheme 时会忽略它们
+     （`jav&#9;ascript:` 在真实浏览器里仍是 javascript:），不剥就能绕过。
+     表键与捕获组**都写不带冒号的 scheme 名**（m[1] 是 "https" 不是 "https:"；
+     写成带冒号的键会让每一个正常外链都落到 else 分支、全站卡片集体降级——本轮
+     探针当场抓到过，别改回去）。 */
+  var HREF_SCHEME_OK = { http: 1, https: 1, mailto: 1, tel: 1 };
+  var HREF_SCHEME_RE = /^([a-z][a-z0-9+.\-]*):/i;
+  function safeHref(u) {
+    var raw = u == null ? "" : String(u);
+    var probe = raw.replace(/[\u0000-\u0020\u007f]/g, "");
+    var m = HREF_SCHEME_RE.exec(probe);
+    // 无 scheme = 站内相对路径（含 / 开头与 # 开头），放行
+    if (!m) return raw;
+    return HREF_SCHEME_OK[m[1].toLowerCase()] ? raw : "";
+  }
+
   // 站点根前缀：文章页在 /posts/ 子目录要回上一级；404 页会被服务在任意深度的
   // 路径下（如 /a/b 也返回 404.html，页面里声明了 window.XHT_AT_404），相对路径
   // 会解析进不存在的子目录，必须改用站点绝对根。forHref=true 给链接拼接用
@@ -1903,7 +1926,11 @@
       return '<button class="project-card reveal" type="button"' + delay + ' data-project="' + esc(p.title) + '" data-project-trigger aria-haspopup="dialog">' + inner + "</button>";
     }
     if (p.href) {
-      return '<a class="project-card reveal"' + delay + ' data-project="' + esc(p.title) + '" href="' + esc(p.href) + '" target="_blank" rel="noopener">' + inner + "</a>";
+      // href 走 safeHref：白名单外的 scheme 视作「没有链接」，退回不可点的 div
+      var href = safeHref(p.href);
+      if (href) {
+        return '<a class="project-card reveal"' + delay + ' data-project="' + esc(p.title) + '" href="' + esc(href) + '" target="_blank" rel="noopener">' + inner + "</a>";
+      }
     }
     return '<div class="project-card reveal"' + delay + ' data-project="' + esc(p.title) + '">' + inner + "</div>";
   }
@@ -2118,10 +2145,12 @@
       descEl.hidden = !p.desc;
       // 数据边界：relatedPost 数据不全时隐藏对应动作行，不渲染空链——
       // href 缺失不用 "#" 兜底（那会新标签打开当前页锚点），slug 缺失不拼
-      // posts/undefined.html；check-site 第 16 道门禁管数据，这里管渲染兜底
+      // posts/undefined.html；check-site 第 16 道门禁管数据，这里管渲染兜底。
+      // href 协议白名单同卡片（safeHref）：白名单外的 scheme 视作缺 href → 动作行隐藏
+      var linkHref = safeHref(p.href);
       var actLink = modal.querySelector('.proj-modal-action[data-act="link"]');
-      actLink.hidden = !p.href;
-      actLink.href = p.href || "#";
+      actLink.hidden = !linkHref;
+      actLink.href = linkHref || "#";
       actLink.querySelector(".proj-modal-action-sub").textContent = p.linkText || "";
       var actPost = modal.querySelector('.proj-modal-action[data-act="post"]');
       // 文章链接统一走 postHref（siteRoot 兼容文章页子目录与 404 绝对根，同 post-nav 口径）

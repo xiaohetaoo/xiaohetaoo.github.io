@@ -85,6 +85,10 @@ const readJSON = (f) => {
 // 原先整段扫不到（gate 2 可被一个属性绕过）
 const LD_RE = /<script\b[^>]*\btype\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
 
+// 站点根 URL：gate 14（同源绝对 URL 归一）与 gate 19（canonical 自指）共用，
+// 提到这里是因为 gate 14 先跑——放到 gate 19 前会撞 TDZ（const 未初始化即被读）
+const SITE = 'https://xiaohetaoo.github.io';
+
 // 顶层页清单：updates.html 与 birthday.html 2026-10-05 起纳入——此前漏登记，两页的
 // JSON-LD 无人校验、?v= 漂移会静默逃逸（birthday 无 ?v=，门禁 1 零命中无害；404 在列但不入 sitemap，属有意）
 const TOP = ['index.html', 'archive.html', 'projects.html', 'updates.html', '404.html', 'about.html',
@@ -473,6 +477,12 @@ const FEED_KIDS = ['title', 'subtitle', 'link', 'id', 'updated', 'author', 'gene
 
 /* 轻量 XML 结构扫描：返回 { kids, stray, mismatched }。
    kids      = 根元素的直接子元素名（按出现序，带属性的也算）
+   kidText   = 根级子元素的**内容文本**（同名多次按出现序 push）。gate 11 需要它：
+               Atom schema 只要求 feed 级 <updated> 是 feed 的子元素、**不要求位置**，
+               旧口径用「取第一个 <updated>」等于赌它排在所有 entry 之前。把根级
+               <updated> 挪到 </feed> 前最后一个位置，取到的就成了最后一条 entry 的
+               updated，只有与 max(entry) 恰好相等时才**假绿**（2026-10-30 审查）。
+               改用根级 kids 定位后与书写位置无关。
    stray     = 根层级的游离文本（压缩空白后应为空串）
    mismatched= 闭合标签名不匹配的记录（如 <priority></priorityx>）
    非真 XML 解析器：只覆盖本站自有的、结构可控的 feed/sitemap。 */
@@ -484,11 +494,13 @@ function xmlScan(xml, rootTag) {
   const TAG_RE = /<(\/?)([A-Za-z_][\w.:-]*)((?:\s+[\w.:-]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>/g;
   const stack = [];
   const kids = [];
+  const kidText = [];      // 根级子元素 {name, text}，gate 11 定位 feed 级 <updated> 用
   const mismatched = [];
   let stray = '';
   let seenRoot = false;
   let rootDepth = -1;
   let lastEnd = 0;
+  let curKid = null;       // 正在收集内容的根级子元素 {name, from}
   let m;
   while ((m = TAG_RE.exec(s))) {
     const closing = m[1] === '/';
@@ -505,10 +517,20 @@ function xmlScan(xml, rootTag) {
     if (closing) {
       const top = stack.pop();
       if (top !== name) mismatched.push('</' + name + '> 关了 <' + top + '>');
+      // 回到根层：刚闭合的就是一个根级子元素，把它的内容文本按名收下
+      if (stack.length === rootDepth && curKid && curKid.name === name) {
+        kidText.push({ name: name, text: s.slice(curKid.from, m.index) });
+        curKid = null;
+      }
       // 关掉根元素（栈空）即结束扫描：根闭合标签本身不是游离文本
       if (stack.length === 0) { lastEnd = TAG_RE.lastIndex; break; }
     } else {
-      if (stack.length === rootDepth) { kids.push(name); stray += s.slice(lastEnd, m.index); }
+      if (stack.length === rootDepth) {
+        kids.push(name);
+        curKid = selfClose ? null : { name: name, from: TAG_RE.lastIndex };
+        if (selfClose) kidText.push({ name: name, text: '' });
+        stray += s.slice(lastEnd, m.index);
+      }
       if (!selfClose) stack.push(name);
     }
     if (stack.length === rootDepth) lastEnd = TAG_RE.lastIndex;
@@ -516,7 +538,7 @@ function xmlScan(xml, rootTag) {
   if (seenRoot && stack.length > 0) mismatched.push('未闭合: ' + stack.join(','));
   // 只有正常走到根闭合（栈空）才继续追加尾部文本；提前 break 时 lastEnd 已指向根闭合之后
   stray += s.slice(lastEnd);
-  return { kids, stray: stray.replace(/\s+/g, ''), mismatched };
+  return { kids, kidText, stray: stray.replace(/\s+/g, ''), mismatched };
 }
 const feedScan = xmlScan(read('feed.xml'), 'feed');
 const feedBadKids = feedScan ? feedScan.kids.filter((k) => !FEED_KIDS.includes(k)) : [];
@@ -621,7 +643,13 @@ check(
 const feedClean = read('feed.xml')
   .replace(/<!--[\s\S]*?-->/g, '')
   .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
-const feedRootUpd = (feedClean.match(/<updated>([^<]*)<\/updated>/) || [])[1] || ''; // feed 头部的第一个 updated
+// feed 级 <updated>：用 gate 8 的 xmlScan 根级 kidText 定位，**不看书写位置**。
+// 旧口径 `feedClean.match(/<updated>(...)/)` 取的是全文第一个 <updated>——那是「feed 头部的
+// updated」只是本文件当前的书写习惯，Atom schema 并不要求它排在任何 entry 之前。把根级
+// updated 挪到 </feed> 前最后一位，旧口径读到的是最后一条 entry 的 updated，与 max(entry)
+// 相等时整道门禁**假绿**（2026-10-30 审查，已用变异测试复现）。
+const feedRootUpdKid = feedScan ? feedScan.kidText.find((k) => k.name === 'updated') : null;
+const feedRootUpd = feedRootUpdKid ? feedRootUpdKid.text.replace(/<[^>]*>/g, '').trim() : '';
 const entryBad = [];
 const entryIds = [];
 const entryUpds = [];
@@ -658,9 +686,15 @@ if (entryIds.length !== wantIds.length || driftAt !== -1)
   entryBad.push('entry 顺序第 ' + (driftAt + 1) + ' 位漂移：应为 ' + (wantIds[driftAt] || '(缺)').split('/').pop() +
     '，实为 ' + (entryIds[driftAt] || '(缺)').split('/').pop());
 // feed 级 <updated> == 全站最新（修订上浮时跟着走，feed.xml 头注释的「记得同步」机械化）
+// 缺根级 <updated> 本身也要报——旧口径缺了取到空串，只要 maxUpd 也空就没人管
 const maxUpd = entryUpds.slice().sort().pop() || '';
-if (feedRootUpd.slice(0, 10) !== maxUpd.slice(0, 10))
+if (!feedRootUpd) entryBad.push('feed 根级缺 <updated>（xmlScan 根子元素里没找到）');
+else if (feedRootUpd.slice(0, 10) !== maxUpd.slice(0, 10))
   entryBad.push('feed 级 <updated>=' + (feedRootUpd.slice(0, 10) || '(空)') + ' ≠ 最新 entry ' + maxUpd.slice(0, 10));
+// 根级 <updated> 必须唯一：Atom 只允许一个，出现两个时「取到哪个」全凭书写序，
+// 这正是旧口径假绿的成因（重复的那份可以写成陈旧日期而不被发现）
+const feedRootUpdCount = feedScan ? feedScan.kidText.filter((k) => k.name === 'updated').length : 0;
+if (feedRootUpdCount > 1) entryBad.push('feed 根级 <updated> 出现 ' + feedRootUpdCount + ' 次（应恰 1）');
 check(
   'feed entry 级：子元素/id==link/category==tags/<updated>==updated||date/书写序/feed 级 updated=max（' + feedEntries + ' 条）',
   entryBad.length === 0,
@@ -729,12 +763,79 @@ check('站内 stylesheet/script 引用全带 ?v=（' + vBad.length + ' 漏）', 
 //       c) 跳过 javascript: / tel:（旧式当相对路径处理，会报假死链）
 //       d) 百分号解码后再判存在（`%70osts/x.html` 是合法链接，旧式误报）
 //       e) 目录型 href（`posts/`）要求目录下真有 index.html，否则线上 404
+//       f) 2026-10-30 补两类此前完全在视野外的候选（变异测试复现：把 og-image-square.png
+//          改名后 30 页引用全断、旧口径仍 31/31 全绿）：
+//          ① `<meta content>` 里的站内资源——og:image / twitter:image 全是
+//             `https://xiaohetaoo.github.io/assets/img/…` 这种**同源绝对 URL**，
+//             爬虫与分享卡靠它，图裂用户看不见、门禁也不看。判定规则（与 :826 的实现
+//             注释同步，别各写一套）：站点前缀绝对 URL / 以 / 开头的路径 / 裸资源文件名
+//             （纯文本描述里没有这些形态，故不会把 og:description 之类卷进来）；
+//             同源 URL 先剥 SITE 前缀再按站内路径判
+//          ② CSS 的 `url()`——`grep url(` 能搜到，但门禁此前只扫 HTML 属性；外链
+//             样式表（assets/css/style.css 全站共用）与页内 `<style>` 两处都查，
+//             data: / 纯 #fragment（SVG 内部引用）不查
 const deadLinks = [];
 const NON_PATH_SCHEMES = /^(?:[a-z][a-z0-9+.-]*:)/i;
+// 同源绝对 URL → 站内路径；非本站前缀的 URL 返回 null（真外链不归站内管）
+const ownPathOf = (r) => {
+  const m = new RegExp('^' + SITE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/.*)$').exec(r);
+  return m ? m[1] : null;
+};
+// 单条候选 → 磁盘判定（HTML 属性 / meta content / CSS url() 三处共用，口径不许分叉）
+const probeRef = (where, r, baseDir) => {
+  if (!r) return;
+  if (r.charAt(0) === '#' || r.indexOf('data:') === 0) return; // 纯锚点（含 SVG url(#id)）/ 内联数据
+  if (/^(?:https?:)?\/\//i.test(r)) {
+    // 真·绝对 URL（带 scheme 或协议相对 //）：同源剥前缀后按站内路径查，异源直接跳过。
+    // 判据必须锚定 "//" —— 写成 `^(https?:)?\/` 会把以 / 开头的**站内**路径也吃进来，
+    // 递归时 ownPathOf 返回 null 又静默 return，等于整类候选全被放过（本轮踩过）
+    const own = ownPathOf(r);
+    if (own === null) return; // 真外链
+    return probeRef(where, own, WEB);
+  }
+  if (NON_PATH_SCHEMES.test(r)) return; // mailto: / tel: / javascript: 等非路径协议
+  const clean = r.split('#')[0].split('?')[0];
+  if (!clean) return;
+  let decoded = clean;
+  try { decoded = decodeURIComponent(clean); } catch (e) { /* 坏编码按原串判 */ }
+  const target = path.normalize(decoded.charAt(0) === '/' ? path.join(WEB, decoded) : path.join(baseDir, decoded));
+  if (fs.existsSync(target)) {
+    // 目录型链接：线上要能取到 index.html
+    if (fs.statSync(target).isDirectory() && !fs.existsSync(path.join(target, 'index.html'))) {
+      deadLinks.push(where + ' → ' + r + '（目录无 index.html）');
+    }
+    return;
+  }
+  deadLinks.push(where + ' → ' + r);
+};
+// ②a 先扫全部 .css 的 url()：全站共用一份 style.css，它断一条影响 30 页
+const CSS_URL_RE = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^"')\s]+))\s*\)/gi;
+const cssUrlPieces = (decl) =>
+  (decl.match(CSS_URL_RE) || []).map((u) => u.replace(/^url\(\s*/i, '').replace(/\s*\)$/, '').replace(/^["']|["']$/g, ''));
+for (const fp of walk(WEB, []).filter((p) => p.endsWith('.css'))) {
+  const rel = path.relative(WEB, fp);
+  for (const u of cssUrlPieces(fs.readFileSync(fp, 'utf8'))) probeRef(rel + ' url()', u, path.dirname(fp));
+}
 for (const f of [...TOP, ...POST_PAGES]) {
   if (f === 'huiyan-shisi.html') continue; // 整页豁免（边界见 gate 13 注释）
   const html = read(f);
   const baseDir = path.dirname(path.join(WEB, f));
+  // ②b 页内 <style> 的 url()
+  for (const m of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
+    for (const u of cssUrlPieces(m[1])) probeRef(f + ' <style> url()', u, baseDir);
+  }
+  // ① meta content：只认四种站内形态（站点前缀绝对 URL / 以 / 开头 / 裸资源文件名 /
+  //   裸相对路径 + 已知资源扩展名），其余（中文描述、日期、summary_large_image 枚举）跳过不误报
+  for (const m of html.matchAll(/<meta\b[^>]*\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)) {
+    const c = (m[1] ?? m[2] ?? '').trim();
+    if (!c) continue;
+    const siteOwn = ownPathOf(c) !== null;
+    const looksRes =
+      c.charAt(0) === '/' ||
+      /^[\w./-]+\.(?:png|jpe?g|webp|gif|svg|ico|avif)(?:[?#]|$)/i.test(c);
+    if (!siteOwn && !looksRes) continue;
+    probeRef(f + ' meta content', c, baseDir);
+  }
   const candidates = [];
   for (const m of html.matchAll(/\b(?:href|src|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
     candidates.push(m[1] ?? m[2] ?? m[3] ?? '');
@@ -746,26 +847,10 @@ for (const f of [...TOP, ...POST_PAGES]) {
       if (u) candidates.push(u);
     }
   }
-  for (const r of candidates) {
-    if (!r) continue;
-    if (/^(https?:)?\/\//.test(r) || r.charAt(0) === '#' || r.indexOf('data:') === 0) continue;
-    if (NON_PATH_SCHEMES.test(r)) continue; // mailto: / tel: / javascript: 等非路径协议
-    const clean = r.split('#')[0].split('?')[0];
-    if (!clean) continue;
-    let decoded = clean;
-    try { decoded = decodeURIComponent(clean); } catch (e) { /* 坏编码按原串判 */ }
-    const target = path.normalize(decoded.charAt(0) === '/' ? path.join(WEB, decoded) : path.join(baseDir, decoded));
-    if (fs.existsSync(target)) {
-      // 目录型链接：线上要能取到 index.html
-      if (fs.statSync(target).isDirectory() && !fs.existsSync(path.join(target, 'index.html'))) {
-        deadLinks.push(f + ' → ' + r + '（目录无 index.html）');
-      }
-      continue;
-    }
-    deadLinks.push(f + ' → ' + r);
-  }
+  for (const r of candidates) probeRef(f, r, baseDir);
 }
-check('内链/资源引用零死链（' + deadLinks.length + ' 断）', deadLinks.length === 0, deadLinks.slice(0, 4).join(' | '));
+check('内链/资源引用零死链（href·src·poster·srcset · meta content · CSS url()，' + deadLinks.length + ' 断）',
+  deadLinks.length === 0, deadLinks.slice(0, 4).join(' | '));
 
 // 15. 根目录每个 HTML 都必须登记进 TOP：新页面忘了登记 = 版本/JSON-LD 门禁整个绕过
 const unregistered = fs.readdirSync(WEB).filter((f) => f.endsWith('.html') && TOP.indexOf(f) === -1);
@@ -835,7 +920,6 @@ check('posts.json 日期真实且 updated >= date（' + posts.length + ' 条）'
 // 删掉整块 Article JSON-LD、feed 标题换成别篇的、删掉 404 的 XHT_AT_404、
 // head 塞裸文本、同页两个 h1、重复 id…… 全部 24/24 放行。
 // 复现工具：D:\zcode\tools\_mutate-gate-gaps.js（18 条里 17 条逃逸）。
-const SITE = 'https://xiaohetaoo.github.io';
 const allPages = [...TOP, ...POST_PAGES];
 const pageUrl = (f) => (f === 'index.html' ? SITE + '/' : SITE + '/' + f);
 const metaOf = (html, re) => {
@@ -928,14 +1012,20 @@ check('404 专项：XHT_AT_404 三处耦合齐全 + 站内引用全绝对路径'
 //     最后一条对应 20261011c 那次「模板 head 注释提前闭合 → 裸文本渲染进 head 并随复制
 //     传染新文章」的事故类型——当时靠人眼发现，现在由门禁兜住。
 const structBad = [];
-// 计数前必须剥掉「注释 + script/style 内容」：页内注释与脚本里经常出现 <h1>/id="…" 这类
-// 字面量（birthday.html 的注释里就有 4 处 <h1>，直接数会把 1 个真标题报成 5 个；
-// 本门禁前一版就是这么误报的）。
+// 计数前必须剥掉「注释 + script/style 内容 + noscript 内容」：页内注释与脚本里经常出现
+// <h1>/id="…" 这类字面量（birthday.html 的注释里就有 4 处 <h1>，直接数会把 1 个真标题
+// 报成 5 个；本门禁前一版就是这么误报的）。
+// 2026-10-30 补 noscript：它的内容是**给禁脚本用户的替代 DOM**，与文档其余部分不同时存在。
+// 现状零风险（全站 noscript 里 0 个 <h1>、0 个 id，已实测），但一旦有人往 <noscript>
+// 的兜底列表里塞标题或带 id 的节点，本门禁就会把「替换视图」和「主视图」当成两个并存
+// 的 h1 报错——属防御性补齐。注意剥 noscript 只对本门的结构计数有意义：gate 3/4 的
+// noscript 顺序断言是**只读 noscript**，剥不剥与之无关。
 const stripForStruct = (html) =>
   html
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, '');
 // huiyan-shisi.html 按二·10 不参与全站审查（上游镜像 + 自包含）。它的 head 里有
 // `<link rel="icon" href="data:image/svg+xml,<svg …></svg>">` —— 属性值内含 `>`，
 // 任何「<[^>]*>」式的简易标签剥离都会在此提前截断、留下 `">` 残渣。
@@ -976,6 +1066,20 @@ check('页面结构：每页恰 1 个 h1 + id 唯一 + head 无游离文本（' 
 //     内容换成别篇的照样全绿（feed 是订阅端唯一的推送源，错配会直接推错内容）；
 //     projects.json 的 date/icon/desc/linkText/tags 也是零校验
 //     （icon 改成 banana、desc 清空、date 写成 2026-13-45 都能过）。
+//     2026-10-30 补 href 协议白名单：projects.json 的 href 会进 a.project-card 的
+//     href 与 relatedPost 弹窗「获取资源」的 href，`javascript:` 串里没有任何
+//     HTML 特殊字符、能原样穿过 esc()——渲染端已加 safeHref 兜底（main.js 5 节），
+//     这里在数据层再拦一道，坏数据不该等到用户点卡片才暴露。
+//     白名单与 main.js 的 HREF_SCHEME_OK 必须一致：http/https/mailto/tel，其余
+//     scheme（javascript:/data:/vbscript:/blob:）一律判坏；无 scheme 的站内相对路径放行。
+const HREF_SCHEME_OK = new Set(['http', 'https', 'mailto', 'tel']);
+// 判协议前先剥 ASCII 空白与控制字符：浏览器解析 scheme 时忽略它们（`jav&#9;ascript:`
+// 在真实浏览器里仍是 javascript:），不剥就能绕过
+const hrefSchemeBad = (u) => {
+  const probe = String(u).replace(/[\u0000-\u0020\u007f]/g, '');
+  const m = /^([a-z][a-z0-9+.\-]*):/i.exec(probe);
+  return m ? !HREF_SCHEME_OK.has(m[1].toLowerCase()) : false;
+};
 const dataBad = [];
 {
   const feed = read('feed.xml');
@@ -1016,6 +1120,8 @@ const dataBad = [];
     if (!p.desc || !String(p.desc).trim()) dataBad.push('项目「' + p.title + '」desc 为空');
     if (!p.linkText || !String(p.linkText).trim()) dataBad.push('项目「' + p.title + '」linkText 为空');
     if (!Array.isArray(p.tags) || !p.tags.length) dataBad.push('项目「' + p.title + '」tags 为空');
+    // href 允许缺省（卡片退成 div），但一旦写了就必须落在协议白名单内
+    if (p.href && hrefSchemeBad(p.href)) dataBad.push('项目「' + p.title + '」href 协议不在白名单：' + p.href);
   }
 }
 check('数据完整性：feed title·summary == posts.json + 项目字段齐全（' + projects.length + ' 项）',

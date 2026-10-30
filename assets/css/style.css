@@ -2103,9 +2103,10 @@ button.project-card {
 .teacher-music { --t-tint: rgba(224, 102, 255, 0.16); --t-line: rgba(224, 102, 255, 0.46); --t-ink: #e79bff; }
 
 /* ---------- 亮色 / 中国红：浅底共享覆盖 ---------- */
-:root[data-theme="light"] .about-profile-glow {
-  background: var(--about-glow);
-}
+/* （此处原有 `:root[data-theme="light"] .about-profile-glow { background: var(--about-glow); }`
+   已被删除：基础规则 .about-profile-glow 本就直接读 var(--about-glow)，而两个浅底主题在
+   :root[data-theme=…] 里各自重定义了该 token 本身，这条覆盖取到的值与基础规则逐字相同，
+   属 token 收口时的残留死规则，2026-10-30 清理） */
 
 /* 暗色底下那层 5% 白在浅底上不可见，两套浅底各换深色低透明度。
    中国红是暖底：冷灰 rgba(16,24,40) 叠在暖米色上会发灰，单独换暖褐 rgba(90,30,20) */
