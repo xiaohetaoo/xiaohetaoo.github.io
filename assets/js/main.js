@@ -44,7 +44,7 @@
 
   /* ---------- 0. 深浅主题切换 ---------- */
   // json 数据的缓存版本号，跟页面资源的 ?v= 一起升，避免部署后浏览器还拿旧 json
-  var DATA_VER = "20261030a";
+  var DATA_VER = "20261109b";
 
   var themeBtn = document.getElementById("theme-toggle");
   var SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
@@ -1361,7 +1361,7 @@
   document.querySelectorAll(".reveal").forEach(watchReveal);
 
   /* ---------- 5. 文章列表（posts.json 驱动：置顶优先，其余按最后更新倒序）
-         #post-list     首页，只显示最新 5 篇
+         #post-list     首页，只显示最新 7 篇
          #archive-list  归档页，显示全部
          #sidebar-posts 文章页侧栏导航，当前篇高亮 ---------- */
   /* HTML 转义：posts.json / projects.json 的所有字段进 innerHTML 前必经。
@@ -1497,7 +1497,7 @@
     return hay.indexOf(q) !== -1;
   }
 
-  /* 渲染文章列表：limit>0 按配额截取（首页 5），搜索态全库匹配不限条数并显示命中总数 */
+  /* 渲染文章列表：limit>0 按配额截取（首页 7），搜索态全库匹配不限条数并显示命中总数 */
   function renderPostCards(container, limit, query) {
     var q = (query || "").trim().toLowerCase();
     loadPosts()
@@ -1541,7 +1541,7 @@
 
   function rerenderLists() {
     var q = searchInput ? searchInput.value : "";
-    if (homeList) renderPostCards(homeList, 5, q);
+    if (homeList) renderPostCards(homeList, 7, q);
     if (archiveList) renderPostCards(archiveList, 0, q);
   }
 

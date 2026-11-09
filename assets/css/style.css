@@ -4549,3 +4549,109 @@ html.intro-pending .reveal {
   font-size: 13px;
   color: var(--text-3);
 }
+
+/* ============ 调研报告类长文排版（2026-11-09 加，《眼见不再为实》首用）============
+   这一组只服务「带图表与附录的学术/调研报告」型文章，不通用：
+   · figure / figcaption：图注居中弱色，图与图注之间不留多余间距
+   · table + caption：表注居中放表上方（与国标学术排版一致），表格本身走 .prose table 基底
+   · 报告专用小段：p.abs（内容摘要）、p.kw（关键词）、p.cap（孤立图注/表注）、
+     p.q（问卷题号行）、p.mat（测试材料行）、ol.refs（参考文献）
+   **暗色主题下图片要套白底卡片**：报告里的 13 张图全是白底/浅蓝底的图表截图，
+   直接贴在纯黑背景上对比过猛、边缘还会发脏；套一层白底 + 圆角后与浅底两主题一致。
+   浅底两主题本来就白，只补极淡的描边把白图与白底分开（手册八·31 成对口径）。 */
+
+.prose figure {
+  margin: 1.8em 0;
+  text-align: center;
+}
+
+.prose figure img {
+  margin: 0 auto;
+  border-radius: var(--radius-xs);
+  /* 报告图统一白底承载：浅底主题下与页面同色，靠细描边分出边界 */
+  background: #fff;
+  border: 1px solid var(--border);
+}
+
+:root[data-theme="light"] .prose figure img,
+:root[data-theme="cn-red"] .prose figure img {
+  border-color: rgba(16, 24, 40, 0.12);
+}
+
+:root[data-theme="cn-red"] .prose figure img {
+  border-color: rgba(90, 30, 20, 0.14);
+}
+
+.prose figcaption {
+  margin-top: 0.7em;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.prose table caption {
+  caption-side: top;
+  padding-bottom: 10px;
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: left;
+}
+
+.prose table td:first-child {
+  white-space: nowrap;
+}
+
+/* 内容摘要 / 关键词：报告首页那两块，整体弱化并加左侧竖条 */
+.prose p.abs,
+.prose p.kw {
+  margin: 1.4em 0;
+  padding: 14px 18px;
+  font-size: 15px;
+  line-height: 1.8;
+  background: var(--bg-code);
+  border-left: 3px solid var(--accent-border);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  color: var(--text-2);
+}
+
+.prose p.kw { margin-top: -0.6em; padding-top: 10px; padding-bottom: 10px; font-size: 14px; }
+
+/* 孤立图注/表注（无对应图表的说明行） */
+.prose p.cap {
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* 问卷题号行：题号在前、题干与选项跟后，等宽字体把题号对齐出来 */
+.prose p.q {
+  padding-left: 0;
+  font-size: 15px;
+}
+
+.prose p.q::first-line {
+  font-family: var(--font-mono);
+  color: var(--accent-bright);
+}
+
+/* 附录里的测试材料行 */
+.prose p.mat {
+  padding: 12px 16px;
+  background: var(--bg-code);
+  border-radius: var(--radius-xs);
+  font-size: 15px;
+}
+
+/* 参考文献：编号由 CSS 生成，条目里的方括号序号已在生成时剥掉 */
+.prose ol.refs {
+  counter-reset: refs;
+  padding-left: 2.2em;
+  font-size: 14.5px;
+  line-height: 1.75;
+}
+
+.prose ol.refs > li {
+  counter-increment: refs;
+  word-break: break-word;
+}

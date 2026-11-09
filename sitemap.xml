@@ -8,14 +8,14 @@
          2026-10-21 首页项目区新增「核语言」卡片（可见文案）
          2026-10-25 首页项目区新增「核核工具箱」卡片（可见文案）
          2026-10-27 首页文章区前 5 篇改为 5 个置顶（可见文案与顺序变化） -->
-    <lastmod>2026-10-27</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://xiaohetaoo.github.io/archive.html</loc>
     <!-- 「已经到底啦~」收尾（2026-10-05，可见文案）；2026-10-11 noscript 补《地理组徽简介》
          2026-10-27 归档列表新增 3 篇置顶、首 5 篇顺序变化（可见文案） -->
-    <lastmod>2026-10-27</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
@@ -41,7 +41,7 @@
          2026-10-27 新增当日条目（置顶调整，可见文案）
          2026-10-29 新增当日条目（搜索面板浅底阴影 + 隐患数与数据联动 + 注释订正，可见文案）
          2026-10-30 新增当日条目（项目链接安全检查 + 自检脚本补盲区，可见文案） -->
-    <lastmod>2026-10-30</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -74,6 +74,11 @@
     <loc>https://xiaohetaoo.github.io/posts/exist-error.html</loc>
     <!-- 修订日同步 lastmod（posts.json 的 updated 2026-10-04，第八版全文修订） -->
     <lastmod>2026-10-04</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://xiaohetaoo.github.io/posts/yanjian-bu-zai-wei-shi.html</loc>
+    <lastmod>2026-11-09</lastmod>
     <priority>0.6</priority>
   </url>
   <url>

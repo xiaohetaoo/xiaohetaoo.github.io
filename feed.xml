@@ -7,9 +7,9 @@
   <id>https://xiaohetaoo.github.io/</id>
   <!-- feed 级时间戳 = 源内最新一条的 <updated>：2026-10-05 起文章排序键换最后修订日。
        沿革：2026-09-06 → 2026-10-04（「存在错误」修订）→ 2026-10-11（《地理组徽简介》上线）
-       → **2026-10-21（《坤坤曲》上线，即当前值）**。新增/修订文章后这里必须跟到源内最大值，
+       → 2026-10-21（《坤坤曲》上线）→ **2026-11-09（《眼见不再为实》上线，即当前值）**。新增/修订文章后这里必须跟到源内最大值，
        check-site 第 11 道门机器校验（feed 级 updated == max(entry updated)），漏跟直接 FAIL -->
-  <updated>2026-10-21T00:00:00+08:00</updated>
+  <updated>2026-11-09T00:00:00+08:00</updated>
   <author>
     <name>小核桃</name>
     <uri>https://xiaohetaoo.github.io/</uri>
@@ -22,7 +22,7 @@
        2026-10-03）第二，其余无修订的回落发布日后相对序不变。两条的 <updated> 同步改为
        修订日（Atom 语义 = 内容最后修改时间）；以后修订文章记得同步这里，见 _template 必改清单。
        **本块 entry 顺序 = 站内显示序，全量都在 feed 里（不限前几条）**：
-       2026-10-11 起全库 17 篇；2026-10-27 起 18 篇且置顶改由 posts.json 的 pinOrder 决定
+       2026-10-11 起全库 17 篇；2026-10-27 起 18 篇；**2026-11-09 起 19 篇**；置顶改由 posts.json 的 pinOrder 决定
        （五篇置顶按 pinOrder 1–5 排最前，其余仍按 updated‖date 倒序）——改 pinOrder 后
        整块 entry 要跟着重排，一条命令：tools/_apply-pin-order.js -->
   <entry>
@@ -68,6 +68,15 @@
     <summary>小核桃工作室致力于响应国家清朗网络行动，坚决打击违法违规网站！</summary>
     <category term="举报"/>
     <category term="查询码"/>
+  </entry>
+  <entry>
+    <title>眼见不再为实</title>
+    <link href="https://xiaohetaoo.github.io/posts/yanjian-bu-zai-wei-shi.html"/>
+    <id>https://xiaohetaoo.github.io/posts/yanjian-bu-zai-wei-shi.html</id>
+    <updated>2026-11-09T00:00:00+08:00</updated>
+    <summary>大一上实践作业作品</summary>
+    <category term="AI"/>
+    <category term="调研报告"/>
   </entry>
   <entry>
     <title>坤坤曲</title>
