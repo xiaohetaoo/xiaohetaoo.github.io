@@ -4598,9 +4598,32 @@ html.intro-pending .reveal {
   text-align: left;
 }
 
-.prose table td:first-child {
-  white-space: nowrap;
+/* 宽表格横向滚动（2026-11-09 补，起因：《眼见不再为实》表3/表4 在手机端把页面撑宽 156px） */
+/* 根因：表3 六列、表4 五列，390px 视口下最小内容宽约 510px。而 table 元素**自己不能 overflow**，
+   于是整页 scrollWidth 被撑到 528px → main 只占 390、右边空出一条（截图里那条右侧空白）。
+   **踩过的两个弯路**：① 只删 td 的 nowrap 无效，表格照样撑破；② 给 table 加 display:block
+   + overflow-x:auto 能让它滚了，但列宽自动分配机制随之失效，每列被压成一两个字一行（更难看）。
+   正解 = 外层 div.table-scroll 负责滚，table 保持正常 table 布局（列宽自动、文字不硬断）。 */
+.prose .table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.4em 0;
 }
+
+/* 窄表仍占满栏宽；宽表按内容撑开，由外层滚动。
+   **必须覆盖基础规则的 width:100%** —— 那条会让表格永远等于容器宽，列只能被压缩，
+   外层 overflow-x:auto 也就永远不触发（scrollWidth 恒等于 clientWidth）。
+   **中文表格不会自己溢出**：汉字可逐字换行，浏览器总能把它压进容器，所以必须显式给
+   最小宽度才会真的横向滚（这是本项目实测出来的，别改成「按内容自适应」）。 */
+.prose .table-scroll > table {
+  width: auto;
+  margin: 0;
+}
+
+/* 按列数分档：列越多给的最小宽度越大，超出容器就交给外层横向滚动。
+   分档值取自实测——够放下中文列头与 6 位数字，又不至于让窄屏空太多。 */
+.prose .table-scroll:has(table tr > th:nth-child(5)) > table { min-width: 520px; }
+.prose .table-scroll:has(table tr > th:nth-child(6)) > table { min-width: 600px; }
 
 /* 内容摘要 / 关键词：报告首页那两块，整体弱化并加左侧竖条 */
 .prose p.abs,
