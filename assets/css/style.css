@@ -2994,7 +2994,13 @@ html.theme-anim::view-transition-new(root) {
 
   --text-1: #171b22;
   --text-2: #454c56;
-  --text-3: #6b727b;  /* 浅色主题：4.5:1 对比度（W3C AAA Large）边缘失败 → 5.0:1 过 AA 4.5:1 */
+  /* 2026-11-10 审查：原 #6b727b 经 WCAG 公式复算只有 4.47:1（#f5f6f8 上）、
+     在 .tag-gray 的 rgba(16,24,40,.05) 药丸底上更低到 4.39:1 —— 两处都差 AA 4.5:1
+     一线（旧注释「5.0:1」与实际不符）。先压到 #656c75 后页面底色上已达标，但
+     药丸/面板底（.related-card 用 --bg-panel-2 #eef0f4）仍只有 4.45:1，故再压一档到
+     #626970：页面底色 5.10:1、最暗的药丸底 4.65:1，均过 AA 且仍是同一档浅灰。
+     cn-red 档按同法压深（见该主题块 --text-3 注释），暗色档 4.56:1 本就达标、不动。 */
+  --text-3: #626970;
 
   --accent: #2f6ceb;
   --accent-bright: #1e56c8;
@@ -3059,6 +3065,13 @@ html.theme-anim::view-transition-new(root) {
 :root[data-theme="cn-red"] .btn-secondary { background: rgba(90, 30, 20, 0.05); }
 :root[data-theme="light"] .side-item:hover { background: rgba(16, 24, 40, 0.05); }
 :root[data-theme="cn-red"] .side-item:hover { background: rgba(90, 30, 20, 0.07); }
+/* 侧栏「当前篇」的日期（2026-11-10 审查）：原来用 --accent-text 压在同项的
+   --accent-dim 淡蓝底上，两层叠加只剩 4.19:1（浅色）/ 4.22:1（中国红）——
+   --accent-text 是按页面底色标定的文字强调色，经不起再叠一层带色底。
+   日期本身是元信息、同级非当前项的日期也是灰的（--text-3），故这里改用 --text-2：
+   浅色 7.06:1、中国红 7.03:1，层级也更干净（当前项的颜色提示交给标题的 --accent-bright）。 */
+:root[data-theme="light"] .side-item.current .d { color: var(--text-2); }
+:root[data-theme="cn-red"] .side-item.current .d { color: var(--text-2); }
 /* .post-card 基础 background 已是 var(--bg-panel)，浅底只需换阴影；
    .project-card 基础是渐变，浅底连底带影一起换（悬停抬升阴影走 --hover-shadow，不另列） */
 :root[data-theme="light"] .post-card { box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05); }
@@ -3139,8 +3152,11 @@ html.theme-anim::view-transition-new(root) {
   --text-2: #5f4640;
   /* 2026-10-23 审查：原 #8a6b64 在 #faf4f0 上只有 4.41:1，与同轮修掉的 --accent
      是同一类问题（浅底两个主题里只差 cn-red 这一档没进 4.5）。压深到 #856660
-     得 4.74:1；暗色档 5.67 / 浅色档 4.50 本就达标，两份不动 */
-  --text-3: #856660;
+     得 4.74:1；暗色档 5.67 / 浅色档 4.50 本就达标，两份不动。
+     2026-11-10 审查补：页面底色达标不等于带色底达标——.tag-gray 药丸底（4.25:1）与
+     .prof-lv4 面板底（4.41:1）仍差一线，故再压到 #7d5f59：页面底色 5.27:1、
+     药丸底 4.72:1、面板底 4.90:1，三处齐过 AA。 */
+  --text-3: #7d5f59;
 
   --accent: #de2910;
   --accent-bright: #b81c11;
